@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>SM exporter — Google sign-in</title>
+  <!--
+    OPTIONAL hosted redirect page for the SM exporter Figma plugin.
+
+    Host this file on any HTTPS site you control (for example https://tier2.digital/figma-oauth/),
+    add that exact URL as an "Authorized redirect URI" on a *Web application* OAuth client in
+    Google Cloud, and enter the same URL in the plugin's Redirect URI field.
+
+    After the user approves access, Google redirects here with ?code=…&state=… and this page shows
+    the code with a copy button. Nothing is sent anywhere; the page has no network calls.
+
+    If you would rather not host anything, leave the plugin's Redirect URI at the default
+    http://127.0.0.1:53682/ (a *Desktop app* OAuth client) and copy the address bar URL from the
+    "site can't be reached" page instead.
+  -->
+  <style>
+    :root { color-scheme: dark; }
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #090a0b; color: #f0f1f4; font: 15px/1.5 Inter, ui-sans-serif, system-ui, sans-serif; }
+    main { width: min(560px, calc(100% - 32px)); padding: 28px; border: 1px solid rgba(255,255,255,.1); border-radius: 18px; background: #131516; }
+    h1 { margin: 0 0 6px; font-size: 20px; font-weight: 500; }
+    p { margin: 0 0 16px; color: #b7b9bf; }
+    code { display: block; padding: 12px 14px; border-radius: 10px; background: #202b2e; color: #e2e3e6; word-break: break-all; user-select: all; }
+    button { margin-top: 14px; height: 40px; padding: 0 22px; border: 0; border-radius: 22px; color: #fff; background: linear-gradient(100deg, #11b9dd, #104cff); font: inherit; font-weight: 500; letter-spacing: .03em; cursor: pointer; }
+    .error { color: #ff8686; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>SM exporter</h1>
+    <div id="content"><p>Reading the response from Google…</p></div>
+  </main>
+  <script>
+    const params = new URLSearchParams(window.location.search || window.location.hash.replace(/^#/, '?'))
+    const content = document.getElementById('content')
+    const code = params.get('code')
+    const error = params.get('error')
+    if (error) {
+      content.innerHTML = '<p class="error"></p><p>Go back to Figma and try connecting again.</p>'
+      content.querySelector('.error').textContent = `Google returned an error: ${error}`
+    } else if (code) {
+      content.innerHTML = '<p>Copy this code and paste it into the plugin in Figma, then close this tab.</p><code id="code"></code><button id="copy" type="button">Copy code</button>'
+      document.getElementById('code').textContent = code
+      document.getElementById('copy').addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(code)
+          document.getElementById('copy').textContent = 'Copied'
+        } catch {
+          document.getElementById('copy').textContent = 'Select the code above and copy it'
+        }
+      })
+    } else {
+      content.innerHTML = '<p>No authorization code was found in this address. Start the sign-in from the plugin in Figma.</p>'
+    }
+  </script>
+</body>
+</html>

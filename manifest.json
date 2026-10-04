@@ -1,0 +1,24 @@
+{
+  "name": "SM exporter",
+  "id": "38d473ff-c75c-4696-b3b5-75f5fa5de6e1",
+  "api": "1.0.0",
+  "main": "code.js",
+  "documentAccess": "dynamic-page",
+  "editorType": [
+    "figma"
+  ],
+  "relaunchButtons": [
+    {
+      "command": "38d473ff-c75c-4696-b3b5-75f5fa5de6e1",
+      "name": "SM exporter"
+    }
+  ],
+  "ui": "ui.html",
+  "networkAccess": {
+    "allowedDomains": [
+      "https://oauth2.googleapis.com",
+      "https://www.googleapis.com"
+    ],
+    "reasoning": "Signs in with Google (OAuth token exchange) and uploads the exported files to the user's Google Drive folder."
+  }
+}
