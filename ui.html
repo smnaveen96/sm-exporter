@@ -1477,9 +1477,12 @@
       const files = []
       const pdfImages = []
       const vectorPages = []
-      // One frame + a typed file name: every image format of that frame is named after it
-      // (Summer-Sale.jpg, Summer-Sale.png, …), matching the PDF. Several frames stay numbered.
-      const typedName = options.typedName || ''
+      // One frame: every image format of that frame is named after the File name field
+      // (Summer-Sale.jpg, Summer-Sale.png, …), or after the frame's name in Figma when it is
+      // empty, matching the PDF. Several frames stay numbered (01.jpg, 02.jpg, …).
+      const frameName = message.rasterSources.length === 1 && frameOrder.length === 1 ? (frameNames[frameOrder[0]] || '') : ''
+      const pdfName = options.typedName || frameName || options.fileName
+      const typedName = options.typedName || frameName || options.fileName || ''
       const useTypedName = typedName && message.rasterSources.length === 1
       const typedStem = typedName.replace(/\.(jpe?g|png|webp|svg|pdf|zip)$/i, '')
       const imageName = (source, extension) => useTypedName ? normalizedFilename(typedStem, extension, source.baseName) : `${source.baseName}.${extension}`
@@ -1503,7 +1506,7 @@
       const bothPdfs = options.pdfImage && options.pdfVector && vectorPages.length > 0
       if (options.pdfImage) {
         files.push({
-          name: normalizedFilename(options.fileName, 'pdf', 'Export'),
+          name: normalizedFilename(pdfName, 'pdf', 'Export'),
           mime: 'application/pdf',
           bytes: buildRasterPdf(pdfImages),
         })
@@ -1512,7 +1515,7 @@
         if (activeDestination !== 'drive') setButtonState('busy', options.compressPdf ? 'COMPRESSING' : 'MERGING PDF')
         if (activeDestination === 'drive') setDriveStatus('busy', options.compressPdf ? 'Compressing PDF...' : 'Merging PDF...')
         const merged = await buildVectorPdf(vectorPages, options.compressPdf ? (options.compressLevel === 'smaller' ? 'smaller' : 'default') : false)
-        const base = normalizedFilename(options.fileName, 'pdf', 'Export').slice(0, -4)
+        const base = normalizedFilename(pdfName, 'pdf', 'Export').slice(0, -4)
         files.push({
           name: bothPdfs ? `${base} — Vector.pdf` : `${base}.pdf`,
           mime: 'application/pdf',
@@ -2170,7 +2173,8 @@
       } else {
         setButtonState('busy', 'CREATING ZIP')
         const zip = buildZip(files)
-        await downloadZip(normalizedFilename(message.options.fileName, 'zip', 'SM Export'), zip)
+        const zipFrame = message.rasterSources.length === 1 && frameOrder.length === 1 ? (frameNames[frameOrder[0]] || '') : ''
+        await downloadZip(normalizedFilename(message.options.typedName || zipFrame || message.options.fileName, 'zip', 'SM Export'), zip)
       }
       busy = false
       setButtonState('success', 'EXPORTED')
