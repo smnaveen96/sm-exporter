@@ -1,6 +1,6 @@
 {
   "name": "SM exporter",
-  "id": "38d473ff-c75c-4696-b3b5-75f5fa5de6e1",
+  "id": "1688606822748713623",
   "api": "1.0.0",
   "main": "code.js",
   "documentAccess": "dynamic-page",
@@ -9,7 +9,7 @@
   ],
   "relaunchButtons": [
     {
-      "command": "38d473ff-c75c-4696-b3b5-75f5fa5de6e1",
+      "command": "1688606822748713623",
       "name": "SM exporter"
     }
   ],
