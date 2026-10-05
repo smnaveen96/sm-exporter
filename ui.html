@@ -187,13 +187,38 @@
       opacity: 0; pointer-events: none; transition: opacity 120ms ease, transform 120ms ease; z-index: 5;
     }
     .info-icon:hover .info-tip, .info-icon:focus-visible .info-tip { opacity: 1; transform: translate(0, -50%); }
+    /* PDF — Image now sits at the right edge of the row, so its tooltip opens below, right-aligned, instead of sideways. */
+    #pdf-image-info { margin-left: -6px; }
+    #pdf-vector-info { margin-left: -3px; }
+    #pdf-vector-tip { left: -8px; top: calc(100% + 6px); transform: translateY(-3px); }
+    .info-icon:hover #pdf-vector-tip, .info-icon:focus-visible #pdf-vector-tip { transform: translateY(0); }
+    /* Compress + level sit flush right so their right edge lines up with the SVG label above. */
+    #compress-toggle { margin-left: 4px; }
+    .compress-level { margin-right: 0; margin-left: 0; }
+    .formats-extra .option-row:last-child > .option { padding-right: 0; }
+    .formats-extra { grid-template-columns: minmax(0, 1fr); }
+    .formats-extra .compress-level { margin-left: 5px; margin-right: 0; }
+    #compress-toggle { gap: 5px; }
+    #compress-toggle .switch-label { font-size: 12px; }
+        #pdf-image-tip { left: auto; right: -4px; top: auto; bottom: calc(100% + 6px); transform: translateY(3px); } /* opens above, right-aligned */
+    .info-icon:hover #pdf-image-tip, .info-icon:focus-visible #pdf-image-tip { transform: translateY(0); }
+    .formats:not(.formats-extra) .option-row { min-height: 38px; }
     .option-row .option { min-height: 0; padding: 6px 5px; }
-    .formats-divider { height: 1px; margin: 2px 4px 6px; background: var(--line); }
-    .formats-extra { margin-bottom: 14px; }
+    .formats-divider { height: 1px; margin: 5px 4px 7px; background: var(--line); }
+    .formats-extra { margin-bottom: 18px; }
+    .formats:not(.formats-extra) { padding-top: 5px; } /* nudges the JPEG / PNG rows down, away from the drop box */
     .formats-extra .option-row { min-height: 38px; }
     .option-row-triple { justify-content: flex-start; gap: 8px; }
     .option-cell { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
-    .option-cell .option { gap: 8px; padding: 6px 4px; }
+    /* Shared columns so JPEG/PDF — Image line up with PNG/WebP, and every checkbox, label and scale pill sits on the same vertical line. */
+    .formats .option-row-triple { display: grid; grid-template-columns: 127px max-content max-content; column-gap: 10px; justify-content: start; }
+    .formats .option-row-triple .option-cell:nth-child(n+2) { padding-left: 0; }
+    .option-cell .option:has(+ .scale-pill) { min-width: 71px; padding-right: 2px !important; box-sizing: border-box; }
+    .formats .option-row-triple .option-cell { gap: 2px; }
+    .formats .option-row > .option, .option-cell .option { padding: 6px 4px; gap: 6px; white-space: nowrap; }
+    .option-cell .option { gap: 6px; padding: 6px 4px; }
+    .option-cell .option:has(#webp) { gap: 5px; } /* the W's open left edge reads as extra space, so pull the label in closer */
+    .formats-extra .option-row:last-child { margin-top: 2px; gap: 3px; } /* PDF — Vector + Compress: a little lower, tighter together */
     .scale-pill {
       position: relative; display: inline-flex; align-items: center;
       height: 28px; padding: 0 22px 0 11px;
@@ -220,10 +245,10 @@
       font: inherit;
     }
     .scale-pill option { color: var(--ink); background: #fff; }
-    .compress-level { margin-left: 6px; animation: pill-in 160ms ease; }
+    .compress-level { margin-left: 2px; animation: pill-in 160ms ease; }
     .compress-level[hidden] { display: none; }
     @keyframes pill-in { from { opacity: 0; transform: translateX(-4px); } to { opacity: 1; transform: none; } }
-    .switch { position: relative; display: inline-flex; align-items: center; gap: 9px; margin-left: 4px; cursor: pointer; user-select: none; transition: opacity 160ms ease; }
+    .switch { position: relative; display: inline-flex; align-items: center; gap: 7px; margin-left: 0; cursor: pointer; user-select: none; transition: opacity 160ms ease; }
     .switch.is-disabled { opacity: .42; cursor: default; }
     .switch input { position: absolute; opacity: 0; pointer-events: none; }
     .switch-label { color: var(--ink-soft); font-size: 13px; }
@@ -247,7 +272,8 @@
     .filename-input:focus { border-color: var(--black); box-shadow: 0 0 0 1px var(--black); background: #fff; }
     .filename-input::placeholder { color: #8c8c91; }
     .file-name-field { display: grid; gap: 8px; margin: 0 0 24px; padding: 0; }
-    .file-name-field label { color: var(--ink); font-size: 14px; font-weight: 500; padding-left: 5px; } /* lines the text up with the checkboxes above */
+    /* The placeholder already says "Enter your filename", so the visible label is dropped; it stays for screen readers. */
+    .file-name-field label { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
     #file-name { display: block; width: auto; min-width: 0; max-width: 100%; justify-self: stretch; }
     .actions { display: flex; align-items: stretch; gap: 10px; }
     #export-button {
@@ -409,12 +435,8 @@
       transition: grid-template-rows 300ms cubic-bezier(.4,0,.2,1);
     }
     .drive-drawer.is-open { grid-template-rows: 1fr; }
-    .drive-drawer > .drawer-inner { min-height: 0; min-width: 0; overflow-x: hidden; overflow-y: auto; max-height: 150px; padding-right: 6px; }
-    /* Settings / sign-in drawer scrolls inside the panel instead of growing the plugin window. Scrollbar stays visible. */
-    .drawer-inner::-webkit-scrollbar { width: 8px; }
-    .drawer-inner::-webkit-scrollbar-track { background: var(--surface); border-radius: 4px; }
-    .drawer-inner::-webkit-scrollbar-thumb { background: #9a9a9f; border-radius: 4px; }
-    .drawer-inner::-webkit-scrollbar-thumb:hover { background: var(--black); }
+    /* Drawer grows to fit its content (the plugin window resizes via syncHeight), so no inner scrollbar is needed. */
+    .drive-drawer > .drawer-inner { min-height: 0; min-width: 0; overflow: hidden; padding: 0 2px 0 0; }
     .drive-area, .drive-drawer, .drive-status { min-width: 0; }
     .drawer-card {
       display: grid; gap: 9px;
@@ -427,6 +449,7 @@
     }
     .drawer-card[hidden] { display: none; }
     .drawer-card p { margin: 0; color: var(--ink-soft); font-size: 12px; line-height: 1.45; }
+    #drawer-auth > p:first-child { font-size: 11px; line-height: 1.4; }
     .drawer-card a { color: var(--black); font-weight: 500; text-decoration: underline; text-underline-offset: 2px; }
     .drawer-card a:hover { text-decoration-thickness: 2px; }
     .drawer-card .filename-input { height: 36px; padding: 0 12px; font-size: 12px; border-radius: 12px; background: #fff; }
@@ -439,6 +462,21 @@
     .drawer-note { min-width: 0; overflow-wrap: anywhere; color: var(--muted); font-size: 11px; line-height: 1.4; }
     .drawer-msg.is-error { color: var(--bad); }
     .drawer-msg.is-busy { color: var(--muted); }
+    .drawer-msg.is-ok { color: var(--link-accent); }
+    .account-card { display: flex; align-items: center; gap: 11px; min-width: 0; padding: 9px 10px 9px 12px; border: 1px solid var(--border); border-radius: 14px; background: var(--panel); }
+    .account-card[hidden] { display: none; }
+    .g-logo { width: 20px; height: 20px; flex: 0 0 auto; }
+    .account-text { flex: 1 1 auto; min-width: 0; display: grid; gap: 1px; }
+    .account-kicker { font-size: 11px; line-height: 1.3; color: var(--muted); }
+    .account-email { font-size: 13px; line-height: 1.3; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .account-card .small-button { flex: 0 0 auto; }
+    .connect-block { display: grid; gap: 8px; }
+    .connect-block[hidden] { display: none; }
+    .google-button { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; height: 40px; padding: 0 16px; border: 1px solid var(--border); border-radius: 999px; color: var(--ink); background: #fff; font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; transition: background-color 120ms ease, opacity 120ms ease; }
+    .google-button .g-logo { width: 18px; height: 18px; }
+    .google-button:hover:not(:disabled) { background: #f6f6f6; }
+    .google-button:disabled { opacity: .5; cursor: default; }
+    .google-button:focus-visible { outline: 2px solid var(--link-accent); outline-offset: 2px; }
     .drawer-card .filename-input.is-invalid, .drawer-card .filename-input.is-invalid:focus { border-color: var(--bad); box-shadow: 0 0 0 1px var(--bad); }
     .drawer-links { display: flex; flex-wrap: wrap; gap: 2px 14px; }
     .drawer-card .drawer-links a { font-size: 10px; font-weight: 400; color: var(--muted); text-decoration: underline; text-underline-offset: 2px; text-decoration-thickness: 1px; }
@@ -489,13 +527,15 @@
 
   <div class="section-title">Export</div>
   <div class="formats" aria-label="Export formats">
-    <div class="option-row">
-      <label class="option"><input id="jpeg" type="checkbox" checked><span class="check"></span><span>JPEG</span></label>
-      <span class="scale-pill" title="Export scale"><span class="scale-value">1x</span><select id="jpeg-scale" aria-label="JPEG scale"><option value="0.5">0.5x</option><option value="1" selected>1x</option><option value="1.5">1.5x</option><option value="2">2x</option><option value="3">3x</option><option value="4">4x</option></select></span>
-    </div>
-    <div class="option-row">
-      <label class="option"><input id="pdf-image" type="checkbox" checked><span class="check"></span><span>PDF — Image</span></label>
-      <button class="info-icon" id="pdf-image-info" type="button" aria-label="About PDF — Image: JPG images merged into PDF" aria-describedby="pdf-image-tip"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="8" cy="4.9" r="0.95" fill="currentColor"/><path d="M8 7.3v4.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg><span class="info-tip" id="pdf-image-tip" role="tooltip">JPG images merged into PDF</span></button>
+    <div class="option-row option-row-triple">
+      <span class="option-cell">
+        <label class="option"><input id="jpeg" type="checkbox" checked><span class="check"></span><span>JPEG</span></label>
+        <span class="scale-pill" title="Export scale"><span class="scale-value">1x</span><select id="jpeg-scale" aria-label="JPEG scale"><option value="0.5">0.5x</option><option value="1" selected>1x</option><option value="1.5">1.5x</option><option value="2">2x</option><option value="3">3x</option><option value="4">4x</option></select></span>
+      </span>
+      <span class="option-cell">
+        <label class="option"><input id="pdf-image" type="checkbox" checked><span class="check"></span><span>PDF — Image</span></label>
+        <button class="info-icon" id="pdf-image-info" type="button" aria-label="About PDF — Image: JPG images merged into PDF" aria-describedby="pdf-image-tip"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="8" cy="4.9" r="0.95" fill="currentColor"/><path d="M8 7.3v4.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg><span class="info-tip" id="pdf-image-tip" role="tooltip">JPG images merged into PDF</span></button>
+      </span>
     </div>
   </div>
   <div class="formats-divider" aria-hidden="true"></div>
@@ -515,6 +555,7 @@
     </div>
     <div class="option-row">
       <label class="option"><input id="pdf-vector" type="checkbox"><span class="check"></span><span>PDF — Vector</span></label>
+      <button class="info-icon" id="pdf-vector-info" type="button" aria-label="About PDF — Vector: sharp, scalable PDF" aria-describedby="pdf-vector-tip"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="8" cy="4.9" r="0.95" fill="currentColor"/><path d="M8 7.3v4.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg><span class="info-tip" id="pdf-vector-tip" role="tooltip">Sharp, scalable PDF</span></button>
       <label id="compress-toggle" class="switch" title="Re-encode embedded images so the PDF is much smaller with no visible loss">
         <span class="switch-label">Compress</span>
         <input id="compress-pdf" type="checkbox" disabled>
@@ -576,19 +617,21 @@
       <div id="drive-drawer" class="drive-drawer">
         <div class="drawer-inner">
           <div id="drawer-settings" class="drawer-card" hidden>
-            <p id="settings-intro">Add the OAuth client from your Google Cloud project. It is stored only on this computer, inside Figma.</p>
             <div class="drawer-field"><label for="client-id">Client ID</label><input id="client-id" class="filename-input" type="text" spellcheck="false" autocomplete="off" placeholder="…apps.googleusercontent.com"></div>
             <div class="drawer-field"><label for="client-secret">Client secret</label><input id="client-secret" class="filename-input" type="password" spellcheck="false" autocomplete="off" placeholder="GOCSPX-…"></div>
             <span id="settings-msg" class="drawer-note drawer-msg" role="alert" hidden></span>
-            <span id="account-label" class="drawer-note"></span>
-            <div class="drawer-actions">
-              <span class="spacer"></span>
-              <button id="disconnect-button" class="small-button is-danger" type="button" hidden>Disconnect</button>
-              <button id="save-settings" class="small-button is-primary" type="button">Save</button>
+            <div id="account-card" class="account-card" hidden>
+              <svg class="g-logo" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+              <div class="account-text"><span id="account-kicker" class="account-kicker">Connected as</span><span id="account-email" class="account-email"></span></div>
+              <button id="disconnect-button" class="small-button is-danger" type="button">Disconnect</button>
+            </div>
+            <div id="connect-block" class="connect-block">
+              <button id="connect-google" class="google-button" type="button"><svg class="g-logo" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg><span>Continue with Google</span></button>
+              <span id="connect-hint" class="drawer-note"></span>
             </div>
           </div>
           <div id="drawer-auth" class="drawer-card" hidden>
-            <p>Approve access in the browser. The next page may say “This site can’t be reached” — that’s expected. Copy its address and paste it below. Google showed an error instead? Open the sign-in page again.</p>
+            <p>Approve access in your browser. The next page may say “This site can’t be reached” — that’s expected. Copy its address and paste it below.</p>
             <p class="drawer-links"><a id="auth-link" href="#" target="_blank" rel="noopener">Open the Google sign-in page again</a><a id="auth-edit-client" href="#">Edit client settings</a></p>
             <div class="drawer-field"><label for="auth-code">Authorization code or redirect URL</label><input id="auth-code" class="filename-input" type="text" spellcheck="false" autocomplete="off" placeholder="4/0A… or http://127.0.0.1:53682/?code=…"></div>
             <span id="auth-error" class="drawer-note drawer-msg is-error" role="alert" hidden></span>
@@ -2321,9 +2364,13 @@
     const drawerAuth = document.getElementById('drawer-auth')
     const clientIdInput = document.getElementById('client-id')
     const clientSecretInput = document.getElementById('client-secret')
-    const saveSettingsButton = document.getElementById('save-settings')
     const disconnectButton = document.getElementById('disconnect-button')
-    const accountLabel = document.getElementById('account-label')
+    const accountCard = document.getElementById('account-card')
+    const accountKicker = document.getElementById('account-kicker')
+    const accountEmail = document.getElementById('account-email')
+    const connectBlock = document.getElementById('connect-block')
+    const connectButton = document.getElementById('connect-google')
+    const connectHint = document.getElementById('connect-hint')
     const authLink = document.getElementById('auth-link')
     const authCodeInput = document.getElementById('auth-code')
     const authContinue = document.getElementById('auth-continue')
@@ -2336,7 +2383,8 @@
     let oauthClient = null           // { clientId, clientSecret, redirectUri }
     let tokens = null                // { accessToken, refreshToken, expiresAt, account }
     let pendingAuth = null           // { state, timer, resolve, reject } while waiting for the pasted code
-    let savingSettings = false       // true while the Client ID / secret is being checked with Google
+    let checkingClient = false       // true while the Client ID / secret is being checked with Google
+    let autosaveTimer = 0, autosaveRun = 0, settingsMsgTimer = 0
     const AUTH_TIMEOUT_MS = 10 * 60 * 1000
     let pendingExport = null         // { resolve, reject } while waiting for the sandbox's export-ready
     let uploadedKey = ''             // fingerprint of what the tick on the cloud button stands for
@@ -2360,15 +2408,20 @@
         post({ type: 'resize', height: Math.ceil(bottom + 15) })
       })
     }
-    new ResizeObserver(syncHeight).observe(driveArea)
+    // Watch every block above the drive area as well: when the thumbnails strip grows or shrinks, the drive area
+    // moves without changing its own size, so observing it alone left the window too tall (or too short).
+    const heightObserver = new ResizeObserver(syncHeight)
+    heightObserver.observe(driveArea)
+    for (const el of document.body.children) if (el.tagName !== 'SCRIPT' && el !== driveArea) heightObserver.observe(el)
+    window.addEventListener('load', syncHeight)
 
-    // Quiet messages (saved, cancelled, disconnected) fade away on their own. Errors, progress and
-    // the upload result — which carries the folder link — stay until the next action.
+    // Quiet messages (saved, disconnected) fade away on their own. Errors, progress and any line
+    // that carries the folder link (the upload result, a cancel after some files went up) stay until the next action.
     function setDriveStatus(state, text, folderUrl) {
       clearTimeout(statusFadeTimer)
       driveStatus.classList.remove('is-fading')
-      // After an upload the result line is one link — the text and the icon open the folder together.
-      const asLink = state === 'success' && Boolean(folderUrl)
+      // After an upload (or a cancel that left files behind) the line is one link — the text and the icon open the folder together.
+      const asLink = (state === 'success' || !state) && Boolean(folderUrl)
       driveOpenFolder.hidden = !asLink
       driveStatusText.hidden = asLink
       if (folderUrl) driveOpenFolder.dataset.url = folderUrl
@@ -2386,13 +2439,24 @@
       }
       if (state === 'success') hideTooltip() // the tick has said it all
       driveSubmit.setAttribute('aria-label', state === 'success' ? 'Uploaded to Google Drive. Upload again' : 'Upload to Google Drive')
-      if (!state && text) {
+      if (!state && text && !asLink) {
         statusFadeTimer = setTimeout(() => {
           driveStatus.classList.add('is-fading')
           statusFadeTimer = setTimeout(() => setDriveStatus('', ''), 380)
         }, Math.max(4000, 2500 + text.length * 50))
       }
       syncHeight()
+    }
+
+    // A short confirmation in the status line (blue, no tick on the upload button) that fades after `ms`.
+    function flashDriveStatus(text, ms) {
+      setDriveStatus('', text)
+      clearTimeout(statusFadeTimer)
+      driveStatus.classList.add('is-success')
+      statusFadeTimer = setTimeout(() => {
+        driveStatus.classList.add('is-fading')
+        statusFadeTimer = setTimeout(() => setDriveStatus('', ''), 380)
+      }, ms)
     }
 
     function failDrive(text) {
@@ -2409,6 +2473,7 @@
         setTimeout(() => { if (!drawerMode) { drawerSettings.hidden = true; drawerAuth.hidden = true } }, 320)
       }
       driveDrawer.classList.toggle('is-open', Boolean(mode))
+      driveDrawer.classList.toggle('is-settings', mode === 'settings')
       settingsToggle.classList.toggle('is-active', mode === 'settings')
       syncHeight()
     }
@@ -2441,14 +2506,21 @@
     }
     fileNameInput.addEventListener('input', dropStaleTick)
 
+    // The bottom of the settings panel: who is connected, or the way to connect.
     function refreshAccountLabel() {
-      if (tokens) {
-        accountLabel.textContent = tokens.account ? `Connected as ${tokens.account}` : 'Connected to Google Drive'
-        disconnectButton.hidden = false
+      const connected = Boolean(tokens)
+      accountCard.hidden = !connected
+      connectBlock.hidden = connected
+      if (connected) {
+        accountKicker.textContent = tokens.account ? 'Connected as' : 'Connected to'
+        accountEmail.textContent = tokens.account || 'Google Drive'
       } else {
-        accountLabel.textContent = oauthClient && oauthClient.builtIn ? 'Team client built in · not signed in yet' : 'Not connected yet'
-        disconnectButton.hidden = true
+        connectButton.disabled = !oauthClient || checkingClient
+        connectHint.textContent = oauthClient
+          ? 'Opens Google in your browser. Allow access, then copy the URL and paste it here.'
+          : 'Add your Client ID and secret above first.'
       }
+      syncHeight()
     }
 
     // Inline messages: shown next to the fields they are about, not only in the status line.
@@ -2458,15 +2530,17 @@
     }
 
     function setSettingsMessage(state, text, invalidInputs) {
+      clearTimeout(settingsMsgTimer)
       settingsMsg.hidden = !text
       settingsMsg.textContent = text || ''
-      settingsMsg.classList.remove('is-error', 'is-busy')
+      settingsMsg.classList.remove('is-error', 'is-busy', 'is-ok')
       if (state && text) settingsMsg.classList.add(`is-${state}`)
       for (const input of [clientIdInput, clientSecretInput]) {
         const invalid = Boolean(text) && state === 'error' && (invalidInputs || []).includes(input)
         input.classList.toggle('is-invalid', invalid)
         if (invalid) input.setAttribute('aria-invalid', 'true'); else input.removeAttribute('aria-invalid')
       }
+      if (state === 'ok' && text) settingsMsgTimer = setTimeout(() => setSettingsMessage('', ''), Math.max(2400, 1500 + text.length * 45))
       if (text) revealMessage(settingsMsg); else syncHeight()
     }
 
@@ -2500,7 +2574,7 @@
     driveUrlInput.addEventListener('blur', () => uploadPill.classList.remove('is-focused'))
     driveUrlInput.addEventListener('input', () => {
       if (busy || !oauthClient) return
-      if (driveStatus.classList.contains('is-error') || driveStatus.classList.contains('is-success')) setDriveStatus('', idleStatusText())
+      if (driveStatus.classList.contains('is-error') || driveStatus.classList.contains('is-success') || !driveOpenFolder.hidden) setDriveStatus('', idleStatusText())
     })
     driveForm.addEventListener('submit', (event) => {
       event.preventDefault()
@@ -2508,7 +2582,6 @@
     })
 
     settingsToggle.addEventListener('click', () => {
-      if (savingSettings) return
       if (drawerMode === 'settings') {
         showDrawer(null)
         return
@@ -2524,9 +2597,6 @@
 
     const CLIENT_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]*\.apps\.googleusercontent\.com$/i
     const stripQuotes = (value) => String(value || '').trim().replace(/^[\s"'`“”‘’]+|[\s"'`“”‘’]+$/g, '')
-
-    clientIdInput.addEventListener('input', () => setSettingsMessage('', ''))
-    clientSecretInput.addEventListener('input', () => setSettingsMessage('', ''))
 
     // Asks Google whether this Client ID + secret pair exists. A made-up code is sent on purpose:
     // a wrong ID or secret comes back as invalid_client, a right pair as invalid_grant (bad code).
@@ -2550,43 +2620,55 @@
       }
     }
 
-    saveSettingsButton.addEventListener('click', async () => {
-      if (savingSettings) return
+    // ---- Client settings save themselves -----------------------------------------------------------
+    // There is no Save button: once a complete, valid Client ID + secret is in the fields they are
+    // checked with Google and saved. Format problems are reported when a field is pasted or left —
+    // never while typing. Emptying the fields never deletes the saved client: it comes back when the
+    // panel is reopened, and Continue with Google asks for the missing details instead.
+    function scheduleAutosave(delay, report) {
+      clearTimeout(autosaveTimer)
+      autosaveTimer = setTimeout(() => autosaveClient(report), delay)
+    }
+
+    for (const input of [clientIdInput, clientSecretInput]) {
+      input.addEventListener('input', () => { setSettingsMessage('', ''); scheduleAutosave(1200, false) })
+      input.addEventListener('paste', () => scheduleAutosave(0, true))
+      input.addEventListener('blur', () => scheduleAutosave(0, true))
+    }
+
+    // Resolves true when the client in the fields is the one in effect (saved now, or already saved).
+    async function autosaveClient(report) {
+      clearTimeout(autosaveTimer)
+      const run = ++autosaveRun
+      if (checkingClient) { checkingClient = false; refreshAccountLabel() } // an older check is superseded
       const clientId = stripQuotes(clientIdInput.value)
       const clientSecret = stripQuotes(clientSecretInput.value)
       const redirectUri = (oauthClient && oauthClient.redirectUri) || DEFAULT_REDIRECT_URI // not shown in the UI; the default is baked in above
-      if (!clientId && !clientSecret) {
-        // Empty Client ID = forget the client saved on this computer (and its sign-in).
-        // The plugin then falls back to the client baked into this file, if any.
-        oauthClient = builtInClient()
-        tokens = null
-        post({ type: 'storage-set', values: { [STORAGE_CLIENT_KEY]: null, [STORAGE_TOKENS_KEY]: null } })
-        fillSettingsFields()
-        showDrawer(null)
-        setDriveStatus('', '')
-        console.log(LOG, 'Stored OAuth client cleared', oauthClient ? '(using built-in client)' : '(no client)')
-        return
-      }
-      // Catch typos before anything is saved, and say which field is wrong.
-      if (!clientId) { setSettingsMessage('error', 'Add the Client ID, or clear both fields to forget this client.', [clientIdInput]); clientIdInput.focus(); return }
-      if (/\s/.test(clientId) || !CLIENT_ID_PATTERN.test(clientId)) {
-        setSettingsMessage('error', 'That doesn’t look like a Google Client ID. It should end with .apps.googleusercontent.com.', [clientIdInput])
-        clientIdInput.focus()
-        return
-      }
-      if (!clientSecret) { setSettingsMessage('error', 'Add the Client secret from the same OAuth client.', [clientSecretInput]); clientSecretInput.focus(); return }
-      if (/\s/.test(clientSecret)) { setSettingsMessage('error', 'The Client secret can’t contain spaces. Copy it again from Google Cloud.', [clientSecretInput]); clientSecretInput.focus(); return }
+      if (settingsMsg.classList.contains('is-busy')) setSettingsMessage('', '')
 
-      savingSettings = true
-      saveSettingsButton.disabled = true
-      saveSettingsButton.textContent = 'Checking…'
+      if (!clientId && !clientSecret) return false // nothing to save; a saved client is left untouched
+      if (oauthClient && oauthClient.clientId === clientId && oauthClient.clientSecret === clientSecret) return true // nothing new
+
+      const idProblem = clientId && (/\s/.test(clientId) || !CLIENT_ID_PATTERN.test(clientId))
+      const secretProblem = clientSecret && /\s/.test(clientSecret)
+      if (idProblem || secretProblem || !clientId || !clientSecret) {
+        if (report && idProblem) setSettingsMessage('error', 'That doesn’t look like a Google Client ID. It should end with .apps.googleusercontent.com.', [clientIdInput])
+        else if (report && secretProblem) setSettingsMessage('error', 'The Client secret can’t contain spaces. Copy it again from Google Cloud.', [clientSecretInput])
+        return false // incomplete or malformed: keep waiting
+      }
+
+      checkingClient = true
+      refreshAccountLabel()
       setSettingsMessage('busy', 'Checking with Google…')
       const check = await verifyOAuthClient(clientId, clientSecret, redirectUri)
-      savingSettings = false
-      saveSettingsButton.disabled = false
-      saveSettingsButton.textContent = 'Save'
-      if (check.status === 'bad-id') { setSettingsMessage('error', check.message, [clientIdInput]); clientIdInput.focus(); return }
-      if (check.status === 'bad-secret') { setSettingsMessage('error', check.message, [clientSecretInput]); clientSecretInput.focus(); return }
+      if (run !== autosaveRun) return false // the fields changed meanwhile: the newer run owns the result
+      checkingClient = false
+      if (check.status === 'bad-id' || check.status === 'bad-secret') {
+        if (drawerMode === 'settings') setSettingsMessage('error', check.message, [check.status === 'bad-id' ? clientIdInput : clientSecretInput])
+        else { setSettingsMessage('', ''); failDrive(check.message) }
+        refreshAccountLabel()
+        return false
+      }
 
       const changedClient = !oauthClient || oauthClient.clientId !== clientId || oauthClient.clientSecret !== clientSecret
       oauthClient = { clientId, clientSecret, redirectUri }
@@ -2596,12 +2678,62 @@
         values[STORAGE_TOKENS_KEY] = null
       }
       post({ type: 'storage-set', values })
-      setSettingsMessage('', '')
+      setSettingsMessage('ok', check.status === 'offline' ? 'Saved. Couldn’t reach Google to check it — it will be checked when you sign in.' : 'Saved')
       refreshAccountLabel()
-      showDrawer(null)
-      setDriveStatus('', check.status === 'offline' ? 'Saved. Couldn’t reach Google to check it — it will be checked on your first upload.' : 'Google client saved.')
-      driveUrlInput.focus()
+      setTimeout(() => { if (drawerMode === 'settings' && !connectBlock.hidden) connectBlock.scrollIntoView({ block: 'nearest' }) }, 60)
       console.log(LOG, 'OAuth client saved', check.status === 'offline' ? '(not verified — offline)' : '(verified)')
+      return true
+    }
+
+    // ---- Continue with Google (from the settings panel) -------------------------------------------
+    // The same sign-in an upload would trigger, started on purpose. Afterwards the settings panel
+    // comes back so the connected account is right there.
+    async function connectFromSettings() {
+      busy = true
+      updateButton()
+      let justConnected = false
+      try {
+        await interactiveSignIn()
+        justConnected = true
+        setDriveStatus('', '')
+      } catch (error) {
+        if (error && error.cancelled) {
+          setDriveStatus('', error.userMessage || '')
+        } else if (error && error.oauthError === 'invalid_client') {
+          fillSettingsFields()
+          showDrawer('settings')
+          setSettingsMessage('error', 'Google rejected this Client ID or secret. Check both for typos.', [clientIdInput, clientSecretInput])
+          setDriveStatus('', '')
+        } else {
+          console.error(LOG, 'Google sign-in failed', error)
+          failDrive(friendlyDriveMessage(error))
+        }
+      } finally {
+        if (pendingAuth) { clearTimeout(pendingAuth.timer); pendingAuth = null }
+        setAuthBusy(false)
+        busy = false
+        updateButton()
+        if (justConnected && tokens) {
+          // Signed in: fold the panel away and flash who is connected for a moment, instead of leaving the form open.
+          showDrawer(null)
+          flashDriveStatus(tokens.account ? `Connected as ${tokens.account}` : 'Connected to Google Drive', 3500)
+        } else if (drawerMode !== 'settings') { fillSettingsFields(); showDrawer('settings') }
+      }
+    }
+
+    connectButton.addEventListener('click', async () => {
+      if (busy || checkingClient || tokens) return
+      const missingId = !stripQuotes(clientIdInput.value)
+      const missingSecret = !stripQuotes(clientSecretInput.value)
+      if (missingId || missingSecret) {
+        const what = missingId && missingSecret ? 'Client ID and Client secret' : missingId ? 'Client ID' : 'Client secret'
+        setSettingsMessage('error', `Enter your ${what} to continue.`, [missingId && clientIdInput, missingSecret && clientSecretInput])
+        ;(missingId ? clientIdInput : clientSecretInput).focus()
+        return
+      }
+      const ready = await autosaveClient(true) // anything still being typed is checked and saved first
+      if (!ready || !oauthClient || busy || tokens) return
+      await connectFromSettings()
     })
 
     disconnectButton.addEventListener('click', () => {
@@ -2651,7 +2783,7 @@
           pendingAuth = null
           setAuthError('')
           showDrawer(null)
-          reject(new DriveError('Sign-in timed out', 'Sign-in timed out. Press upload to try again.'))
+          reject(new DriveError('Sign-in timed out', 'Sign-in timed out. Please try again.'))
         }, AUTH_TIMEOUT_MS)
         pendingAuth = {
           state,
@@ -2793,7 +2925,6 @@
       authLink.dataset.url = url
       authLink.href = url
       console.log(LOG, 'Opening Google sign-in', challenge ? '(PKCE S256)' : '(no PKCE)')
-      console.log(LOG, 'Opening Google sign-in', url)
       post({ type: 'open-url', url })
       authCodeInput.value = ''
       setAuthError('')
@@ -3068,6 +3199,7 @@
         showUploadCancel(true) // signed in: from here on the upload can be cancelled from the status line
         throwIfUploadCancelled()
         const folder = await verifyFolder(folderId)
+        uploadRun.folderUrl = `https://drive.google.com/drive/folders/${encodeURIComponent(folder.id)}`
         throwIfUploadCancelled()
         console.log(LOG, `Uploading to folder "${folder.name}" (${folder.id})`)
         setDriveStatus('busy', 'Preparing files...')
@@ -3096,7 +3228,7 @@
         const stoppedByUser = Boolean(uploadRun && uploadRun.cancelled)
         if (stoppedByUser) console.log(LOG, 'Upload cancelled'); else if (error && error.cancelled) console.log(LOG, 'Sign-in cancelled'); else console.error(LOG, 'Google Drive upload failed', error)
         if (stoppedByUser) {
-          setDriveStatus('', uploadCancelledMessage())
+          setDriveStatus('', uploadCancelledMessage(), uploadRun.uploaded ? uploadRun.folderUrl : '')
         } else if (error && error.cancelled) {
           setDriveStatus('', error.userMessage || '') // cancelling is a choice, not an error
         } else if (error && error.oauthError === 'invalid_client') {

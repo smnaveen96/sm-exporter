@@ -1,6 +1,7 @@
 "use strict";
 const PANEL_WIDTH = 386;
-const PANEL_HEIGHT = 606;
+const PANEL_HEIGHT = 566; // initial window height; the UI resizes it to fit its content right after opening
+const MIN_PANEL_HEIGHT = 200; // smallest height the UI may shrink the window to
 let selectionVersion = 0;
 // figma.currentPage.selection comes back in Figma's internal order (roughly layer stacking,
 // and it varies with how the selection was made). Designers expect canvas reading order,
@@ -159,7 +160,7 @@ figma.ui.onmessage = (message) => {
         return;
     }
     if (message.type === 'resize') {
-        const height = Math.max(PANEL_HEIGHT, Math.min(1000, Math.round(message.height)));
+        const height = Math.max(MIN_PANEL_HEIGHT, Math.min(1000, Math.round(message.height)));
         figma.ui.resize(PANEL_WIDTH, height);
         return;
     }
