@@ -271,7 +271,7 @@
     #export-button:hover:not(:disabled) { background: #2a2a2a; transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0,0,0,.18); }
     #export-button:active:not(:disabled) { transform: translateY(1px) scale(.992); box-shadow: none; }
     #export-button:focus-visible { outline: 2px solid var(--black); outline-offset: 2px; }
-    #export-button:disabled:not(.is-busy) { background: #c9c9cc; color: #fff; cursor: default; }
+    #export-button:disabled:not(.is-busy) { background: #c9c9cc; color: #fff; cursor: default; pointer-events: none; }
     #export-button.is-busy { cursor: wait; }
     #export-button.is-busy::before { animation: buttonSweep 1.15s linear infinite; }
     #export-button.is-success { background: var(--ok); }
@@ -340,7 +340,17 @@
     }
     #drive-submit:hover:not(:disabled) { background: #2a2a2a; }
     #drive-submit:active:not(:disabled) { background: #000; }
-    #drive-submit:disabled { cursor: default; background: #c9c9cc; }
+    #drive-submit:disabled { cursor: default; background: #c9c9cc; pointer-events: none; } /* lets the pill underneath see the hover, so the tooltip can explain why it's off */
+    .tooltip {
+      position: fixed; z-index: 50; left: 0; top: 0;
+      padding: 6px 10px; border-radius: 8px;
+      background: var(--black); color: #fff; box-shadow: 0 8px 22px rgba(0,0,0,.18);
+      font-size: 11px; line-height: 1.3; white-space: nowrap;
+      pointer-events: none;
+      visibility: hidden; opacity: 0; transform: translateY(2px);
+      transition: opacity 120ms ease, transform 120ms ease, visibility 0s linear 120ms;
+    }
+    .tooltip.is-visible { visibility: visible; opacity: 1; transform: none; transition-delay: 0s; }
     #drive-submit svg { width: 28px; height: 28px; display: block; overflow: visible; }
     #drive-submit .upload-arrow { transform-origin: 256px 256px; }
     #drive-submit:hover:not(:disabled) .upload-arrow { animation: arrowLift 1.3s cubic-bezier(.45,.05,.35,1) infinite; }
@@ -348,7 +358,7 @@
     #drive-submit .submit-check { display: none; width: 12px; height: 7px; border-left: 2.2px solid #fff; border-bottom: 2.2px solid #fff; transform: translateY(-2px) rotate(-45deg); }
     .upload-pill.is-busy #drive-submit svg { display: none; }
     .upload-pill.is-busy #drive-submit .submit-spinner { display: block; }
-    .upload-pill.is-success #drive-submit { background: var(--ok); }
+    .upload-pill.is-success #drive-submit { background: var(--link-accent); }
     .upload-pill.is-success #drive-submit svg { display: none; }
     .upload-pill.is-success #drive-submit .submit-check { display: block; animation: checkIn 260ms cubic-bezier(.2,.9,.25,1.4); }
     .upload-pill.is-error { animation: buttonShake 340ms ease; border-color: var(--bad); }
@@ -360,21 +370,28 @@
       color: var(--muted);
       font-size: 12px;
     }
-    .drive-status .status-text { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; transition: color 200ms ease; }
+    .drive-status .status-text { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; transition: color 200ms ease, opacity 350ms ease; }
     .drive-status .status-spacer { flex: 1 1 auto; }
-    .status-link { flex: 0 0 auto; display: grid; place-items: center; width: 20px; height: 20px; color: var(--black); opacity: .85; transition: opacity 120ms ease, transform 160ms ease; }
-    .status-link[hidden] { display: none; }
-    .status-link svg { width: 16px; height: 16px; display: block; }
-    .status-link:hover { opacity: 1; transform: translateY(-1px); }
+    :root { --link-accent: #1d72e8; --link-accent-deep: #0b57c4; } /* soft system blue, not browser-hyperlink blue */
+    .status-result { flex: 0 1 auto; min-width: 0; display: inline-flex; align-items: center; gap: 5px; color: var(--link-accent); text-decoration: none; cursor: pointer; transition: color 120ms ease; }
+    .status-result[hidden] { display: none; }
+    .status-result-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-decoration: underline; text-underline-offset: 2px; text-decoration-thickness: 1px; }
+    .status-result svg { flex: 0 0 auto; width: 14px; height: 14px; display: block; }
+    .status-result:hover { color: var(--link-accent-deep); }
+    .status-result:focus-visible { outline: 2px solid var(--link-accent); outline-offset: 3px; border-radius: 4px; }
+    .drive-status.is-fading .status-text { opacity: 0; }
+    .status-cancel { flex: 0 0 auto; padding: 0; border: 0; background: none; font: inherit; font-size: 11px; color: var(--muted); text-decoration: underline; text-underline-offset: 2px; text-decoration-thickness: 1px; cursor: pointer; }
+    .status-cancel[hidden] { display: none; }
+    .status-cancel:hover { color: var(--black); }
     .drive-status.is-busy .status-text { color: var(--ink-soft); }
-    .drive-status.is-success .status-text { color: var(--ok); }
+    .drive-status.is-success .status-text { color: var(--link-accent); }
     .drive-status.is-error .status-text { color: var(--bad); white-space: normal; }
     .status-dot { display: none; flex: 0 0 auto; width: 7px; height: 7px; border-radius: 50%; background: var(--black); animation: statusPulse 1s ease-in-out infinite; }
     .drive-status.is-busy .status-dot { display: block; }
     .icon-button {
       flex: 0 0 auto;
       display: grid; place-items: center;
-      width: 24px; height: 24px;
+      width: 24px; height: 24px; padding: 0;
       border: 0; border-radius: 50%;
       color: var(--muted); background: transparent;
       cursor: pointer;
@@ -420,6 +437,12 @@
     .drawer-actions .spacer { flex: 1 1 0; min-width: 0; }
     .drawer-actions .small-button { flex: 0 0 auto; }
     .drawer-note { min-width: 0; overflow-wrap: anywhere; color: var(--muted); font-size: 11px; line-height: 1.4; }
+    .drawer-msg.is-error { color: var(--bad); }
+    .drawer-msg.is-busy { color: var(--muted); }
+    .drawer-card .filename-input.is-invalid, .drawer-card .filename-input.is-invalid:focus { border-color: var(--bad); box-shadow: 0 0 0 1px var(--bad); }
+    .drawer-links { display: flex; flex-wrap: wrap; gap: 2px 14px; }
+    .drawer-card .drawer-links a { font-size: 10px; font-weight: 400; color: var(--muted); text-decoration: underline; text-underline-offset: 2px; text-decoration-thickness: 1px; }
+    .drawer-card .drawer-links a:hover { color: var(--black); text-decoration-thickness: 1px; }
     .small-button {
       height: 32px;
       padding: 0 16px;
@@ -450,6 +473,7 @@
   </style>
 </head>
 <body>
+  <div id="tooltip" class="tooltip" role="tooltip" aria-hidden="true"></div>
   <div class="brand">
     <div class="brand-mark" aria-hidden="true">
       <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><path fill="#000" fill-rule="evenodd" d="M45.75 0.16 L43.58 0.48 L42.86 0.48 L41.49 0.80 L40.45 0.88 L38.68 1.36 L37.56 1.52 L35.87 2.09 L35.55 2.09 L30.82 3.77 L26.89 5.62 L23.92 7.30 L19.90 10.03 L15.97 13.32 L12.52 16.85 L9.55 20.55 L7.38 23.76 L6.58 25.28 L6.02 26.08 L4.74 28.65 L2.81 33.31 L1.52 37.48 L1.20 39.25 L0.88 40.29 L0.80 41.33 L0.56 42.13 L0.48 43.42 L0.24 44.54 L0.16 46.71 L0.00 47.59 L0.00 52.33 L0.24 54.25 L0.24 55.46 L0.48 56.58 L0.56 57.78 L0.80 58.59 L0.88 59.63 L1.52 62.52 L1.85 63.32 L2.17 64.77 L3.13 67.34 L3.13 67.58 L3.45 68.14 L3.77 69.18 L4.74 71.35 L6.74 75.12 L9.63 79.53 L12.84 83.47 L16.45 87.08 L20.39 90.29 L24.08 92.78 L28.41 95.10 L32.99 97.03 L33.23 97.03 L35.71 97.91 L36.60 98.07 L37.08 98.31 L38.84 98.64 L39.81 98.96 L42.62 99.36 L43.10 99.52 L47.27 99.84 L47.35 99.92 L52.49 99.92 L52.57 99.84 L53.53 99.84 L56.74 99.52 L57.78 99.28 L58.75 99.20 L59.15 99.04 L60.11 98.96 L61.08 98.64 L62.76 98.31 L67.09 96.95 L71.67 95.02 L75.92 92.70 L79.61 90.21 L83.79 86.76 L86.76 83.79 L89.97 79.94 L92.62 76.00 L94.14 73.35 L95.18 71.27 L97.03 66.77 L98.31 62.68 L99.36 57.70 L99.44 56.42 L99.68 55.06 L99.68 53.85 L99.92 51.44 L99.84 47.11 L99.36 42.30 L98.31 37.32 L96.79 32.50 L96.47 31.94 L96.47 31.70 L95.83 30.34 L95.75 29.94 L95.51 29.61 L95.35 29.61 L94.30 31.54 L92.38 35.63 L91.41 37.40 L90.13 40.21 L88.84 42.62 L87.24 46.07 L85.96 48.48 L84.91 50.80 L83.07 54.33 L79.70 61.32 L79.29 61.72 L69.34 61.72 L69.18 61.56 L69.18 61.24 L69.50 60.75 L70.79 57.95 L74.64 50.32 L76.89 45.59 L77.85 43.82 L79.78 39.73 L80.74 37.96 L82.02 35.15 L83.63 32.10 L88.44 22.15 L89.57 19.98 L89.57 19.58 L87.08 16.53 L84.67 14.04 L82.18 11.80 L79.78 9.87 L75.44 6.98 L71.75 4.98 L69.42 3.93 L66.53 2.81 L66.05 2.73 L64.61 2.17 L62.60 1.69 L62.36 1.52 L61.56 1.44 L60.59 1.12 L60.19 1.12 L58.99 0.80 L58.43 0.80 L57.54 0.56 L56.34 0.48 L55.14 0.24 L52.81 0.16 L52.73 0.08 L49.76 0.00 L49.68 0.08Z M40.29 43.18 L40.53 43.18 L40.69 43.34 L41.65 45.43 L43.18 48.23 L44.22 50.48 L49.76 61.24 L49.68 61.64 L49.52 61.72 L35.55 61.64 L35.47 61.56 L30.98 61.56 L30.74 61.32 L35.47 52.33 L35.47 52.17 L37.00 49.44 L37.48 48.31 L39.89 43.90 L40.05 43.42Z M50.16 42.86 L68.78 42.86 L69.02 43.18 L68.06 44.94 L66.05 49.04 L59.63 61.40 L59.39 61.40 L59.23 61.24 L58.67 60.19 L58.51 59.71 L52.89 48.96 L52.49 47.99 L51.28 45.83 L50.88 44.86 L50.00 43.34 L50.00 43.02Z M30.82 43.10 L30.02 44.86 L28.89 46.87 L26.48 51.77 L22.15 60.03 L21.67 61.16 L21.27 61.56 L12.04 61.56 L11.88 61.40 L13.08 58.83 L19.74 45.99 L20.14 45.02 L21.03 43.34 L21.35 42.94 L21.51 42.86 L30.58 42.86Z"/></svg>
@@ -519,7 +543,7 @@
     <div id="upload-pill" class="upload-pill">
       <form id="drive-form" class="upload-form" novalidate>
         <input id="drive-url" type="text" placeholder="Drive folder link…" spellcheck="false" autocomplete="off">
-        <button id="drive-submit" type="submit" aria-label="Upload to Google Drive" title="Upload to Google Drive">
+        <button id="drive-submit" type="submit" aria-label="Upload to Google Drive">
           <svg viewBox="0 0 512 512" aria-hidden="true">
             <path d="M486.415 221.268a128.434 128.434 0 0 0 -53.015-40.946 133.368 133.368 0 0 0 -27.388-77.541c-19.762-25.731-48.994-43.836-82.312-50.981-81.28-17.425-168.763 32.165-195.012 110.546l-2.84 8.482a126.526 126.526 0 0 0 .678 253.05h73.227a16 16 0 0 0 0-32h-73.227a94.526 94.526 0 0 1 0-189.052h10.838a16 16 0 0 0 15.172-10.92l6.5-19.4c21.239-63.425 92.1-103.538 157.961-89.416 52.792 11.318 87.445 55.5 84.268 107.445a16 16 0 0 0 11.335 16.294c39.682 11.99 67.4 49.215 67.4 90.523a94.633 94.633 0 0 1 -94.526 94.526h-73.227a16 16 0 0 0 0 32h73.227a126.67 126.67 0 0 0 126.526-126.526 125.165 125.165 0 0 0 -25.585-76.084z" fill="currentColor"/>
             <g class="upload-arrow"><path d="M303.508 324.693a15.962 15.962 0 0 1 -12.3-5.758l-19.208-23.05v151.807a16 16 0 0 1 -32 0v-151.807l-19.208 23.05a16 16 0 1 1 -24.583-20.485l47.5-57a16 16 0 0 1 24.584 0l47.5 57a16 16 0 0 1 -12.283 26.243z" fill="currentColor"/></g>
@@ -534,7 +558,9 @@
       <div id="drive-status" class="drive-status" role="status" aria-live="polite">
         <span class="status-dot" aria-hidden="true"></span>
         <span id="drive-status-text" class="status-text"></span>
-        <a id="drive-open-folder" class="status-link" href="#" hidden aria-label="Open the folder in Google Drive" title="Open the folder in Google Drive">
+        <button id="drive-cancel" class="status-cancel" type="button" hidden>Cancel</button>
+        <a id="drive-open-folder" class="status-result" href="#" hidden>
+          <span id="drive-open-text" class="status-result-text"></span>
           <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path d="M16.2 22H7.8C6 22 5 22 4.2 21.6C3.4 21.2 2.8 20.6 2.5 19.9C2 19 2 18 2 16.2V7.8C2 6 2 5 2.4 4.2C2.8 3.4 3.4 2.8 4.1 2.5C5 2 6 2 7.8 2H10C10.6 2 11 2.4 11 3C11 3.6 10.6 4 10 4H7.8C6.3 4 5.5 4 5.1 4.2C4.7 4.4 4.4 4.7 4.2 5.1C4 5.5 4 6.3 4 7.8V16.2C4 17.7 4 18.5 4.2 18.9C4.4 19.3 4.7 19.6 5.1 19.8C5.5 20 6.3 20 7.8 20H16.2C17.7 20 18.5 20 18.9 19.8C19.3 19.6 19.6 19.3 19.8 18.9C20 18.5 20 17.7 20 16.2V14C20 13.4 20.4 13 21 13C21.6 13 22 13.4 22 14V16.2C22 18 22 19 21.6 19.8C21.2 20.6 20.6 21.2 19.9 21.5C19 22 18 22 16.2 22ZM12 13C11.7 13 11.5 12.9 11.3 12.7C10.9 12.3 10.9 11.7 11.3 11.3L18.6 4H15C14.4 4 14 3.6 14 3C14 2.4 14.4 2 15 2H21C21.1 2 21.3 2 21.4 2.1C21.5 2.1 21.6 2.2 21.7 2.3C21.8 2.4 21.9 2.5 21.9 2.6C22 2.7 22 2.9 22 3V9C22 9.6 21.6 10 21 10C20.4 10 20 9.6 20 9V5.4L12.7 12.7C12.5 12.9 12.3 13 12 13Z" fill="currentColor"/>
           </svg>
@@ -553,6 +579,7 @@
             <p id="settings-intro">Add the OAuth client from your Google Cloud project. It is stored only on this computer, inside Figma.</p>
             <div class="drawer-field"><label for="client-id">Client ID</label><input id="client-id" class="filename-input" type="text" spellcheck="false" autocomplete="off" placeholder="…apps.googleusercontent.com"></div>
             <div class="drawer-field"><label for="client-secret">Client secret</label><input id="client-secret" class="filename-input" type="password" spellcheck="false" autocomplete="off" placeholder="GOCSPX-…"></div>
+            <span id="settings-msg" class="drawer-note drawer-msg" role="alert" hidden></span>
             <span id="account-label" class="drawer-note"></span>
             <div class="drawer-actions">
               <span class="spacer"></span>
@@ -561,9 +588,10 @@
             </div>
           </div>
           <div id="drawer-auth" class="drawer-card" hidden>
-            <p>Sign in with Google in the browser window that just opened, approve access, then paste the code (or the whole address you were redirected to) below.</p>
-            <p><a id="auth-link" href="#" target="_blank" rel="noopener">Open the Google sign-in page again</a></p>
+            <p>Approve access in the browser. The next page may say “This site can’t be reached” — that’s expected. Copy its address and paste it below. Google showed an error instead? Open the sign-in page again.</p>
+            <p class="drawer-links"><a id="auth-link" href="#" target="_blank" rel="noopener">Open the Google sign-in page again</a><a id="auth-edit-client" href="#">Edit client settings</a></p>
             <div class="drawer-field"><label for="auth-code">Authorization code or redirect URL</label><input id="auth-code" class="filename-input" type="text" spellcheck="false" autocomplete="off" placeholder="4/0A… or http://127.0.0.1:53682/?code=…"></div>
+            <span id="auth-error" class="drawer-note drawer-msg is-error" role="alert" hidden></span>
             <div class="drawer-actions">
               <span class="spacer"></span>
               <button id="auth-cancel" class="small-button" type="button">Cancel</button>
@@ -621,6 +649,7 @@
     const buttonLabel = document.getElementById('button-label')
     const fileNameInput = document.getElementById('file-name')
     const driveSubmit = document.getElementById('drive-submit')
+    let tooltipEl = null, tooltipTimer = 0, overTarget = null // button tooltips (set up further down)
 
     function post(message) {
       parent.postMessage({ pluginMessage: message }, '*')
@@ -662,6 +691,7 @@
       const blocked = busy || selectedCount === 0 || !anyFormatSelected()
       exportButton.disabled = blocked
       driveSubmit.disabled = blocked
+      refreshTooltip()
     }
 
     // Formats, scales and Compress are remembered per person (figma.clientStorage), so the
@@ -924,7 +954,7 @@
     document.querySelectorAll('.scale-pill select').forEach((select) => {
       const value = select.parentElement.querySelector('.scale-value')
       const sync = () => { value.textContent = select.options[select.selectedIndex].text }
-      select.addEventListener('change', () => { sync(); saveSettings() })
+      select.addEventListener('change', () => { sync(); saveSettings(); dropStaleTick() })
       select.addEventListener('sync', sync)
       sync()
     })
@@ -942,6 +972,7 @@
       if (exportButton.classList.contains('is-error')) setButtonState('', 'EXPORT')
       updateButton()
       saveSettings()
+      dropStaleTick()
     }))
     syncCompressToggle()
 
@@ -2197,12 +2228,93 @@
     const MULTIPART_LIMIT = 5 * 1024 * 1024
 
     const uploadPill = document.getElementById('upload-pill')
+    // ---- Button tooltips -------------------------------------------------------------------------
+    // Custom rather than the native title: it appears quickly, goes away on click, and can say WHY a
+    // button is off. A greyed-out Export or cloud button explains itself on hover and on click; an
+    // enabled Export button needs none (it has a label), an enabled cloud button says what it does.
+    tooltipEl = document.getElementById('tooltip')
+    const tipTargets = [exportButton, driveSubmit]
+    let tipHoldTimer = 0
+
+    function tooltipTextFor(target) {
+      if (busy) return ''
+      if (selectedCount === 0) return 'Select frames first'
+      if (!anyFormatSelected()) return 'Choose a format first'
+      if (target !== driveSubmit) return ''
+      return uploadPill.classList.contains('is-success') ? 'Uploaded · click to upload again' : 'Upload to Google Drive'
+    }
+
+    function showTooltip(target) {
+      const text = tooltipTextFor(target)
+      if (!text) { hideTooltip(); return }
+      tooltipEl.textContent = text
+      const box = target.getBoundingClientRect()
+      const width = tooltipEl.offsetWidth
+      const height = tooltipEl.offsetHeight
+      // Cloud button sits at the window's right edge, so its tooltip is right-aligned to it; Export's is centred.
+      const wanted = target === driveSubmit ? box.right - width : box.left + (box.width - width) / 2
+      const left = Math.max(8, Math.min(wanted, window.innerWidth - width - 8))
+      const top = box.top - height - 8 >= 8 ? box.top - height - 8 : box.bottom + 8
+      tooltipEl.style.left = `${Math.round(left)}px`
+      tooltipEl.style.top = `${Math.round(top)}px`
+      tooltipEl.classList.add('is-visible')
+      tooltipEl.dataset.target = target.id
+      target.setAttribute('aria-describedby', 'tooltip')
+    }
+
+    function hideTooltip() {
+      clearTimeout(tooltipTimer)
+      clearTimeout(tipHoldTimer)
+      if (!tooltipEl) return
+      tooltipEl.classList.remove('is-visible')
+      for (const target of tipTargets) target.removeAttribute('aria-describedby')
+    }
+
+    // Keeps the tooltip truthful if frames or formats change while it is showing.
+    function refreshTooltip() {
+      if (!tooltipEl || !tooltipEl.classList.contains('is-visible')) return
+      const target = tipTargets.find((candidate) => candidate.id === tooltipEl.dataset.target)
+      if (target) showTooltip(target)
+    }
+
+    // The pointer is matched against each button's box instead of relying on the button's own events,
+    // because a disabled button does not reliably report hover or press.
+    function targetAt(event) {
+      return tipTargets.find((target) => {
+        const box = target.getBoundingClientRect()
+        return event.clientX >= box.left && event.clientX <= box.right && event.clientY >= box.top && event.clientY <= box.bottom
+      }) || null
+    }
+
+    document.addEventListener('pointermove', (event) => {
+      const target = targetAt(event)
+      if (target === overTarget) return
+      overTarget = target
+      hideTooltip()
+      if (target) tooltipTimer = setTimeout(() => showTooltip(target), 450)
+    })
+    document.addEventListener('pointerout', (event) => { if (!event.relatedTarget) { overTarget = null; hideTooltip() } })
+    document.addEventListener('pointerdown', (event) => {
+      const target = targetAt(event)
+      hideTooltip()
+      // Pressing a greyed-out button answers at once and stays up long enough to read.
+      if (target && target.disabled && tooltipTextFor(target)) {
+        showTooltip(target)
+        tipHoldTimer = setTimeout(hideTooltip, 2000)
+      }
+    })
+    driveSubmit.addEventListener('focus', () => { if (driveSubmit.matches(':focus-visible')) { clearTimeout(tooltipTimer); tooltipTimer = setTimeout(() => showTooltip(driveSubmit), 250) } })
+    driveSubmit.addEventListener('blur', hideTooltip)
+    window.addEventListener('blur', hideTooltip)
+    window.addEventListener('resize', hideTooltip)
     const driveForm = document.getElementById('drive-form')
     const driveUrlInput = document.getElementById('drive-url')
     const driveArea = document.getElementById('drive-area')
     const driveStatus = document.getElementById('drive-status')
     const driveStatusText = document.getElementById('drive-status-text')
     const driveOpenFolder = document.getElementById('drive-open-folder')
+    const driveOpenText = document.getElementById('drive-open-text')
+    const driveCancel = document.getElementById('drive-cancel')
     const settingsToggle = document.getElementById('drive-settings-toggle')
     const driveDrawer = document.getElementById('drive-drawer')
     const drawerSettings = document.getElementById('drawer-settings')
@@ -2216,12 +2328,21 @@
     const authCodeInput = document.getElementById('auth-code')
     const authContinue = document.getElementById('auth-continue')
     const authCancel = document.getElementById('auth-cancel')
+    const authEditClient = document.getElementById('auth-edit-client')
+    const authError = document.getElementById('auth-error')
+    const settingsMsg = document.getElementById('settings-msg')
 
     let drawerMode = null            // null | 'settings' | 'auth'
     let oauthClient = null           // { clientId, clientSecret, redirectUri }
     let tokens = null                // { accessToken, refreshToken, expiresAt, account }
-    let pendingAuth = null           // { state, resolve, reject } while waiting for the pasted code
+    let pendingAuth = null           // { state, timer, resolve, reject } while waiting for the pasted code
+    let savingSettings = false       // true while the Client ID / secret is being checked with Google
+    const AUTH_TIMEOUT_MS = 10 * 60 * 1000
     let pendingExport = null         // { resolve, reject } while waiting for the sandbox's export-ready
+    let uploadedKey = ''             // fingerprint of what the tick on the cloud button stands for
+    let selectedIds = []             // ids of the selected frames, as last reported by the plugin
+    let uploadRun = null             // { cancelled, controller, uploaded, total } while an upload to Drive runs
+    let statusFadeTimer = 0          // fades quiet status messages away
     let resizeFrame = 0
 
     class DriveError extends Error {
@@ -2241,8 +2362,15 @@
     }
     new ResizeObserver(syncHeight).observe(driveArea)
 
+    // Quiet messages (saved, cancelled, disconnected) fade away on their own. Errors, progress and
+    // the upload result — which carries the folder link — stay until the next action.
     function setDriveStatus(state, text, folderUrl) {
-      driveOpenFolder.hidden = !(state === 'success' && folderUrl)
+      clearTimeout(statusFadeTimer)
+      driveStatus.classList.remove('is-fading')
+      // After an upload the result line is one link — the text and the icon open the folder together.
+      const asLink = state === 'success' && Boolean(folderUrl)
+      driveOpenFolder.hidden = !asLink
+      driveStatusText.hidden = asLink
       if (folderUrl) driveOpenFolder.dataset.url = folderUrl
       driveStatus.classList.remove('is-busy', 'is-success', 'is-error')
       uploadPill.classList.remove('is-busy', 'is-success', 'is-error')
@@ -2251,7 +2379,19 @@
         void uploadPill.offsetWidth // restart the shake animation on repeated errors
         uploadPill.classList.add(`is-${state}`)
       }
-      driveStatusText.textContent = text
+      driveStatusText.textContent = asLink ? '' : text
+      if (asLink) {
+        driveOpenText.textContent = text
+        driveOpenFolder.setAttribute('aria-label', `${text}. Open the folder in Google Drive`)
+      }
+      if (state === 'success') hideTooltip() // the tick has said it all
+      driveSubmit.setAttribute('aria-label', state === 'success' ? 'Uploaded to Google Drive. Upload again' : 'Upload to Google Drive')
+      if (!state && text) {
+        statusFadeTimer = setTimeout(() => {
+          driveStatus.classList.add('is-fading')
+          statusFadeTimer = setTimeout(() => setDriveStatus('', ''), 380)
+        }, Math.max(4000, 2500 + text.length * 50))
+      }
       syncHeight()
     }
 
@@ -2285,6 +2425,22 @@
       return ''
     }
 
+    // The tick on the cloud button means "this exact set is in Drive". It stays until that stops being
+    // true — different frames, formats, sizes or file name — and then the button goes back to the cloud.
+    // (Editing the link field clears it too, through setDriveStatus.) The "Uploaded to …" link line is a
+    // record of what happened, so it stays.
+    function uploadSignature() {
+      return JSON.stringify([selectedIds, currentSettings(), fileNameInput.value.trim()])
+    }
+
+    function dropStaleTick() {
+      if (!uploadPill.classList.contains('is-success') || uploadSignature() === uploadedKey) return
+      uploadPill.classList.remove('is-success')
+      driveSubmit.setAttribute('aria-label', 'Upload to Google Drive')
+      refreshTooltip()
+    }
+    fileNameInput.addEventListener('input', dropStaleTick)
+
     function refreshAccountLabel() {
       if (tokens) {
         accountLabel.textContent = tokens.account ? `Connected as ${tokens.account}` : 'Connected to Google Drive'
@@ -2295,9 +2451,43 @@
       }
     }
 
+    // Inline messages: shown next to the fields they are about, not only in the status line.
+    function revealMessage(element) {
+      if (!element.hidden && typeof element.scrollIntoView === 'function') element.scrollIntoView({ block: 'nearest' })
+      syncHeight()
+    }
+
+    function setSettingsMessage(state, text, invalidInputs) {
+      settingsMsg.hidden = !text
+      settingsMsg.textContent = text || ''
+      settingsMsg.classList.remove('is-error', 'is-busy')
+      if (state && text) settingsMsg.classList.add(`is-${state}`)
+      for (const input of [clientIdInput, clientSecretInput]) {
+        const invalid = Boolean(text) && state === 'error' && (invalidInputs || []).includes(input)
+        input.classList.toggle('is-invalid', invalid)
+        if (invalid) input.setAttribute('aria-invalid', 'true'); else input.removeAttribute('aria-invalid')
+      }
+      if (text) revealMessage(settingsMsg); else syncHeight()
+    }
+
+    function setAuthError(text) {
+      authError.hidden = !text
+      authError.textContent = text || ''
+      authCodeInput.classList.toggle('is-invalid', Boolean(text))
+      if (text) authCodeInput.setAttribute('aria-invalid', 'true'); else authCodeInput.removeAttribute('aria-invalid')
+      if (text) revealMessage(authError); else syncHeight()
+    }
+
+    function setAuthBusy(isBusy) {
+      authContinue.disabled = isBusy
+      authCancel.disabled = isBusy
+      authContinue.textContent = isBusy ? 'Connecting…' : 'Continue'
+    }
+
     function fillSettingsFields() {
       clientIdInput.value = oauthClient ? oauthClient.clientId : ''
       clientSecretInput.value = oauthClient ? oauthClient.clientSecret : ''
+      setSettingsMessage('', '')
       refreshAccountLabel()
     }
 
@@ -2318,20 +2508,54 @@
     })
 
     settingsToggle.addEventListener('click', () => {
+      if (savingSettings) return
       if (drawerMode === 'settings') {
         showDrawer(null)
         return
       }
-      if (pendingAuth) return
+      if (drawerMode === 'auth') {
+        // While signing in, the gear is the way back to the client settings (e.g. to fix a typo).
+        if (pendingAuth) cancelSignIn({ openSettings: true })
+        return
+      }
       fillSettingsFields()
       showDrawer('settings')
     })
 
-    saveSettingsButton.addEventListener('click', () => {
-      const clientId = clientIdInput.value.trim()
-      const clientSecret = clientSecretInput.value.trim()
+    const CLIENT_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]*\.apps\.googleusercontent\.com$/i
+    const stripQuotes = (value) => String(value || '').trim().replace(/^[\s"'`“”‘’]+|[\s"'`“”‘’]+$/g, '')
+
+    clientIdInput.addEventListener('input', () => setSettingsMessage('', ''))
+    clientSecretInput.addEventListener('input', () => setSettingsMessage('', ''))
+
+    // Asks Google whether this Client ID + secret pair exists. A made-up code is sent on purpose:
+    // a wrong ID or secret comes back as invalid_client, a right pair as invalid_grant (bad code).
+    async function verifyOAuthClient(clientId, clientSecret, redirectUri) {
+      try {
+        const response = await fetch(GOOGLE_TOKEN_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({ code: 'verify', client_id: clientId, client_secret: clientSecret, redirect_uri: redirectUri, grant_type: 'authorization_code' }).toString(),
+        })
+        const data = await response.json().catch(() => ({}))
+        if (data.error === 'invalid_client') {
+          const description = String(data.error_description || '').toLowerCase()
+          if (description.includes('not found') || description.includes('deleted')) return { status: 'bad-id', message: 'Google doesn’t recognise this Client ID. Check it for typos.' }
+          return { status: 'bad-secret', message: 'Google rejected the Client ID or secret. Check the secret for typos, and that it belongs to this Client ID.' }
+        }
+        return { status: 'ok' }
+      } catch (error) {
+        console.warn(LOG, 'Could not verify the OAuth client', error)
+        return { status: 'offline' }
+      }
+    }
+
+    saveSettingsButton.addEventListener('click', async () => {
+      if (savingSettings) return
+      const clientId = stripQuotes(clientIdInput.value)
+      const clientSecret = stripQuotes(clientSecretInput.value)
       const redirectUri = (oauthClient && oauthClient.redirectUri) || DEFAULT_REDIRECT_URI // not shown in the UI; the default is baked in above
-      if (!clientId) {
+      if (!clientId && !clientSecret) {
         // Empty Client ID = forget the client saved on this computer (and its sign-in).
         // The plugin then falls back to the client baked into this file, if any.
         oauthClient = builtInClient()
@@ -2343,7 +2567,28 @@
         console.log(LOG, 'Stored OAuth client cleared', oauthClient ? '(using built-in client)' : '(no client)')
         return
       }
-      const changedClient = !oauthClient || oauthClient.clientId !== clientId
+      // Catch typos before anything is saved, and say which field is wrong.
+      if (!clientId) { setSettingsMessage('error', 'Add the Client ID, or clear both fields to forget this client.', [clientIdInput]); clientIdInput.focus(); return }
+      if (/\s/.test(clientId) || !CLIENT_ID_PATTERN.test(clientId)) {
+        setSettingsMessage('error', 'That doesn’t look like a Google Client ID. It should end with .apps.googleusercontent.com.', [clientIdInput])
+        clientIdInput.focus()
+        return
+      }
+      if (!clientSecret) { setSettingsMessage('error', 'Add the Client secret from the same OAuth client.', [clientSecretInput]); clientSecretInput.focus(); return }
+      if (/\s/.test(clientSecret)) { setSettingsMessage('error', 'The Client secret can’t contain spaces. Copy it again from Google Cloud.', [clientSecretInput]); clientSecretInput.focus(); return }
+
+      savingSettings = true
+      saveSettingsButton.disabled = true
+      saveSettingsButton.textContent = 'Checking…'
+      setSettingsMessage('busy', 'Checking with Google…')
+      const check = await verifyOAuthClient(clientId, clientSecret, redirectUri)
+      savingSettings = false
+      saveSettingsButton.disabled = false
+      saveSettingsButton.textContent = 'Save'
+      if (check.status === 'bad-id') { setSettingsMessage('error', check.message, [clientIdInput]); clientIdInput.focus(); return }
+      if (check.status === 'bad-secret') { setSettingsMessage('error', check.message, [clientSecretInput]); clientSecretInput.focus(); return }
+
+      const changedClient = !oauthClient || oauthClient.clientId !== clientId || oauthClient.clientSecret !== clientSecret
       oauthClient = { clientId, clientSecret, redirectUri }
       const values = { [STORAGE_CLIENT_KEY]: oauthClient }
       if (changedClient && tokens) {
@@ -2351,11 +2596,12 @@
         values[STORAGE_TOKENS_KEY] = null
       }
       post({ type: 'storage-set', values })
+      setSettingsMessage('', '')
       refreshAccountLabel()
       showDrawer(null)
-      setDriveStatus('', '')
+      setDriveStatus('', check.status === 'offline' ? 'Saved. Couldn’t reach Google to check it — it will be checked on your first upload.' : 'Google client saved.')
       driveUrlInput.focus()
-      console.log(LOG, 'OAuth client saved')
+      console.log(LOG, 'OAuth client saved', check.status === 'offline' ? '(not verified — offline)' : '(verified)')
     })
 
     disconnectButton.addEventListener('click', () => {
@@ -2369,12 +2615,102 @@
     authCodeInput.addEventListener('keydown', (event) => {
       if (event.key === 'Enter') { event.preventDefault(); submitAuthCode() }
     })
-    authCancel.addEventListener('click', () => {
-      if (!pendingAuth) return
-      const { reject } = pendingAuth
-      pendingAuth = null
-      reject(new DriveError('Sign-in cancelled by user', 'Google sign-in was cancelled.'))
+    authCodeInput.addEventListener('input', () => setAuthError(''))
+    authCancel.addEventListener('click', () => cancelSignIn())
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && drawerMode === 'auth' && pendingAuth) { event.preventDefault(); cancelSignIn() }
     })
+    authEditClient.addEventListener('click', (event) => {
+      event.preventDefault()
+      if (pendingAuth) cancelSignIn({ openSettings: true })
+    })
+
+    // Backing out of sign-in is a choice, not a failure: close the panel and show no error.
+    function cancelSignIn(options) {
+      const openSettings = Boolean(options && options.openSettings)
+      const waiting = pendingAuth
+      if (!waiting) { if (drawerMode === 'auth' && !authCancel.disabled) showDrawer(null); return }
+      pendingAuth = null
+      setAuthError('')
+      showDrawer(null)
+      const error = new DriveError('Sign-in cancelled by user', openSettings ? '' : 'Sign-in cancelled.')
+      error.cancelled = true
+      waiting.reject(error)
+      if (openSettings) {
+        fillSettingsFields()
+        showDrawer('settings')
+        setTimeout(() => clientIdInput.focus(), 360)
+      }
+    }
+
+    // Resolves with the pasted code. Gives up after AUTH_TIMEOUT_MS so the buttons never stay locked.
+    function waitForAuthCode(state) {
+      return new Promise((resolve, reject) => {
+        const timer = setTimeout(() => {
+          if (!pendingAuth) return
+          pendingAuth = null
+          setAuthError('')
+          showDrawer(null)
+          reject(new DriveError('Sign-in timed out', 'Sign-in timed out. Press upload to try again.'))
+        }, AUTH_TIMEOUT_MS)
+        pendingAuth = {
+          state,
+          timer,
+          resolve: (value) => { clearTimeout(timer); resolve(value) },
+          reject: (error) => { clearTimeout(timer); reject(error) },
+        }
+      })
+    }
+
+    function submitAuthCode() {
+      if (!pendingAuth) return
+      const parsed = extractAuthCode(authCodeInput.value, pendingAuth.state)
+      if (parsed.error) {
+        setAuthError(parsed.error)
+        authCodeInput.focus()
+        return
+      }
+      setAuthError('')
+      const waiting = pendingAuth
+      pendingAuth = null
+      waiting.resolve(parsed.code)
+    }
+
+    // Accepts the bare authorization code or the full redirect URL (…?code=…&state=…), which is
+    // what the browser address bar shows after consent. Returns { code } or { error } in plain words.
+    function extractAuthCode(rawValue, expectedState) {
+      const value = stripQuotes(rawValue)
+      if (!value) return { error: 'Paste the address from the browser (or the code) to continue.' }
+      if (/^https?:\/\//i.test(value) || /(^|[?&#])(code|error)=/.test(value)) {
+        let url
+        try {
+          url = new URL(value.includes('://') ? value : `http://x/?${value.replace(/^[?#]/, '')}`)
+        } catch {
+          return { error: 'That address couldn’t be read. Copy it again from the browser, or paste just the code.' }
+        }
+        if (/(^|\.)accounts\.google\.com$/i.test(url.hostname)) return { error: 'That’s the sign-in page. Approve access first, then copy the address of the page that opens next.' }
+        const params = new URLSearchParams(url.search || url.hash.replace(/^#/, '?'))
+        const problem = params.get('error')
+        if (problem) {
+          return { error: problem === 'access_denied'
+            ? 'Access wasn’t allowed in Google. Open the sign-in page again and approve it.'
+            : `Google reported “${problem}”. Open the sign-in page again and retry.` }
+        }
+        const code = params.get('code')
+        if (!code) return { error: 'That address has no code in it. Approve access first, then copy the address of the page that opens next.' }
+        const state = params.get('state')
+        if (state && expectedState && state !== expectedState) return { error: 'That address is from a different sign-in attempt. Use the link above to sign in again.' }
+        return { code }
+      }
+      // A bare code: tidy common copy artefacts (%2F, trailing &scope=…) and check it looks like one.
+      let code = value.split(/[&\s]/)[0]
+      try { code = decodeURIComponent(code) } catch { /* keep as pasted */ }
+      if (!/^[A-Za-z0-9_\-/.~]{20,}$/.test(code)) {
+        return { error: 'That doesn’t look like a Google code. After approving, copy the full address from the browser bar.' }
+      }
+      return { code }
+    }
+
     driveOpenFolder.addEventListener('click', (event) => {
       event.preventDefault()
       if (driveOpenFolder.dataset.url) post({ type: 'open-url', url: driveOpenFolder.dataset.url })
@@ -2383,42 +2719,6 @@
       event.preventDefault()
       if (authLink.dataset.url) post({ type: 'open-url', url: authLink.dataset.url })
     })
-
-    function submitAuthCode() {
-      if (!pendingAuth) return
-      const parsed = extractAuthCode(authCodeInput.value, pendingAuth.state)
-      if (parsed.error) {
-        failDrive(parsed.error)
-        authCodeInput.focus()
-        return
-      }
-      const { resolve } = pendingAuth
-      pendingAuth = null
-      resolve(parsed.code)
-    }
-
-    // Accepts either the bare authorization code or the full redirect URL
-    // (…?code=…&state=…), which is what the browser address bar shows after consent.
-    function extractAuthCode(rawValue, expectedState) {
-      const value = String(rawValue || '').trim()
-      if (!value) return { error: 'Paste the code from Google to continue.' }
-      if (/^https?:\/\//i.test(value) || value.includes('code=')) {
-        let params
-        try {
-          const url = new URL(value.includes('://') ? value : `http://x/?${value.replace(/^\?/, '')}`)
-          params = new URLSearchParams(url.search || url.hash.replace(/^#/, '?'))
-        } catch {
-          return { error: 'That link could not be read — paste the code itself instead.' }
-        }
-        if (params.get('error')) return { error: `Google reported: ${params.get('error')}.` }
-        const code = params.get('code')
-        if (!code) return { error: 'That link does not contain an authorization code.' }
-        const state = params.get('state')
-        if (state && expectedState && state !== expectedState) return { error: 'That code belongs to a different sign-in attempt. Start again.' }
-        return { code }
-      }
-      return { code: value }
-    }
 
     function parseDriveFolderId(rawValue) {
       const value = String(rawValue || '').trim()
@@ -2460,11 +2760,13 @@
       })
       const data = await response.json().catch(() => ({}))
       if (!response.ok) {
-        throw new DriveError(
+        const failure = new DriveError(
           `Token request failed (${response.status}): ${data.error || ''} ${data.error_description || ''}`.trim(),
           `Google sign-in failed (${data.error || 'HTTP ' + response.status}${data.error === 'invalid_client' ? ': check Client ID and secret' : data.error === 'invalid_grant' ? ': code used or expired, sign in again' : data.error === 'redirect_uri_mismatch' ? ': redirect address differs' : ''}).`,
           response.status,
         )
+        failure.oauthError = data.error || ''
+        throw failure
       }
       return data
     }
@@ -2491,22 +2793,45 @@
       authLink.dataset.url = url
       authLink.href = url
       console.log(LOG, 'Opening Google sign-in', challenge ? '(PKCE S256)' : '(no PKCE)')
+      console.log(LOG, 'Opening Google sign-in', url)
       post({ type: 'open-url', url })
       authCodeInput.value = ''
+      setAuthError('')
+      setAuthBusy(false)
       showDrawer('auth')
+      setDriveStatus('busy', 'Waiting for Google sign-in...')
       setTimeout(() => authCodeInput.focus(), 360)
-      const code = await new Promise((resolve, reject) => { pendingAuth = { state, resolve, reject } })
+      let data = null
+      while (!data) {
+        const code = await waitForAuthCode(state)
+        const fields = {
+          code,
+          client_id: oauthClient.clientId,
+          client_secret: oauthClient.clientSecret,
+          redirect_uri: oauthClient.redirectUri,
+          grant_type: 'authorization_code',
+        }
+        if (challenge) fields.code_verifier = verifier
+        setAuthBusy(true)
+        try {
+          data = await tokenRequest(fields)
+        } catch (error) {
+          setAuthBusy(false)
+          // A bad or used code, or a dropped connection: keep the panel open so it can be fixed in place.
+          if (error instanceof DriveError && error.oauthError === 'invalid_grant') {
+            setAuthError('Google didn’t accept that code. It may be incomplete, already used or expired. Copy the address again, or open the sign-in page again.')
+          } else if (error instanceof TypeError) {
+            setAuthError('Couldn’t reach Google. Check your connection, then press Continue.')
+          } else {
+            throw error
+          }
+          authCodeInput.focus()
+          authCodeInput.select()
+        }
+      }
+      setAuthBusy(false)
       showDrawer(null)
       setDriveStatus('busy', 'Connecting to Google Drive...')
-      const fields = {
-        code,
-        client_id: oauthClient.clientId,
-        client_secret: oauthClient.clientSecret,
-        redirect_uri: oauthClient.redirectUri,
-        grant_type: 'authorization_code',
-      }
-      if (challenge) fields.code_verifier = verifier
-      const data = await tokenRequest(fields)
       tokens = {
         accessToken: data.access_token,
         refreshToken: data.refresh_token || (tokens && tokens.refreshToken) || null,
@@ -2563,6 +2888,7 @@
       const token = await ensureAccessToken()
       const options = Object.assign({}, init || {})
       options.headers = Object.assign({}, options.headers || {}, { Authorization: `Bearer ${token}` })
+      if (uploadRun && !options.signal) options.signal = uploadRun.controller.signal
       const response = await fetch(url, options)
       if (response.status === 401 && allowRetry && tokens && tokens.refreshToken) {
         console.warn(LOG, 'Drive returned 401, refreshing token and retrying once')
@@ -2640,7 +2966,7 @@
       const sessionUrl = start.headers.get('Location')
       if (sessionUrl) {
         console.log(LOG, `${existingId ? 'Replacing' : 'Uploading'} ${file.name} (${file.bytes.length} bytes)`)
-        const put = await fetch(sessionUrl, { method: 'PUT', headers: { 'Content-Type': file.mime }, body: file.bytes })
+        const put = await fetch(sessionUrl, { method: 'PUT', headers: { 'Content-Type': file.mime }, body: file.bytes, signal: uploadRun ? uploadRun.controller.signal : undefined })
         if (!put.ok) throw await driveError(put, 'upload')
         return put.json()
       }
@@ -2680,6 +3006,39 @@
       return 'Upload failed — please check the Drive link and permissions.'
     }
 
+    // ---- Cancelling an upload ------------------------------------------------------------------
+    function uploadCancelledError() {
+      const error = new DriveError('Upload cancelled by user', '')
+      error.cancelled = true
+      return error
+    }
+
+    function throwIfUploadCancelled() {
+      if (uploadRun && uploadRun.cancelled) throw uploadCancelledError()
+    }
+
+    function showUploadCancel(visible) {
+      driveCancel.hidden = !visible
+      syncHeight()
+    }
+
+    function uploadCancelledMessage() {
+      const done = uploadRun ? uploadRun.uploaded : 0
+      const total = uploadRun ? uploadRun.total : 0
+      if (!done) return 'Cancelled. Nothing was uploaded.'
+      return `Cancelled. ${done} of ${total} file${total === 1 ? '' : 's'} already uploaded.`
+    }
+
+    // Stops at once if a Drive request is in flight. While frames are still being rendered in Figma
+    // (which can't be interrupted) it waits for that render to finish and then stops.
+    driveCancel.addEventListener('click', () => {
+      if (!uploadRun || uploadRun.cancelled) return
+      uploadRun.cancelled = true
+      showUploadCancel(false)
+      setDriveStatus('busy', 'Cancelling...')
+      uploadRun.controller.abort()
+    })
+
     async function startDriveUpload() {
       if (busy) return
       if (selectedCount === 0) { failDrive('Select frames to upload.'); return }
@@ -2698,38 +3057,69 @@
       }
       busy = true
       activeDestination = 'drive'
+      uploadRun = { cancelled: false, controller: new AbortController(), uploaded: 0, total: 0 }
+      const signature = uploadSignature() // what this upload is made of
+      hideTooltip()
       updateButton()
       setButtonState('', 'EXPORT')
       try {
         setDriveStatus('busy', 'Connecting to Google Drive...')
         await ensureAccessToken()
+        showUploadCancel(true) // signed in: from here on the upload can be cancelled from the status line
+        throwIfUploadCancelled()
         const folder = await verifyFolder(folderId)
+        throwIfUploadCancelled()
         console.log(LOG, `Uploading to folder "${folder.name}" (${folder.id})`)
         setDriveStatus('busy', 'Preparing files...')
         const files = await renderFilesForUpload()
+        uploadRun.total = files.length
+        throwIfUploadCancelled()
         const existing = await listFolderFiles(folder.id)
         let replaced = 0
         for (let index = 0; index < files.length; index += 1) {
+          throwIfUploadCancelled()
           const file = files[index]
           const matches = existing.get(file.name.toLowerCase()) || []
           setDriveStatus('busy', `${matches.length ? 'Replacing' : 'Uploading'} ${index + 1} of ${files.length}...`)
           await uploadFile(file, folder.id, matches[0])
+          uploadRun.uploaded += 1
           if (matches.length) replaced += 1
-          for (const duplicate of matches.slice(1)) await trashFile(duplicate.id) // older duplicates → bin
+          for (const duplicate of matches.slice(1)) { // older duplicates → bin
+            try { await trashFile(duplicate.id) } catch (error) { if (!uploadRun.cancelled) throw error }
+          }
         }
         setDriveStatus('success', `Uploaded to “${folder.name}”`, `https://drive.google.com/drive/folders/${encodeURIComponent(folder.id)}`)
+        uploadedKey = signature
+        dropStaleTick() // if the options were changed mid-upload, the tick would already be untrue
         console.log(LOG, `Upload complete: ${files.length} files, ${replaced} replaced`)
       } catch (error) {
-        console.error(LOG, 'Google Drive upload failed', error)
-        failDrive(friendlyDriveMessage(error))
+        const stoppedByUser = Boolean(uploadRun && uploadRun.cancelled)
+        if (stoppedByUser) console.log(LOG, 'Upload cancelled'); else if (error && error.cancelled) console.log(LOG, 'Sign-in cancelled'); else console.error(LOG, 'Google Drive upload failed', error)
+        if (stoppedByUser) {
+          setDriveStatus('', uploadCancelledMessage())
+        } else if (error && error.cancelled) {
+          setDriveStatus('', error.userMessage || '') // cancelling is a choice, not an error
+        } else if (error && error.oauthError === 'invalid_client') {
+          // Google doesn’t accept the saved client: take the user straight to the fields to fix it.
+          fillSettingsFields()
+          showDrawer('settings')
+          failDrive('Google rejected the Client ID or secret.')
+          setSettingsMessage('error', 'Google rejected this Client ID or secret. Check both for typos, then Save.', [clientIdInput, clientSecretInput])
+        } else {
+          failDrive(friendlyDriveMessage(error))
+        }
       } finally {
         pendingExport = null
-        pendingAuth = null
+        showUploadCancel(false)
+        uploadRun = null
+        if (pendingAuth) { clearTimeout(pendingAuth.timer); pendingAuth = null }
+        setAuthBusy(false)
+        if (drawerMode === 'auth') showDrawer(null) // never leave the sign-in panel stranded open
         busy = false
         activeDestination = 'download'
         setButtonState('', 'EXPORT') // the EXPORT button never keeps a busy look after an upload
         updateButton()
-        setTimeout(() => uploadPill.classList.remove('is-success', 'is-error'), 1800)
+        setTimeout(() => uploadPill.classList.remove('is-error'), 1800) // the tick stays: see dropStaleTick
       }
     }
 
@@ -2745,15 +3135,20 @@
           ? `${selectedCount} frame${selectedCount === 1 ? '' : 's'} selected`
           : 'Select frames to export'
         renderThumbnails(message.thumbnails || [], message.ids, message.names)
+        selectedIds = message.ids || []
         updateButton()
+        dropStaleTick()
       } else if (message.type === 'progress') {
-        if (activeDestination === 'drive') setDriveStatus('busy', `Rendering ${message.current} of ${message.total}...`)
+        if (activeDestination === 'drive') { if (!(uploadRun && uploadRun.cancelled)) setDriveStatus('busy', `Rendering ${message.current} of ${message.total}...`) }
         else setButtonState('busy', `EXPORTING ${message.current}/${message.total}`)
       } else if (message.type === 'export-ready') {
         if (activeDestination === 'drive') {
           const waiting = pendingExport
           pendingExport = null
-          if (waiting) generateFiles(message).then(waiting.resolve, waiting.reject)
+          if (waiting) {
+            if (uploadRun && uploadRun.cancelled) waiting.reject(uploadCancelledError()) // cancelled during the render: skip building the files
+            else generateFiles(message).then(waiting.resolve, waiting.reject)
+          }
           return
         }
         setButtonState('busy', 'PREPARING FILES')
