@@ -2751,6 +2751,7 @@
     authCancel.addEventListener('click', () => cancelSignIn())
     document.addEventListener('keydown', (event) => {
       if (event.key === 'Escape' && drawerMode === 'auth' && pendingAuth) { event.preventDefault(); cancelSignIn() }
+      else if (event.key === 'Escape' && drawerMode === 'settings') { event.preventDefault(); showDrawer(null) }
     })
     authEditClient.addEventListener('click', (event) => {
       event.preventDefault()
