@@ -56,27 +56,31 @@
     }
     .preview-wrap {
       position: relative;
+      display: flow-root; /* keeps the strip's negative margins inside the wrap instead of pulling the whole wrap up */
       height: 97px;
       margin-bottom: 13px;
     }
     #preview {
       display: flex;
       gap: 7px;
-      width: 100%;
-      height: 97px;
+      /* Breathing room above/below/beside the strip so a lifted thumbnail and its shadow are not
+         clipped by the scroll container; the negative margins cancel it out so layout is unchanged. */
+      width: calc(100% + 16px);
+      height: 121px;
+      margin: -12px -8px;
+      padding: 12px 8px;
       overflow-x: auto;
       scrollbar-width: none;
-      padding-right: 0;
     }
     #preview::-webkit-scrollbar { display: none; }
     .thumb {
       position: relative;
-      flex: 0 0 112px;
+      flex: 0 0 80px; /* portrait card: the inner 72x90 area is 4:5 */
       height: 96px;
-      padding: 3px;
+      padding: 3px 4px;
       overflow: hidden;
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: 8px;
       background: var(--surface-2);
       cursor: grab; user-select: none; touch-action: none;
       transition: border-color 140ms ease, transform 140ms ease;
@@ -91,11 +95,24 @@
       font-size: 10px; font-weight: 500; letter-spacing: .02em; line-height: 1.4;
       pointer-events: none;
     }
-    .thumb.is-dragging { cursor: grabbing; border-color: var(--black); box-shadow: 0 0 0 1px var(--black), 0 10px 22px rgba(0,0,0,.22); z-index: 2; transition: none; }
+    .thumb.is-selected { border-color: var(--black); box-shadow: 0 0 0 1px var(--black); }
+    .thumb.is-dragging { cursor: grabbing; border-color: var(--black); box-shadow: 0 0 0 1px var(--black), 0 5px 12px rgba(0,0,0,.2); z-index: 3; transition: none; }
     .thumb.is-dragging:hover { transform: none; }
-    .thumb.is-settling { transition: transform 220ms cubic-bezier(.2,.8,.2,1), box-shadow 220ms ease; box-shadow: none; }
+    .thumb.is-settling { transition: transform 220ms cubic-bezier(.2,.8,.2,1), box-shadow 220ms ease; box-shadow: 0 0 0 1px var(--black); }
     #preview.is-reordering .thumb:not(.is-dragging) { transition: transform 200ms cubic-bezier(.2,.8,.2,1); }
     #preview.is-reordering .thumb:not(.is-dragging):hover { border-color: var(--border); }
+    #preview.is-reordering .thumb.is-selected:not(.is-dragging) { border-color: var(--black); }
+    /* Extra selected frames gather under the one being held while a group is dragged. */
+    #preview.is-reordering .thumb.is-follower { z-index: 2; transition: transform 90ms ease-out; }
+    .thumb.is-dragging[data-count]::after {
+      content: attr(data-count);
+      position: absolute; top: 5px; right: 5px;
+      min-width: 18px; padding: 1px 5px;
+      border-radius: 9px;
+      color: #fff; background: var(--black);
+      font-size: 10px; font-weight: 600; line-height: 1.4; text-align: center;
+      pointer-events: none;
+    }
     .preview-empty {
       display: grid;
       place-items: center;
@@ -114,7 +131,7 @@
       top: 0; bottom: 1px;
       display: flex;
       align-items: center;
-      width: 32px;
+      width: 52px; /* 8px of it sits over the strip's side room, so the fade reaches the very edge */
       margin: 0; padding: 0; border: 0;
       color: var(--black);
       background: transparent;
@@ -124,13 +141,22 @@
       transition: opacity 180ms ease;
     }
     .preview-arrow.is-visible { opacity: 1; pointer-events: auto; }
-    .preview-arrow svg { width: 18px; height: 18px; position: relative; transition: transform 140ms ease; }
-    .preview-arrow.is-right { right: 0; justify-content: flex-end; padding-right: 2px; background: linear-gradient(to right, rgba(255,255,255,0), rgba(255,255,255,.96) 72%); }
-    .preview-arrow.is-left { left: 0; justify-content: flex-start; padding-left: 2px; background: linear-gradient(to left, rgba(255,255,255,0), rgba(255,255,255,.96) 72%); }
+    /* The arrow sits on its own disc so it stays legible over any thumbnail. */
+    .preview-arrow svg {
+      width: 28px; height: 28px; padding: 5px; box-sizing: border-box;
+      border-radius: 50%;
+      color: var(--black);
+      background: #fff;
+      box-shadow: 0 0 0 1px rgba(0,0,0,.16), 0 2px 8px rgba(0,0,0,.18);
+      position: relative; transition: transform 140ms ease, color 140ms ease, background-color 140ms ease;
+    }
+    .preview-arrow:hover svg { color: #fff; background: var(--black); }
+    .preview-arrow.is-right { right: -8px; justify-content: flex-end; padding-right: 10px; background: linear-gradient(to right, rgba(255,255,255,0), #fff 60%); }
+    .preview-arrow.is-left { left: -8px; justify-content: flex-start; padding-left: 10px; background: linear-gradient(to left, rgba(255,255,255,0), #fff 60%); }
     .preview-arrow.is-right:hover svg { transform: translateX(2px); }
     .preview-arrow.is-left:hover svg { transform: translateX(-2px); }
     .preview-arrow:focus-visible { outline: none; }
-    .preview-arrow:focus-visible svg { outline: 2px solid var(--black); outline-offset: 2px; border-radius: 4px; }
+    .preview-arrow:focus-visible svg { outline: 2px solid var(--black); outline-offset: 2px; }
     .section-title { display: none; }
     .formats {
       display: grid;
@@ -786,6 +812,8 @@
     // order; the user can drag thumbnails to change it. Reset only when the set of frames changes.
     let frameOrder = []   // frame node ids, current export order
     let frameNames = {}   // id → layer name (for tooltips)
+    const selected = new Set()   // thumbnails currently selected (for group reordering)
+    let selectionAnchor = null   // where a Shift+click range starts
 
     function sameIdSet(a, b) {
       if (a.length !== b.length) return false
@@ -807,6 +835,8 @@
     function renderThumbnails(thumbnails, ids, names) {
       clearThumbnailUrls()
       preview.replaceChildren()
+      selected.clear()
+      selectionAnchor = null
       if (!thumbnails.length) {
         const empty = document.createElement('div')
         empty.className = 'preview-empty'
@@ -857,7 +887,7 @@
       cancelAnimationFrame(scrollFrame)
       scrollFrame = requestAnimationFrame(glideScroll)
     }
-    const CARD_STEP = 112 + 7 // thumbnail width + gap
+    const CARD_STEP = 80 + 7 // thumbnail width + gap
     previewArrowLeft.addEventListener('click', () => glideTo((scrollTarget === null ? preview.scrollLeft : scrollTarget) - CARD_STEP))
     previewArrowRight.addEventListener('click', () => glideTo((scrollTarget === null ? preview.scrollLeft : scrollTarget) + CARD_STEP))
 
@@ -887,17 +917,44 @@
     // Pointer-based drag to reorder thumbnails, Figma-layer-list style: the held thumbnail
     // follows the pointer, neighbours slide aside with an eased transition, and on release the
     // thumbnail glides into its slot before the DOM order (and export order) is committed.
+    //
+    // Selection: click selects one frame, Shift+click selects a range, Cmd (Mac) / Ctrl (Windows)
+    // +click toggles one frame, Cmd/Ctrl+A selects all, Esc clears. Dragging any selected frame
+    // moves the whole selection as a block, keeping its internal order.
+    // Dragging near either end of the strip scrolls it, so a frame can travel the full length.
     let drag = null
+    let autoFrame = 0
 
     function dragThumbs() {
       return Array.from(preview.querySelectorAll('.thumb'))
     }
 
-    function projectedOrder() {
+    function applySelectionClasses() {
+      dragThumbs().forEach((thumb) => thumb.classList.toggle('is-selected', selected.has(thumb)))
+    }
+    function selectOnly(thumb) {
+      selected.clear()
+      if (thumb) selected.add(thumb)
+      selectionAnchor = thumb || null
+      applySelectionClasses()
+    }
+    function selectRange(thumb, additive) {
       const thumbs = dragThumbs()
-      const moved = thumbs.splice(drag.fromIndex, 1)[0]
-      thumbs.splice(drag.toIndex, 0, moved)
-      return thumbs
+      const anchor = thumbs.includes(selectionAnchor) ? selectionAnchor : (thumbs.find((t) => selected.has(t)) || thumb)
+      const from = thumbs.indexOf(anchor)
+      const to = thumbs.indexOf(thumb)
+      if (!additive) selected.clear()
+      for (let i = Math.min(from, to); i <= Math.max(from, to); i += 1) selected.add(thumbs[i])
+      selectionAnchor = anchor
+      applySelectionClasses()
+    }
+
+    // Final order if the drag ended now: the unselected frames keep their order, and the selected
+    // block is inserted after the first `drag.k` of them.
+    function projectedOrder() {
+      const rest = drag.rest.map((i) => drag.thumbs[i])
+      const group = drag.group.map((i) => drag.thumbs[i])
+      return [...rest.slice(0, drag.k), ...group, ...rest.slice(drag.k)]
     }
 
     function renumberProjected() {
@@ -906,28 +963,95 @@
       order.forEach((thumb, index) => { thumb.querySelector('.thumb-index').textContent = String(index + 1).padStart(width, '0') })
     }
 
-    function layoutSiblings() {
-      // Every sibling between the origin and the target slot shifts one slot toward the origin.
-      dragThumbs().forEach((thumb, index) => {
-        if (thumb === drag.thumb) return
-        let shift = 0
-        if (drag.fromIndex < drag.toIndex && index > drag.fromIndex && index <= drag.toIndex) shift = -drag.slot
-        else if (drag.fromIndex > drag.toIndex && index >= drag.toIndex && index < drag.fromIndex) shift = drag.slot
-        thumb.style.transform = shift ? `translateX(${shift}px)` : ''
+    function layoutRest() {
+      // Unselected frames slide to their projected slot, opening a gap as wide as the selection.
+      drag.rest.forEach((index, rank) => {
+        const projected = rank < drag.k ? rank : rank + drag.group.length
+        const shift = (projected - index) * drag.slot
+        drag.thumbs[index].style.transform = shift ? `translateX(${shift}px)` : ''
       })
     }
 
+    function updateDrag() {
+      // Content-space offset of the held frame: pointer travel plus however far the strip has scrolled.
+      let dx = drag.lastX - drag.startX + (preview.scrollLeft - drag.startScroll)
+      // Keep the held frame within the strip: it can reach the first and last slot, plus a small margin, but no further.
+      const END_MARGIN = 6
+      const first = drag.centers[0] - END_MARGIN
+      const last = drag.centers[drag.centers.length - 1] + END_MARGIN
+      dx = Math.max(first - drag.centers[drag.fromIndex], Math.min(last - drag.centers[drag.fromIndex], dx))
+      const heldCenter = drag.centers[drag.fromIndex] + dx
+      drag.thumb.style.transform = `translateX(${dx}px)`
+      let follower = 0
+      drag.group.forEach((index) => {
+        if (index === drag.fromIndex) return
+        follower += 1
+        const offset = Math.min(follower, 3) * 4
+        const x = drag.centers[drag.fromIndex] + dx - drag.centers[index] + offset
+        drag.thumbs[index].style.transform = `translate(${x}px, ${offset * 0.6}px)`
+      })
+      // Target slot = how many unselected thumbnails' centres the held centre has passed.
+      let k = 0
+      for (const index of drag.rest) if (drag.centers[index] < heldCenter) k += 1
+      if (k !== drag.k) {
+        drag.k = k
+        layoutRest()
+        renumberProjected()
+      }
+    }
+
+    function autoScrollTick() {
+      autoFrame = 0
+      if (!drag || !drag.active) return
+      const rect = preview.getBoundingClientRect()
+      const zone = 36
+      let speed = 0
+      if (drag.lastX < rect.left + zone) speed = -Math.min(1, (rect.left + zone - drag.lastX) / zone) * 16
+      else if (drag.lastX > rect.right - zone) speed = Math.min(1, (drag.lastX - (rect.right - zone)) / zone) * 16
+      if (speed) {
+        const before = preview.scrollLeft
+        preview.scrollLeft += Math.abs(speed) < 1 ? Math.sign(speed) : speed
+        if (preview.scrollLeft !== before) updateDrag()
+      }
+      autoFrame = requestAnimationFrame(autoScrollTick)
+    }
+    // Wheel / trackpad scrolling during a drag must move the held frame with the strip too.
+    preview.addEventListener('scroll', () => { if (drag && drag.active) updateDrag() }, { passive: true })
+
     preview.addEventListener('pointerdown', (event) => {
+      if (drag) { finishDrag(); return } // a drag that never got its release: settle it instead of getting stuck
+      if (busy || event.button !== 0) return
       const thumb = event.target.closest('.thumb')
-      if (!thumb || busy || event.button !== 0 || drag) return
+      if (!thumb) { if (event.target === preview) selectOnly(null); return }
+      const additive = event.metaKey || event.ctrlKey
+      let collapseOnClick = false
+      if (event.shiftKey) {
+        selectRange(thumb, additive)
+      } else if (additive) {
+        if (selected.has(thumb)) { // toggling a frame off: nothing to drag
+          selected.delete(thumb)
+          selectionAnchor = thumb
+          applySelectionClasses()
+          event.preventDefault()
+          return
+        }
+        selected.add(thumb)
+        selectionAnchor = thumb
+        applySelectionClasses()
+      } else if (!selected.has(thumb)) {
+        selectOnly(thumb)
+      } else if (selected.size > 1) {
+        collapseOnClick = true // a plain click on a multi-selection narrows it to this frame, unless it turns into a drag
+      }
       const thumbs = dragThumbs()
       const rects = thumbs.map((t) => t.getBoundingClientRect())
       const fromIndex = thumbs.indexOf(thumb)
       const slot = rects.length > 1 ? Math.abs(rects[1].left - rects[0].left) : rects[0].width + 7
       drag = {
-        thumb, pointerId: event.pointerId, active: false,
-        startX: event.clientX, startY: event.clientY,
-        fromIndex, toIndex: fromIndex, slot,
+        thumb, thumbs, pointerId: event.pointerId, active: false, collapseOnClick,
+        startX: event.clientX, startY: event.clientY, lastX: event.clientX,
+        startScroll: preview.scrollLeft,
+        fromIndex, k: 0, slot, group: [], rest: [],
         centers: rects.map((r) => r.left + r.width / 2), // layout centres, unaffected by transforms
       }
       thumb.setPointerCapture(event.pointerId)
@@ -936,51 +1060,62 @@
 
     preview.addEventListener('pointermove', (event) => {
       if (!drag || event.pointerId !== drag.pointerId) return
-      const dx = event.clientX - drag.startX
+      if (!(event.buttons & 1)) { finishDrag(); return } // the button was released somewhere we never saw it
+      drag.lastX = event.clientX
       if (!drag.active) {
-        if (Math.abs(dx) < 4 && Math.abs(event.clientY - drag.startY) < 4) return
+        if (Math.abs(event.clientX - drag.startX) < 4 && Math.abs(event.clientY - drag.startY) < 4) return
         drag.active = true
+        cancelAnimationFrame(scrollFrame) // stop any wheel glide so it cannot fight the drag
+        scrollTarget = null
+        const indices = drag.thumbs.map((t, i) => i)
+        drag.group = indices.filter((i) => selected.has(drag.thumbs[i]))
+        if (!drag.group.includes(drag.fromIndex)) drag.group = [drag.fromIndex]
+        drag.rest = indices.filter((i) => !drag.group.includes(i))
+        drag.k = drag.rest.filter((i) => i < drag.fromIndex).length // start with nothing displaced
         drag.thumb.classList.add('is-dragging')
+        if (drag.group.length > 1) drag.thumb.dataset.count = String(drag.group.length)
+        drag.group.forEach((i) => { if (i !== drag.fromIndex) drag.thumbs[i].classList.add('is-follower') })
         preview.classList.add('is-reordering')
-      }
-      drag.thumb.style.transform = `translateX(${dx}px) scale(1.04)`
-      // Target slot = how many other thumbnails' centres the dragged centre has passed.
-      const draggedCenter = drag.centers[drag.fromIndex] + dx
-      let toIndex = 0
-      drag.centers.forEach((center, index) => { if (index !== drag.fromIndex && center < draggedCenter) toIndex += 1 })
-      if (toIndex !== drag.toIndex) {
-        drag.toIndex = toIndex
-        layoutSiblings()
+        layoutRest()
         renumberProjected()
+        autoFrame = requestAnimationFrame(autoScrollTick)
       }
+      updateDrag()
     })
 
     function finishDrag() {
-      const { thumb, fromIndex, toIndex, slot } = drag
       const current = drag
       drag = null
+      cancelAnimationFrame(autoFrame)
+      autoFrame = 0
+      if (!current.active) { // a plain click
+        if (current.collapseOnClick) selectOnly(current.thumb)
+        return
+      }
+      const { thumb, thumbs, group, rest, k, slot } = current
+      const order = [...rest.slice(0, k).map((i) => thumbs[i]), ...group.map((i) => thumbs[i]), ...rest.slice(k).map((i) => thumbs[i])]
+      const moved = order.some((t, i) => t !== thumbs[i])
       const commit = () => {
-        if (fromIndex !== toIndex) {
-          const thumbs = dragThumbs()
-          const reference = thumbs[toIndex]
-          if (toIndex > fromIndex) preview.insertBefore(thumb, reference.nextSibling)
-          else preview.insertBefore(thumb, reference)
-        }
+        if (moved) order.forEach((t) => preview.appendChild(t))
         // Clear the slide transforms with transitions frozen, so nothing animates over the
         // slot it has just been placed in.
         const all = dragThumbs()
         for (const t of all) { t.style.transition = 'none'; t.style.transform = '' }
-        thumb.classList.remove('is-dragging', 'is-settling')
+        for (const t of all) t.classList.remove('is-dragging', 'is-settling', 'is-follower')
+        thumb.removeAttribute('data-count')
         preview.classList.remove('is-reordering')
         void preview.offsetWidth // apply the frozen state before re-enabling transitions
         requestAnimationFrame(() => { for (const t of all) t.style.transition = '' })
         renumberThumbnails()
-        if (fromIndex !== toIndex) console.log(LOG, 'Frame order:', frameOrder.join(', '))
+        if (moved) console.log(LOG, 'Frame order:', frameOrder.join(', '))
       }
-      if (!current.active) { commit(); return }
-      // Glide into the target slot, then commit the DOM order.
-      thumb.classList.add('is-settling')
-      thumb.style.transform = `translateX(${(toIndex - fromIndex) * slot}px)`
+      // Glide every moved frame into its target slot, then commit the DOM order.
+      group.forEach((index, rank) => {
+        const t = thumbs[index]
+        t.classList.remove('is-follower')
+        t.classList.add('is-settling')
+        t.style.transform = `translateX(${(k + rank - index) * slot}px)`
+      })
       let done = false
       const finish = () => { if (done) return; done = true; thumb.removeEventListener('transitionend', finish); commit() }
       thumb.addEventListener('transitionend', finish)
@@ -993,6 +1128,35 @@
     }
     preview.addEventListener('pointerup', endDrag)
     preview.addEventListener('pointercancel', endDrag)
+    preview.addEventListener('lostpointercapture', endDrag)
+    // Releasing outside the plugin window, or the window losing focus mid-drag, must also end the drag.
+    window.addEventListener('pointerup', endDrag)
+    window.addEventListener('pointercancel', endDrag)
+    window.addEventListener('blur', () => { if (drag) finishDrag() })
+    document.addEventListener('pointerdown', (event) => {
+      if (drag || !selected.size) return
+      if (event.target.closest && event.target.closest('.preview-wrap')) return
+      selectOnly(null)
+    })
+    // Ctrl+click opens a context menu on macOS; keep it from interrupting a selection.
+    preview.addEventListener('contextmenu', (event) => { if (event.target.closest('.thumb')) event.preventDefault() })
+
+    document.addEventListener('keydown', (event) => {
+      if (busy || drag) return
+      const active = document.activeElement
+      if (active && (/^(INPUT|TEXTAREA|SELECT)$/.test(active.tagName) || active.isContentEditable)) return
+      if ((event.metaKey || event.ctrlKey) && !event.shiftKey && !event.altKey && event.key.toLowerCase() === 'a') {
+        const thumbs = dragThumbs()
+        if (!thumbs.length) return
+        event.preventDefault()
+        selected.clear()
+        thumbs.forEach((t) => selected.add(t))
+        selectionAnchor = thumbs[0]
+        applySelectionClasses()
+      } else if (event.key === 'Escape' && selected.size && !drawerMode) {
+        selectOnly(null)
+      }
+    })
 
     document.querySelectorAll('.scale-pill select').forEach((select) => {
       const value = select.parentElement.querySelector('.scale-value')
