@@ -66,19 +66,39 @@ function numberedName(index, total) {
 async function sendSelection() {
     const version = ++selectionVersion;
     const frames = selectedFrames();
-    try {
-        const thumbnails = await Promise.all(frames.map((frame) => frame.exportAsync({
-            format: 'PNG',
-            constraint: { type: 'WIDTH', value: 224 }, // crisp on Retina at the 112px thumbnail size
-        })));
-        if (version !== selectionVersion)
-            return;
-        figma.ui.postMessage({ type: 'selection', count: frames.length, thumbnails, ids: frames.map((frame) => frame.id), names: frames.map((frame) => frame.name) });
+    const ids = frames.map((frame) => frame.id);
+    const names = frames.map((frame) => frame.name);
+    if (frames.length === 0) {
+        figma.ui.postMessage({ type: 'selection', count: 0, thumbnails: [], ids, names, version });
+        return;
     }
-    catch {
-        if (version !== selectionVersion)
-            return;
-        figma.ui.postMessage({ type: 'selection', count: frames.length, thumbnails: [], ids: frames.map((frame) => frame.id), names: frames.map((frame) => frame.name) });
+    // Tell the UI which frames are selected right away (count, names, Export button), then send
+    // each thumbnail the moment it is ready instead of waiting for the slowest frame. The
+    // thumbnails themselves are rendered exactly as before: same size, all started at once.
+    figma.ui.postMessage({ type: 'selection', count: frames.length, thumbnails: [], ids, names, pending: true, version });
+    let failed = 0;
+    await Promise.all(frames.map(async (frame) => {
+        try {
+            const bytes = await frame.exportAsync({
+                format: 'PNG',
+                constraint: { type: 'WIDTH', value: 224 }, // crisp on Retina at the thumbnail size
+            });
+            if (version !== selectionVersion)
+                return;
+            figma.ui.postMessage({ type: 'thumbnail', version, id: frame.id, bytes });
+        }
+        catch {
+            failed += 1;
+            if (version !== selectionVersion)
+                return;
+            figma.ui.postMessage({ type: 'thumbnail', version, id: frame.id, bytes: null });
+        }
+    }));
+    if (version !== selectionVersion)
+        return;
+    // Nothing could be rendered at all: behave as before ("Preview unavailable").
+    if (failed === frames.length) {
+        figma.ui.postMessage({ type: 'selection', count: frames.length, thumbnails: [], ids, names, version });
     }
 }
 async function runExport(options) {

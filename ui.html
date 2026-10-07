@@ -86,6 +86,11 @@
       transition: border-color 140ms ease, transform 140ms ease;
     }
     .thumb:hover { border-color: var(--black); }
+    /* A frame whose preview is still being rendered: soft shimmer instead of an empty card. */
+    .thumb.is-loading { background: linear-gradient(110deg, var(--surface) 30%, #fafafa 50%, var(--surface) 70%) 0 0 / 250% 100%; animation: thumb-loading 1.3s linear infinite; }
+    .thumb.is-loading img { visibility: hidden; }
+    @keyframes thumb-loading { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+    @media (prefers-reduced-motion: reduce) { .thumb.is-loading { animation: none; } }
     .thumb img { width: 100%; height: 100%; display: block; object-fit: contain; border-radius: 4px; pointer-events: none; }
     .thumb-index {
       position: absolute; left: 5px; bottom: 5px;
@@ -215,24 +220,36 @@
     .info-icon:hover .info-tip, .info-icon:focus-visible .info-tip { opacity: 1; transform: translate(0, -50%); }
     /* PDF — Image now sits at the right edge of the row, so its tooltip opens below, right-aligned, instead of sideways. */
     #pdf-image-info { margin-left: -6px; }
-    #pdf-vector-info { margin-left: -3px; }
+    #pdf-vector-info { margin-left: 0; margin-right: 0; }
     #pdf-vector-tip { left: -8px; top: calc(100% + 6px); transform: translateY(-3px); }
     .info-icon:hover #pdf-vector-tip, .info-icon:focus-visible #pdf-vector-tip { transform: translateY(0); }
     /* Compress + level sit flush right so their right edge lines up with the SVG label above. */
-    #compress-toggle { margin-left: 4px; }
+    #compress-toggle { margin-left: 0; }
     .compress-level { margin-right: 0; margin-left: 0; }
     .formats-extra .option-row:last-child > .option { padding-right: 0; }
     .formats-extra { grid-template-columns: minmax(0, 1fr); }
-    .formats-extra .compress-level { margin-left: 5px; margin-right: 0; }
-    #compress-toggle { gap: 5px; }
+    .formats-extra .compress-level { margin-left: 3px; margin-right: 0; padding: 0 22px 0 9px; }
+    .formats-extra .compress-level::after { right: 8px; }
+    #compress-toggle { gap: 4px; }
+    /* Compact Compress toggle (~25% smaller than the base switch): 29x16 track, 12px knob. */
+    #compress-toggle .switch-track { width: 29px; height: 16px; border-radius: 8px; }
+    #compress-toggle .switch-knob { top: 2px; left: 2px; width: 12px; height: 12px; }
+    #compress-toggle input:checked ~ .switch-track .switch-knob { transform: translateX(13px); }
+    /* The PDF type pill hugs its text ("PDF — Merged" / "PDF — Individual"); the info icon, Compress and the level pill follow it. */
+    .pdf-mode-pill { padding: 0 22px 0 9px; margin-left: 5px; flex: 0 0 auto; } /* label-to-pill gap matches the JPEG / PNG rows */
+    .pdf-mode-pill::after { right: 8px; }
+    .pdf-mode-pill .scale-value { min-width: 0; white-space: nowrap; }
     #compress-toggle .switch-label { font-size: 12px; }
+    /* Breathing room: an invisible hit area around Compress + its switch, so the click doesn't have to land exactly on the tiny label or track.
+       It stays inside the row's height and clear of the neighbouring controls, so nothing else is disturbed. */
+    #compress-toggle::before { content: ''; position: absolute; top: -9px; bottom: -9px; left: -2px; right: -3px; }
         #pdf-image-tip { left: auto; right: -4px; top: auto; bottom: calc(100% + 6px); transform: translateY(3px); } /* opens above, right-aligned */
     .info-icon:hover #pdf-image-tip, .info-icon:focus-visible #pdf-image-tip { transform: translateY(0); }
     .formats:not(.formats-extra) .option-row { min-height: 38px; }
     .option-row .option { min-height: 0; padding: 6px 5px; }
     .formats-divider { height: 1px; margin: 5px 4px 7px; background: var(--line); }
-    .formats-extra { margin-bottom: 18px; }
-    .formats:not(.formats-extra) { padding-top: 5px; } /* nudges the JPEG / PNG rows down, away from the drop box */
+    .formats-extra { margin-bottom: 19px; }
+    .formats:not(.formats-extra) { padding-top: 8px; } /* nudges the JPEG / PNG rows down, away from the drop box */
     .formats-extra .option-row { min-height: 38px; }
     .option-row-triple { justify-content: flex-start; gap: 8px; }
     .option-cell { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
@@ -244,7 +261,7 @@
     .formats .option-row > .option, .option-cell .option { padding: 6px 4px; gap: 6px; white-space: nowrap; }
     .option-cell .option { gap: 6px; padding: 6px 4px; }
     .option-cell .option:has(#webp) { gap: 5px; } /* the W's open left edge reads as extra space, so pull the label in closer */
-    .formats-extra .option-row:last-child { margin-top: 2px; gap: 3px; } /* PDF — Vector + Compress: a little lower, tighter together */
+    .formats-extra .option-row:last-child { margin-top: 6px; gap: 2px; } /* PDF — Vector + Compress: a little lower, tighter together */
     .scale-pill {
       position: relative; display: inline-flex; align-items: center;
       height: 28px; padding: 0 22px 0 11px;
@@ -296,7 +313,7 @@
       transition: border-color 120ms ease, box-shadow 120ms ease, background-color 120ms ease;
     }
     .filename-input:focus { border-color: var(--black); box-shadow: 0 0 0 1px var(--black); background: #fff; }
-    .filename-input::placeholder { color: #8c8c91; }
+    .filename-input::placeholder { color: #66666c; } /* darker, so it reads clearly as the file-name box and not the Drive link box */
     .file-name-field { display: grid; gap: 8px; margin: 0 0 24px; padding: 0; }
     /* The placeholder already says "Enter your filename", so the visible label is dropped; it stays for screen readers. */
     .file-name-field label { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
@@ -580,14 +597,15 @@
       </span>
     </div>
     <div class="option-row">
-      <label class="option"><input id="pdf-vector" type="checkbox"><span class="check"></span><span>PDF — Vector</span></label>
-      <button class="info-icon" id="pdf-vector-info" type="button" aria-label="About PDF — Vector: sharp, scalable PDF" aria-describedby="pdf-vector-tip"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="8" cy="4.9" r="0.95" fill="currentColor"/><path d="M8 7.3v4.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg><span class="info-tip" id="pdf-vector-tip" role="tooltip">Sharp, scalable PDF</span></button>
+      <label class="option"><input id="pdf-vector" type="checkbox"><span class="check"></span><span>PDF</span></label>
+      <span class="scale-pill pdf-mode-pill" title="PDF type"><span class="scale-value">Merged</span><select id="pdf-mode" aria-label="PDF type"><option value="merged" selected>Merged</option><option value="individual">Individual</option></select></span>
+      <button class="info-icon" id="pdf-vector-info" type="button" aria-label="About Merged PDF: All frames in one PDF" aria-describedby="pdf-vector-tip"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="8" cy="4.9" r="0.95" fill="currentColor"/><path d="M8 7.3v4.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg><span class="info-tip" id="pdf-vector-tip" role="tooltip">All frames in one PDF</span></button>
       <label id="compress-toggle" class="switch" title="Re-encode embedded images so the PDF is much smaller with no visible loss">
         <span class="switch-label">Compress</span>
         <input id="compress-pdf" type="checkbox" disabled>
         <span class="switch-track"><span class="switch-knob"></span></span>
       </label>
-      <span id="compress-level-pill" class="scale-pill compress-level" title="Compression level" hidden><span class="scale-value">Default</span><select id="compress-level" aria-label="Compression level"><option value="default" selected>Default</option><option value="smaller">Smaller</option></select></span>
+      <span id="compress-level-pill" class="scale-pill compress-level" title="Compression level" hidden><span class="scale-value">Medium</span><select id="compress-level" aria-label="Compression level"><option value="default" selected>Medium</option><option value="smaller">Small</option></select></span>
     </div>
   </div>
   <div class="file-name-field">
@@ -707,6 +725,7 @@
     let selectedCount = 0
     let busy = false
     let thumbnailUrls = []
+    let latestSelectionVersion = null // thumbnails that arrive for an older selection are ignored
     // Where the files produced by the next export go: 'download' (EXPORT) or 'drive' (UPLOAD).
     let activeDestination = 'download'
 
@@ -747,6 +766,7 @@
         png: checked('png'),
         svg: checked('svg'),
         pdfVector: checked('pdf-vector'),
+        pdfMode: document.getElementById('pdf-mode').value, // 'merged' | 'individual'
         compressPdf: checked('pdf-vector') && checked('compress-pdf'),
         compressLevel: document.getElementById('compress-level').value, // 'default' | 'smaller'
         scales: { jpeg: scaleOf('jpeg-scale'), png: scaleOf('png-scale'), webp: scaleOf('webp-scale') },
@@ -767,7 +787,7 @@
     // plugin opens the way it was left. Nothing is ever ticked that the user did not tick.
     const STORAGE_SETTINGS_KEY = 'tier2-export-settings'
     const SETTING_CHECKBOXES = ['jpeg', 'pdf-image', 'png', 'webp', 'svg', 'pdf-vector', 'compress-pdf']
-    const SETTING_SELECTS = ['jpeg-scale', 'png-scale', 'webp-scale', 'compress-level']
+    const SETTING_SELECTS = ['jpeg-scale', 'png-scale', 'webp-scale', 'compress-level', 'pdf-mode']
     let settingsLoaded = false
     function currentSettings() {
       const settings = {}
@@ -832,12 +852,24 @@
       frameOrder = thumbs.map((thumb) => thumb.dataset.id)
     }
 
-    function renderThumbnails(thumbnails, ids, names) {
-      clearThumbnailUrls()
+    function renderThumbnails(thumbnails, ids, names, pending) {
+      // While fresh previews are still being rendered, a frame that stays selected keeps showing
+      // its current preview (no blank flash); the new one replaces it as soon as it arrives.
+      const kept = new Map()
+      if (pending && ids) {
+        const wanted = new Set(ids)
+        preview.querySelectorAll('.thumb').forEach((thumb) => {
+          const img = thumb.querySelector('img')
+          if (img && img.dataset.blob && wanted.has(thumb.dataset.id)) kept.set(thumb.dataset.id, img.dataset.blob)
+        })
+      }
+      const keptUrls = new Set(kept.values())
+      for (const url of thumbnailUrls) if (!keptUrls.has(url)) URL.revokeObjectURL(url)
+      thumbnailUrls = thumbnailUrls.filter((url) => keptUrls.has(url))
       preview.replaceChildren()
       selected.clear()
       selectionAnchor = null
-      if (!thumbnails.length) {
+      if (!thumbnails.length && !pending) {
         const empty = document.createElement('div')
         empty.className = 'preview-empty'
         empty.textContent = selectedCount ? 'Preview unavailable' : 'No frames selected'
@@ -853,13 +885,19 @@
       const order = sameIdSet(frameOrder, ids) ? frameOrder.slice() : ids.slice()
       const byId = new Map(ids.map((id, index) => [id, thumbnails[index]]))
       for (const id of order) {
-        const url = URL.createObjectURL(new Blob([asBytes(byId.get(id))], { type: 'image/png' }))
-        thumbnailUrls.push(url)
+        const bytes = byId.get(id)
+        let url = null
+        if (bytes) {
+          url = URL.createObjectURL(new Blob([asBytes(bytes)], { type: 'image/png' }))
+          thumbnailUrls.push(url)
+        } else if (kept.has(id)) {
+          url = kept.get(id)
+        }
         const frame = document.createElement('div')
         frame.className = 'thumb'
         frame.dataset.id = id
         const image = document.createElement('img')
-        image.src = url
+        if (url) { image.src = url; image.dataset.blob = url } else if (pending) frame.classList.add('is-loading')
         image.alt = frameNames[id] || 'Selected frame'
         image.draggable = false
         const badge = document.createElement('span')
@@ -870,6 +908,25 @@
       }
       renumberThumbnails()
       updateScrollCues()
+    }
+
+    // A thumbnail finished rendering: put it into its slot (replacing the previous preview, if any).
+    function applyThumbnail(id, bytes) {
+      const thumb = Array.from(preview.querySelectorAll('.thumb')).find((candidate) => candidate.dataset.id === id)
+      if (!thumb) return
+      const image = thumb.querySelector('img')
+      if (bytes) {
+        const previous = image.dataset.blob
+        const url = URL.createObjectURL(new Blob([asBytes(bytes)], { type: 'image/png' }))
+        thumbnailUrls.push(url)
+        image.src = url
+        image.dataset.blob = url
+        if (previous) {
+          URL.revokeObjectURL(previous)
+          thumbnailUrls = thumbnailUrls.filter((candidate) => candidate !== previous)
+        }
+      }
+      thumb.classList.remove('is-loading')
     }
 
     // Left / right arrows appear only where there is more to see; none when everything fits.
@@ -1165,6 +1222,17 @@
       select.addEventListener('sync', sync)
       sync()
     })
+    // The info tooltip next to the PDF type pill follows the chosen type.
+    const PDF_MODE_TIPS = { merged: 'All frames in one PDF', individual: 'One PDF per frame' }
+    const pdfModeSelect = document.getElementById('pdf-mode')
+    function syncPdfModeTip() {
+      const tip = PDF_MODE_TIPS[pdfModeSelect.value] || PDF_MODE_TIPS.merged
+      document.getElementById('pdf-vector-tip').textContent = tip
+      document.getElementById('pdf-vector-info').setAttribute('aria-label', `About ${pdfModeSelect.options[pdfModeSelect.selectedIndex].text} PDF: ${tip}`)
+    }
+    pdfModeSelect.addEventListener('change', syncPdfModeTip)
+    pdfModeSelect.addEventListener('sync', syncPdfModeTip)
+    syncPdfModeTip()
     const compressToggle = document.getElementById('compress-toggle')
     const compressInput = document.getElementById('compress-pdf')
     const compressLevelPill = document.getElementById('compress-level-pill')
@@ -1715,6 +1783,7 @@
       const files = []
       const pdfImages = []
       const vectorPages = []
+      const vectorIndexes = [] // which source (frame) each vector page came from
       // One frame: every image format of that frame is named after the File name field
       // (Summer-Sale.jpg, Summer-Sale.png, …), or after the frame's name in Figma when it is
       // empty, matching the PDF. Several frames stay numbered (01.jpg, 02.jpg, …).
@@ -1724,7 +1793,7 @@
       const useTypedName = typedName && message.rasterSources.length === 1
       const typedStem = typedName.replace(/\.(jpe?g|png|webp|svg|pdf|zip)$/i, '')
       const imageName = (source, extension) => useTypedName ? normalizedFilename(typedStem, extension, source.baseName) : `${source.baseName}.${extension}`
-      for (const source of message.rasterSources) {
+      for (const [sourceIndex, source] of message.rasterSources.entries()) {
         // PDF — Image always uses the 1x render (unchanged quality path); JPEG follows its own scale.
         if (options.pdfImage) pdfImages.push(await convertPng(source.pngBytes, 'image/jpeg', 0.93))
         if (options.jpeg) {
@@ -1739,7 +1808,7 @@
           files.push({ name: imageName(source, 'webp'), mime: 'image/webp', bytes: webp.bytes })
         }
         if (options.svg && source.svg) files.push({ name: imageName(source, 'svg'), mime: 'image/svg+xml', bytes: asBytes(source.svg) })
-        if (options.pdfVector && source.pdf) vectorPages.push(asBytes(source.pdf))
+        if (options.pdfVector && source.pdf) { vectorPages.push(asBytes(source.pdf)); vectorIndexes.push(sourceIndex) }
       }
       const bothPdfs = options.pdfImage && options.pdfVector && vectorPages.length > 0
       if (options.pdfImage) {
@@ -1750,15 +1819,35 @@
         })
       }
       if (options.pdfVector && vectorPages.length > 0) {
-        if (activeDestination !== 'drive') setButtonState('busy', options.compressPdf ? 'COMPRESSING' : 'MERGING PDF')
-        if (activeDestination === 'drive') setDriveStatus('busy', options.compressPdf ? 'Compressing PDF...' : 'Merging PDF...')
-        const merged = await buildVectorPdf(vectorPages, options.compressPdf ? (options.compressLevel === 'smaller' ? 'smaller' : 'default') : false)
-        const base = normalizedFilename(pdfName, 'pdf', 'Export').slice(0, -4)
-        files.push({
-          name: bothPdfs ? `${base} — Vector.pdf` : `${base}.pdf`,
-          mime: 'application/pdf',
-          bytes: merged,
-        })
+        // PDF — Individual with several frames: one PDF per frame, named after the frame.
+        // (One frame behaves like Merged: the typed file name wins, else the frame name.)
+        const individual = options.pdfMode === 'individual' && vectorPages.length > 1
+        const compress = options.compressPdf ? (options.compressLevel === 'smaller' ? 'smaller' : 'default') : false
+        if (activeDestination !== 'drive') setButtonState('busy', options.compressPdf ? 'COMPRESSING' : (individual ? 'CREATING PDFS' : 'MERGING PDF'))
+        if (activeDestination === 'drive') setDriveStatus('busy', options.compressPdf ? 'Compressing PDF...' : (individual ? 'Creating PDFs...' : 'Merging PDF...'))
+        if (individual) {
+          const order = Array.isArray(options.order) ? options.order : []
+          const framesKnown = order.length === message.rasterSources.length // only trust the names when every page lines up with a frame
+          const taken = new Set(files.map((file) => file.name.toLowerCase()))
+          for (let i = 0; i < vectorPages.length; i += 1) {
+            const sourceIndex = vectorIndexes[i]
+            const source = message.rasterSources[sourceIndex]
+            const stem = (framesKnown && frameNames[order[sourceIndex]]) || source.baseName || String(i + 1).padStart(2, '0')
+            let name = normalizedFilename(stem, 'pdf', source.baseName || 'Export')
+            // Same frame name twice: "Card", "Card 2", "Card 3"
+            for (let n = 2; taken.has(name.toLowerCase()); n += 1) name = normalizedFilename(`${stem} ${n}`, 'pdf', 'Export')
+            taken.add(name.toLowerCase())
+            files.push({ name, mime: 'application/pdf', bytes: await buildVectorPdf([vectorPages[i]], compress) })
+          }
+        } else {
+          const merged = await buildVectorPdf(vectorPages, compress)
+          const base = normalizedFilename(pdfName, 'pdf', 'Export').slice(0, -4)
+          files.push({
+            name: bothPdfs ? `${base} — Vector.pdf` : `${base}.pdf`,
+            mime: 'application/pdf',
+            bytes: merged,
+          })
+        }
       }
       files.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }))
       return files
@@ -3431,10 +3520,13 @@
         selectionCount.textContent = selectedCount > 0
           ? `${selectedCount} frame${selectedCount === 1 ? '' : 's'} selected`
           : 'Select frames to export'
-        renderThumbnails(message.thumbnails || [], message.ids, message.names)
+        latestSelectionVersion = message.version
+        renderThumbnails(message.thumbnails || [], message.ids, message.names, Boolean(message.pending))
         selectedIds = message.ids || []
         updateButton()
         dropStaleTick()
+      } else if (message.type === 'thumbnail') {
+        if (message.version === latestSelectionVersion) applyThumbnail(message.id, message.bytes)
       } else if (message.type === 'progress') {
         if (activeDestination === 'drive') { if (!(uploadRun && uploadRun.cancelled)) setDriveStatus('busy', `Rendering ${message.current} of ${message.total}...`) }
         else setButtonState('busy', `EXPORTING ${message.current}/${message.total}`)
