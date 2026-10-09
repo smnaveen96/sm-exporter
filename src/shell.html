@@ -1,0 +1,293 @@
+<!doctype html>
+<!--
+  SM exporter — Figma plugin
+  Created by Naveen, Tier2 Digital (tier2.digital) · 2026
+  Exports selected frames as JPEG / WebP / PDF and uploads them to Google Drive.
+-->
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="author" content="Naveen, Tier2 Digital">
+  <style>__STYLES_CSS__</style>
+</head>
+<body>
+  <div id="tooltip" class="tooltip" role="tooltip" aria-hidden="true"></div>
+  <div id="modal" class="modal" hidden>
+    <div class="modal-card" role="alertdialog" aria-modal="true" aria-labelledby="modal-title" aria-describedby="modal-text">
+      <h2 id="modal-title"></h2>
+      <p id="modal-text"></p>
+      <input id="modal-input" class="filename-input modal-input" type="text" spellcheck="false" autocomplete="off" hidden>
+      <div class="modal-actions">
+        <button id="modal-cancel" class="small-button" type="button">Cancel</button>
+        <button id="modal-ok" class="small-button is-danger-solid" type="button">Delete</button>
+      </div>
+    </div>
+  </div>
+  <div id="share-modal" class="modal" hidden>
+    <div class="modal-card share-card" role="dialog" aria-modal="true" aria-labelledby="share-title">
+      <h2 id="share-title">Share</h2>
+      <div class="share-add">
+        <input id="share-email" class="filename-input" type="email" placeholder="Add people by email" spellcheck="false" autocomplete="off">
+        <button id="share-add-button" class="small-button is-primary" type="button">Add</button>
+      </div>
+      <span id="share-msg" class="drawer-note drawer-msg" role="alert" hidden></span>
+      <div id="share-people-wrap" class="share-people-wrap">
+        <div id="share-people" class="share-people"></div>
+      </div>
+      <div class="share-divider"></div>
+      <div class="share-general">
+        <div class="share-general-row">
+          <span id="share-general-icon" class="share-general-icon"></span>
+          <div class="share-general-text">
+            <span id="share-general-label">Restricted</span>
+            <span id="share-general-sub" class="share-general-sub">Only people added can open this</span>
+          </div>
+          <select id="share-general-select" class="select-pill" aria-label="General access"><option value="restricted">Restricted</option><option id="share-general-domain-option" value="domain" hidden></option><option value="anyone">Anyone with the link</option></select>
+        </div>
+        <div id="share-general-role-row" class="share-general-row" hidden>
+          <span class="share-general-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M2.5 12h19"/><path d="M12 2.5a14.8 14.8 0 0 1 3.9 9.5 14.8 14.8 0 0 1-3.9 9.5 14.8 14.8 0 0 1-3.9-9.5A14.8 14.8 0 0 1 12 2.5z"/></svg></span>
+          <div class="share-general-text"><span>Anyone with the link can</span></div>
+          <select id="share-general-role" class="select-pill" aria-label="What anyone with the link can do"><option value="writer">Edit</option><option value="commenter">Comment</option><option value="reader" selected>View</option></select>
+        </div>
+      </div>
+      <div class="modal-actions share-actions">
+        <button id="share-copy-link" class="small-button has-icon" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 8V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2"/><rect x="4" y="8" width="12" height="12" rx="2"/></svg>Copy link</button>
+        <span class="spacer"></span>
+        <button id="share-cancel" class="small-button" type="button">Cancel</button>
+        <button id="share-done" class="small-button is-primary" type="button">Done</button>
+      </div>
+    </div>
+  </div>
+  <div id="ctx-menu" class="ctx-menu" role="menu" hidden></div>
+  <div id="qlook" class="qlook" role="dialog" aria-modal="true" aria-label="Preview" hidden>
+    <div class="ql-bar">
+      <span id="ql-icon" class="ql-icon" aria-hidden="true"></span>
+      <span id="ql-name" class="ql-name"></span>
+      <span id="ql-count" class="ql-count"></span>
+      <span id="ql-zoom" class="ql-zoom" hidden>
+        <button id="ql-zoom-out" class="ql-btn" type="button" aria-label="Zoom out"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+        <span id="ql-zoom-pct" class="ql-zoom-pct" role="button" tabindex="0" title="Reset zoom">100%</span>
+        <button id="ql-zoom-in" class="ql-btn" type="button" aria-label="Zoom in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+      </span>
+      <button id="ql-download" class="ql-btn" type="button" aria-label="Download"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg></button>
+      <button id="ql-open" class="ql-btn" type="button" aria-label="Open in Drive"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg></button>
+      <button id="ql-close" class="ql-btn" type="button" aria-label="Close preview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <div class="ql-body">
+      <div id="ql-pages" class="ql-pages" hidden></div>
+      <div id="ql-stage" class="ql-stage">
+        <button id="ql-nav-prev" class="ql-nav ql-nav-prev" type="button" aria-label="Previous file"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+        <button id="ql-nav-next" class="ql-nav ql-nav-next" type="button" aria-label="Next file"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+      </div>
+    </div>
+  </div>
+  <div class="brand">
+    <div class="brand-mark" aria-hidden="true">
+      <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><path fill="#000" fill-rule="evenodd" d="M45.75 0.16 L43.58 0.48 L42.86 0.48 L41.49 0.80 L40.45 0.88 L38.68 1.36 L37.56 1.52 L35.87 2.09 L35.55 2.09 L30.82 3.77 L26.89 5.62 L23.92 7.30 L19.90 10.03 L15.97 13.32 L12.52 16.85 L9.55 20.55 L7.38 23.76 L6.58 25.28 L6.02 26.08 L4.74 28.65 L2.81 33.31 L1.52 37.48 L1.20 39.25 L0.88 40.29 L0.80 41.33 L0.56 42.13 L0.48 43.42 L0.24 44.54 L0.16 46.71 L0.00 47.59 L0.00 52.33 L0.24 54.25 L0.24 55.46 L0.48 56.58 L0.56 57.78 L0.80 58.59 L0.88 59.63 L1.52 62.52 L1.85 63.32 L2.17 64.77 L3.13 67.34 L3.13 67.58 L3.45 68.14 L3.77 69.18 L4.74 71.35 L6.74 75.12 L9.63 79.53 L12.84 83.47 L16.45 87.08 L20.39 90.29 L24.08 92.78 L28.41 95.10 L32.99 97.03 L33.23 97.03 L35.71 97.91 L36.60 98.07 L37.08 98.31 L38.84 98.64 L39.81 98.96 L42.62 99.36 L43.10 99.52 L47.27 99.84 L47.35 99.92 L52.49 99.92 L52.57 99.84 L53.53 99.84 L56.74 99.52 L57.78 99.28 L58.75 99.20 L59.15 99.04 L60.11 98.96 L61.08 98.64 L62.76 98.31 L67.09 96.95 L71.67 95.02 L75.92 92.70 L79.61 90.21 L83.79 86.76 L86.76 83.79 L89.97 79.94 L92.62 76.00 L94.14 73.35 L95.18 71.27 L97.03 66.77 L98.31 62.68 L99.36 57.70 L99.44 56.42 L99.68 55.06 L99.68 53.85 L99.92 51.44 L99.84 47.11 L99.36 42.30 L98.31 37.32 L96.79 32.50 L96.47 31.94 L96.47 31.70 L95.83 30.34 L95.75 29.94 L95.51 29.61 L95.35 29.61 L94.30 31.54 L92.38 35.63 L91.41 37.40 L90.13 40.21 L88.84 42.62 L87.24 46.07 L85.96 48.48 L84.91 50.80 L83.07 54.33 L79.70 61.32 L79.29 61.72 L69.34 61.72 L69.18 61.56 L69.18 61.24 L69.50 60.75 L70.79 57.95 L74.64 50.32 L76.89 45.59 L77.85 43.82 L79.78 39.73 L80.74 37.96 L82.02 35.15 L83.63 32.10 L88.44 22.15 L89.57 19.98 L89.57 19.58 L87.08 16.53 L84.67 14.04 L82.18 11.80 L79.78 9.87 L75.44 6.98 L71.75 4.98 L69.42 3.93 L66.53 2.81 L66.05 2.73 L64.61 2.17 L62.60 1.69 L62.36 1.52 L61.56 1.44 L60.59 1.12 L60.19 1.12 L58.99 0.80 L58.43 0.80 L57.54 0.56 L56.34 0.48 L55.14 0.24 L52.81 0.16 L52.73 0.08 L49.76 0.00 L49.68 0.08Z M40.29 43.18 L40.53 43.18 L40.69 43.34 L41.65 45.43 L43.18 48.23 L44.22 50.48 L49.76 61.24 L49.68 61.64 L49.52 61.72 L35.55 61.64 L35.47 61.56 L30.98 61.56 L30.74 61.32 L35.47 52.33 L35.47 52.17 L37.00 49.44 L37.48 48.31 L39.89 43.90 L40.05 43.42Z M50.16 42.86 L68.78 42.86 L69.02 43.18 L68.06 44.94 L66.05 49.04 L59.63 61.40 L59.39 61.40 L59.23 61.24 L58.67 60.19 L58.51 59.71 L52.89 48.96 L52.49 47.99 L51.28 45.83 L50.88 44.86 L50.00 43.34 L50.00 43.02Z M30.82 43.10 L30.02 44.86 L28.89 46.87 L26.48 51.77 L22.15 60.03 L21.67 61.16 L21.27 61.56 L12.04 61.56 L11.88 61.40 L13.08 58.83 L19.74 45.99 L20.14 45.02 L21.03 43.34 L21.35 42.94 L21.51 42.86 L30.58 42.86Z"/></svg>
+    </div>
+    <div class="brand-title">SM exporter</div>
+    <div id="account-switch" class="account-switch">
+      <button id="account-chip" class="account-chip" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Connect Google Drive" title="Connect Google Drive"></button>
+      <div id="account-menu" class="account-menu" hidden>
+        <button id="account-back" class="account-back" type="button" hidden>← Accounts</button>
+        <div id="account-list" role="menu"></div>
+      </div>
+    </div>
+  </div>
+  <p id="selection-count">Select frames to export</p>
+  <div class="preview-wrap">
+    <div id="preview"><div class="preview-empty">No frames selected</div></div>
+    <button id="preview-arrow-left" class="preview-arrow is-left" type="button" aria-label="Scroll thumbnails left" tabindex="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg></button>
+    <button id="preview-arrow-right" class="preview-arrow is-right" type="button" aria-label="Scroll thumbnails right" tabindex="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg></button>
+  </div>
+
+  <p id="picker-summary" class="picker-summary"></p>
+  <div id="export-panel" class="collapse"><div class="collapse-inner">
+  <div class="section-title">Export</div>
+  <div class="formats" aria-label="Export formats">
+    <div class="option-row option-row-triple">
+      <span class="option-cell">
+        <label class="option"><input id="jpeg" type="checkbox" checked><span class="check"></span><span>JPEG</span></label>
+        <span class="scale-pill" title="Export scale"><span class="scale-value">1x</span><select id="jpeg-scale" aria-label="JPEG scale"><option value="0.5">0.5x</option><option value="1" selected>1x</option><option value="1.5">1.5x</option><option value="2">2x</option><option value="3">3x</option><option value="4">4x</option></select></span>
+      </span>
+      <span class="option-cell">
+        <label class="option"><input id="pdf-image" type="checkbox" checked><span class="check"></span><span>PDF — Image</span></label>
+        <button class="info-icon" id="pdf-image-info" type="button" aria-label="About PDF — Image: JPG images merged into PDF" aria-describedby="pdf-image-tip"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="8" cy="4.9" r="0.95" fill="currentColor"/><path d="M8 7.3v4.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg><span class="info-tip" id="pdf-image-tip" role="tooltip">JPG images merged into PDF</span></button>
+      </span>
+    </div>
+  </div>
+  <div class="formats-divider" aria-hidden="true"></div>
+  <div class="formats formats-extra" aria-label="More export formats">
+    <div class="option-row option-row-triple">
+      <span class="option-cell">
+        <label class="option"><input id="png" type="checkbox"><span class="check"></span><span>PNG</span></label>
+        <span class="scale-pill" title="Export scale"><span class="scale-value">1x</span><select id="png-scale" aria-label="PNG scale"><option value="0.5">0.5x</option><option value="1" selected>1x</option><option value="1.5">1.5x</option><option value="2">2x</option><option value="3">3x</option><option value="4">4x</option></select></span>
+      </span>
+      <span class="option-cell">
+        <label class="option"><input id="webp" type="checkbox"><span class="check"></span><span>WebP</span></label>
+        <span class="scale-pill" title="Export scale"><span class="scale-value">1x</span><select id="webp-scale" aria-label="WebP scale"><option value="0.5">0.5x</option><option value="1" selected>1x</option><option value="1.5">1.5x</option><option value="2">2x</option><option value="3">3x</option><option value="4">4x</option></select></span>
+      </span>
+      <span class="option-cell">
+        <label class="option"><input id="svg" type="checkbox"><span class="check"></span><span>SVG</span></label>
+      </span>
+    </div>
+    <div class="option-row">
+      <label class="option"><input id="pdf-vector" type="checkbox"><span class="check"></span><span>PDF</span></label>
+      <span class="scale-pill pdf-mode-pill" title="PDF type"><span class="scale-value">Merged</span><select id="pdf-mode" aria-label="PDF type"><option value="merged" selected>Merged</option><option value="individual">Individual</option></select></span>
+      <button class="info-icon" id="pdf-vector-info" type="button" aria-label="About Merged PDF: All frames in one PDF" aria-describedby="pdf-vector-tip"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="8" cy="4.9" r="0.95" fill="currentColor"/><path d="M8 7.3v4.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg><span class="info-tip" id="pdf-vector-tip" role="tooltip">All frames in one PDF</span></button>
+      <label id="compress-toggle" class="switch" title="Re-encode embedded images so the PDF is much smaller with no visible loss">
+        <span class="switch-label">Compress</span>
+        <input id="compress-pdf" type="checkbox" disabled>
+        <span class="switch-track"><span class="switch-knob"></span></span>
+      </label>
+      <span id="compress-level-pill" class="scale-pill compress-level" title="Compression level" hidden><span class="scale-value">Medium</span><select id="compress-level" aria-label="Compression level"><option value="default" selected>Medium</option><option value="smaller">Small</option></select></span>
+    </div>
+  </div>
+  <div class="file-name-field">
+    <label for="file-name">File name</label>
+    <input id="file-name" class="filename-input" type="text" placeholder="Enter your filename" spellcheck="false">
+  </div>
+  <div id="actions" class="actions">
+    <button id="export-button" type="button" disabled>
+      <span class="button-content">
+        <span class="button-spinner"></span><span class="button-check"></span><span id="button-label">EXPORT</span>
+        <svg class="button-download" viewBox="0 0 34 24" fill="none" aria-hidden="true">
+          <g class="download-arrow">
+            <path d="M17 1.2V14" stroke="white" stroke-width="3.1" stroke-linecap="round"/>
+            <path d="M10.4 7.2 17 14.4l6.6-7.2" stroke="white" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round"/>
+          </g>
+          <path class="download-tray" d="M1.2 15.2v6.6h31.2v-6.6" stroke="white" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </span>
+    </button>
+    <div id="upload-pill" class="upload-pill">
+      <form id="drive-form" class="upload-form" novalidate>
+        <input id="drive-url" type="text" placeholder="Paste Drive folder link" spellcheck="false" autocomplete="off">
+        <button id="drive-submit" type="submit" aria-label="Upload to Google Drive">
+          <svg viewBox="0 0 512 512" aria-hidden="true">
+            <path d="M486.415 221.268a128.434 128.434 0 0 0 -53.015-40.946 133.368 133.368 0 0 0 -27.388-77.541c-19.762-25.731-48.994-43.836-82.312-50.981-81.28-17.425-168.763 32.165-195.012 110.546l-2.84 8.482a126.526 126.526 0 0 0 .678 253.05h73.227a16 16 0 0 0 0-32h-73.227a94.526 94.526 0 0 1 0-189.052h10.838a16 16 0 0 0 15.172-10.92l6.5-19.4c21.239-63.425 92.1-103.538 157.961-89.416 52.792 11.318 87.445 55.5 84.268 107.445a16 16 0 0 0 11.335 16.294c39.682 11.99 67.4 49.215 67.4 90.523a94.633 94.633 0 0 1 -94.526 94.526h-73.227a16 16 0 0 0 0 32h73.227a126.67 126.67 0 0 0 126.526-126.526 125.165 125.165 0 0 0 -25.585-76.084z" fill="currentColor"/>
+            <g class="upload-arrow"><path d="M303.508 324.693a15.962 15.962 0 0 1 -12.3-5.758l-19.208-23.05v151.807a16 16 0 0 1 -32 0v-151.807l-19.208 23.05a16 16 0 1 1 -24.583-20.485l47.5-57a16 16 0 0 1 24.584 0l47.5 57a16 16 0 0 1 -12.283 26.243z" fill="currentColor"/></g>
+          </svg>
+          <span class="submit-spinner"></span><span class="submit-check"></span>
+        </button>
+      </form>
+    </div>
+  </div>
+  </div></div>
+  <div id="drive-area" class="drive-area is-open">
+    <div class="drive-area-inner">
+      <div id="drive-status" class="drive-status is-empty" role="status" aria-live="polite">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span id="drive-status-text" class="status-text"></span>
+        <button id="drive-cancel" class="status-cancel" type="button" hidden>Cancel</button>
+        <a id="drive-open-folder" class="status-result" href="#" hidden>
+          <span id="drive-open-text" class="status-result-text"></span>
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M16.2 22H7.8C6 22 5 22 4.2 21.6C3.4 21.2 2.8 20.6 2.5 19.9C2 19 2 18 2 16.2V7.8C2 6 2 5 2.4 4.2C2.8 3.4 3.4 2.8 4.1 2.5C5 2 6 2 7.8 2H10C10.6 2 11 2.4 11 3C11 3.6 10.6 4 10 4H7.8C6.3 4 5.5 4 5.1 4.2C4.7 4.4 4.4 4.7 4.2 5.1C4 5.5 4 6.3 4 7.8V16.2C4 17.7 4 18.5 4.2 18.9C4.4 19.3 4.7 19.6 5.1 19.8C5.5 20 6.3 20 7.8 20H16.2C17.7 20 18.5 20 18.9 19.8C19.3 19.6 19.6 19.3 19.8 18.9C20 18.5 20 17.7 20 16.2V14C20 13.4 20.4 13 21 13C21.6 13 22 13.4 22 14V16.2C22 18 22 19 21.6 19.8C21.2 20.6 20.6 21.2 19.9 21.5C19 22 18 22 16.2 22ZM12 13C11.7 13 11.5 12.9 11.3 12.7C10.9 12.3 10.9 11.7 11.3 11.3L18.6 4H15C14.4 4 14 3.6 14 3C14 2.4 14.4 2 15 2H21C21.1 2 21.3 2 21.4 2.1C21.5 2.1 21.6 2.2 21.7 2.3C21.8 2.4 21.9 2.5 21.9 2.6C22 2.7 22 2.9 22 3V9C22 9.6 21.6 10 21 10C20.4 10 20 9.6 20 9V5.4L12.7 12.7C12.5 12.9 12.3 13 12 13Z" fill="currentColor"/>
+          </svg>
+        </a>
+        <span class="status-spacer"></span>
+        <button id="drive-toggle" class="drive-toggle" type="button" aria-expanded="false" aria-controls="drive-drawer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span>Drive folders</span><svg class="toggle-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+      </div>
+      <div id="drive-drawer" class="drive-drawer">
+        <div class="drawer-inner">
+          <div id="drawer-settings" class="drawer-card" hidden>
+            <div class="drawer-field"><label for="client-id">Client ID</label><input id="client-id" class="filename-input" type="text" spellcheck="false" autocomplete="off" placeholder="…apps.googleusercontent.com"></div>
+            <div class="drawer-field"><label for="client-secret">Client secret</label><input id="client-secret" class="filename-input" type="password" spellcheck="false" autocomplete="off" placeholder="GOCSPX-…"></div>
+            <span id="settings-msg" class="drawer-note drawer-msg" role="alert" hidden></span>
+            <div class="drawer-actions settings-actions">
+              <button id="client-delete" class="small-button is-danger" type="button">Delete</button>
+              <span class="spacer"></span>
+              <button id="client-save" class="small-button is-primary" type="button">Save</button>
+            </div>
+            <div id="account-card" class="account-card" hidden>
+              <svg class="g-logo" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+              <div class="account-text"><span id="account-kicker" class="account-kicker">Connected as</span><span id="account-email" class="account-email"></span></div>
+              <button id="disconnect-button" class="small-button is-danger" type="button">Disconnect</button>
+            </div>
+            <div id="connect-block" class="connect-block">
+              <button id="connect-google" class="google-button" type="button"><svg class="g-logo" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg><span>Continue with Google</span></button>
+              <span id="connect-hint" class="drawer-note"></span>
+            </div>
+          </div>
+          <div id="drawer-picker" class="drawer-card" hidden>
+            <div id="picker-top" class="picker-top" hidden>
+              <span id="picker-title" class="picker-title"></span>
+              <button id="picker-top-close" class="icon-button" type="button" aria-label="Cancel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+            </div>
+            <div id="picker-toolbar" class="picker-toolbar">
+              <div id="picker-selbar" class="picker-selbar">
+                <button id="sel-clear" class="icon-button" type="button" aria-label="Clear selection"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+                <span id="sel-count" class="sel-count" aria-live="polite"></span>
+                <button id="sel-move" class="icon-button" type="button" aria-label="Move to…"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M10 13h6M13.5 10.5L16 13l-2.5 2.5"/></svg></button>
+                <button id="sel-download" class="icon-button" type="button" aria-label="Download"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg></button>
+                <button id="sel-trash" class="icon-button" type="button" aria-label="Move to bin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16"/><path d="M9 7V4.5h6V7"/><path d="M6.5 7l.8 12a1.5 1.5 0 0 0 1.5 1.4h6.4a1.5 1.5 0 0 0 1.5-1.4l.8-12"/><path d="M10 11v6M14 11v6"/></svg></button>
+                <button id="sel-link" class="icon-button" type="button" aria-label="Copy link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg></button>
+                <button id="sel-more" class="icon-button" type="button" aria-label="More actions" aria-haspopup="menu"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5.5" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="12" cy="18.5" r="1.7"/></svg></button>
+              </div>
+              <div id="picker-tabs" class="picker-tabs" role="tablist">
+                <div class="picker-tabs-scroll">
+                  <button class="picker-tab is-active" type="button" role="tab" data-tab="mine">My Drive</button>
+                  <button class="picker-tab" type="button" role="tab" data-tab="shared">Shared with me</button>
+                  <button class="picker-tab" type="button" role="tab" data-tab="drives">Shared drives</button>
+                </div>
+              </div>
+            </div>
+            <!-- One row instead of a separate search bar, tools strip and view toggle: home, the search
+                 pillbox (shorter than the standalone version used elsewhere), sort, star, then list/grid
+                 as two plain icon buttons side by side (Google Drive's own pattern) rather than one button
+                 that swaps icons — no checkmark or extra decoration on the active one, just the same
+                 is-on highlight the other toolbar icons already use. -->
+            <div id="picker-quickbar" class="picker-quickbar">
+              <button id="picker-home" class="icon-button" type="button" aria-label="Back to My Drive" title="My Drive"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v9a1 1 0 0 0 1 1h3v-5h4v5h3a1 1 0 0 0 1-1v-9"/></svg></button>
+              <input id="picker-search" class="filename-input picker-search-input" type="text" placeholder="Search in Drive" spellcheck="false" autocomplete="off">
+              <span id="picker-sort" class="sort-menu">
+                <button id="picker-sort-button" class="icon-button" type="button" aria-label="Sort" title="Sort" aria-haspopup="menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 6v13M7 19l-3-3M7 19l3-3M17 18V5M17 5l-3 3M17 5l3 3"/></svg></button>
+              </span>
+              <button id="picker-star" class="icon-button" type="button" aria-label="Starred folders" title="Starred folders" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5l2.6 5.3 5.9.9-4.25 4.15 1 5.85L12 16.9l-5.25 2.8 1-5.85L3.5 9.7l5.9-.9z"/></svg></button>
+              <div class="picker-view-pill" role="group" aria-label="List or grid view">
+                <button id="picker-view-list" class="picker-view-btn" type="button" aria-label="List view" title="List view"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+                <button id="picker-view-grid" class="picker-view-btn" type="button" aria-label="Grid view" title="Grid view"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="6.5" height="6.5" rx="1"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1"/></svg></button>
+              </div>
+            </div>
+            <div class="picker-head">
+              <button id="picker-back" class="icon-button" type="button" aria-label="Back" title="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg></button>
+              <span id="picker-path" class="picker-path crumbs"></span>
+            </div>
+            <div id="picker-list" class="picker-list is-grid" role="listbox"></div>
+            <div class="drawer-actions">
+              <button id="picker-new" class="small-button has-icon" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>New folder</button>
+              <span class="spacer"></span>
+              <button id="picker-cancel" class="small-button" type="button">Cancel</button>
+              <button id="picker-select" class="small-button is-primary" type="button" disabled>Upload here</button>
+            </div>
+          </div>
+          <span id="picker-anchor" hidden></span>
+          <div id="drawer-auth" class="drawer-card" hidden>
+            <p>Approve access in your browser. The next page may say “This site can’t be reached” — that’s expected. Copy its address and paste it below.</p>
+            <p class="drawer-links"><a id="auth-link" href="#" target="_blank" rel="noopener">Open the Google sign-in page again</a><a id="auth-edit-client" href="#">Edit client settings</a></p>
+            <div class="drawer-field"><label for="auth-code">Authorization code or redirect URL</label><input id="auth-code" class="filename-input" type="text" spellcheck="false" autocomplete="off" placeholder="4/0A… or http://127.0.0.1:53682/?code=…"></div>
+            <span id="auth-error" class="drawer-note drawer-msg is-error" role="alert" hidden></span>
+            <div class="drawer-actions">
+              <span class="spacer"></span>
+              <button id="auth-cancel" class="small-button" type="button">Cancel</button>
+              <button id="auth-continue" class="small-button is-primary" type="button">Continue</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- pdf-lib 1.17.1 (MIT, https://pdf-lib.js.org) — merges and compresses the vector PDFs -->
+  <script>__VENDOR_PDF_LIB_MIN_JS__</script>
+  <!-- pdf.js 3.11.174 (Apache-2.0, https://mozilla.github.io/pdf.js/) -- renders real page thumbnails for the PDF preview strip (pdf-lib above can read a PDF's structure but can't rasterize a page to pixels) -->
+  <script>__VENDOR_PDFJS_MIN_JS__</script>
+  <!-- pdf.js's worker build, kept inert (type="text/plain" so the browser never executes it here) until a Blob + Worker is built from its text at runtime -- pdf.js needs a real Worker, and Figma's sandboxed plugin iframe can't fetch a separate .js file for one, so the worker script has to ship inline like this instead. -->
+  <script type="text/plain" id="pdfjs-worker-src">__VENDOR_PDFJS_WORKER_TXT__</script>
+
+  <!-- fflate 0.8.2 (MIT, https://github.com/101arrowz/fflate) — deflate for lossless PNG optimisation -->
+  <script>__VENDOR_FFLATE_MIN_JS__</script>
+  <script>__APP_MAIN_JS__</script>
+</body>
+</html>

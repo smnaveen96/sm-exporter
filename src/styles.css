@@ -1,0 +1,1135 @@
+
+    :root {
+      color-scheme: light;
+      --ink: #151515;
+      --ink-soft: #3a3a3a;
+      --muted: #6f6f72;
+      --panel: #ffffff;
+      --surface: #efefef;
+      --surface-2: #f6f6f6;
+      --line: #e2e2e4;
+      --border: #d3d3d6;
+      --border-strong: #8d8d92;
+      --black: #111111;
+      --ok: #15855a;
+      --bad: #c93232;
+    }
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; }
+    body {
+      margin: 0;
+      min-height: 100%;
+      padding: 16px 15px 15px;
+      overflow: hidden;
+      font: 13px/1.4 Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+      color: var(--ink);
+      background: var(--panel);
+      -webkit-font-smoothing: antialiased;
+      /* Cmd/Ctrl+A is meant to select frame thumbnails or picker items (see the keydown handlers), never
+         the page's own text — but on the desktop app, Select All can also be wired as a native Edit-menu
+         accelerator that selects DOM text directly, outside the web page's own keydown handling entirely,
+         so no amount of event.preventDefault() in here can stop that specific path. Turning off text
+         selection globally closes the visible symptom either way: there's nothing left for a native
+         Select All to highlight. Inputs and textareas keep working normally — a browser always allows
+         selecting a form control's own value regardless of the ancestor's user-select. */
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    input, textarea { user-select: text; -webkit-user-select: text; }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      height: 62px;
+      padding: 0 2px 14px;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--line);
+    }
+    .brand-mark { flex: 0 0 44px; width: 44px; height: 44px; }
+    .brand-mark svg { display: block; width: 44px; height: 44px; }
+    .brand-title { color: #66666a; font-size: 25px; font-weight: 500; letter-spacing: -.035em; line-height: 1; }
+    #selection-count {
+      margin: 0 5px 11px;
+      color: var(--ink);
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .preview-wrap {
+      position: relative;
+      display: flow-root; /* keeps the strip's negative margins inside the wrap instead of pulling the whole wrap up */
+      height: 97px;
+      margin-bottom: 13px;
+    }
+    #preview {
+      display: flex;
+      gap: 7px;
+      /* Breathing room above/below/beside the strip so a lifted thumbnail and its shadow are not
+         clipped by the scroll container; the negative margins cancel it out so layout is unchanged. */
+      width: calc(100% + 16px);
+      height: 121px;
+      margin: -12px -8px;
+      padding: 12px 8px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    #preview::-webkit-scrollbar { display: none; }
+    .thumb {
+      position: relative;
+      flex: 0 0 80px; /* portrait card: the inner 72x90 area is 4:5 */
+      height: 96px;
+      padding: 3px 4px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface-2);
+      cursor: grab; user-select: none; touch-action: none;
+      transition: border-color 140ms ease, transform 140ms ease;
+    }
+    .thumb:hover { border-color: var(--black); }
+    /* A frame whose preview is still being rendered: soft shimmer instead of an empty card. */
+    .thumb.is-loading { background: linear-gradient(110deg, var(--surface) 30%, #fafafa 50%, var(--surface) 70%) 0 0 / 250% 100%; animation: thumb-loading 1.3s linear infinite; }
+    .thumb.is-loading img { visibility: hidden; }
+    @keyframes thumb-loading { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+    @media (prefers-reduced-motion: reduce) { .thumb.is-loading { animation: none; } }
+    .thumb img { width: 100%; height: 100%; display: block; object-fit: contain; border-radius: 4px; pointer-events: none; }
+    .thumb-index {
+      position: absolute; left: 5px; bottom: 5px;
+      padding: 1px 6px;
+      border-radius: 6px;
+      color: #fff; background: var(--black);
+      font-size: 10px; font-weight: 500; letter-spacing: .02em; line-height: 1.4;
+      pointer-events: none;
+    }
+    .thumb.is-selected { border-color: var(--black); box-shadow: 0 0 0 1px var(--black); }
+    .thumb.is-dragging { cursor: grabbing; border-color: var(--black); box-shadow: 0 0 0 1px var(--black), 0 5px 12px rgba(0,0,0,.2); z-index: 3; transition: none; }
+    .thumb.is-dragging:hover { transform: none; }
+    .thumb.is-settling { transition: transform 220ms cubic-bezier(.2,.8,.2,1), box-shadow 220ms ease; box-shadow: 0 0 0 1px var(--black); }
+    #preview.is-reordering .thumb:not(.is-dragging) { transition: transform 200ms cubic-bezier(.2,.8,.2,1); }
+    #preview.is-reordering .thumb:not(.is-dragging):hover { border-color: var(--border); }
+    #preview.is-reordering .thumb.is-selected:not(.is-dragging) { border-color: var(--black); }
+    /* Extra selected frames gather under the one being held while a group is dragged. */
+    #preview.is-reordering .thumb.is-follower { z-index: 2; transition: transform 90ms ease-out; }
+    .thumb.is-dragging[data-count]::after {
+      content: attr(data-count);
+      position: absolute; top: 5px; right: 5px;
+      min-width: 18px; padding: 1px 5px;
+      border-radius: 9px;
+      color: #fff; background: var(--black);
+      font-size: 10px; font-weight: 600; line-height: 1.4; text-align: center;
+      pointer-events: none;
+    }
+    .preview-empty {
+      display: grid;
+      place-items: center;
+      flex: 0 0 100%;
+      min-width: 0;
+      width: 100%; height: 97px;
+      border: 1.5px dashed var(--border-strong);
+      border-radius: 18px;
+      color: var(--muted);
+      font-size: 14px;
+      background: var(--surface);
+    }
+    /* Scroll cues: shown only on the side that has more thumbnails. */
+    .preview-arrow {
+      position: absolute;
+      top: 0; bottom: 1px;
+      display: flex;
+      align-items: center;
+      width: 52px; /* 8px of it sits over the strip's side room, so the fade reaches the very edge */
+      margin: 0; padding: 0; border: 0;
+      color: var(--black);
+      background: transparent;
+      cursor: pointer;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 180ms ease;
+    }
+    .preview-arrow.is-visible { opacity: 1; pointer-events: auto; }
+    /* The arrow sits on its own disc so it stays legible over any thumbnail. */
+    .preview-arrow svg {
+      width: 28px; height: 28px; padding: 5px; box-sizing: border-box;
+      border-radius: 50%;
+      color: var(--black);
+      background: #fff;
+      box-shadow: 0 0 0 1px rgba(0,0,0,.16), 0 2px 8px rgba(0,0,0,.18);
+      position: relative; transition: transform 140ms ease, color 140ms ease, background-color 140ms ease;
+    }
+    .preview-arrow:hover svg { color: #fff; background: var(--black); }
+    .preview-arrow.is-right { right: -8px; justify-content: flex-end; padding-right: 10px; background: linear-gradient(to right, rgba(255,255,255,0), #fff 60%); }
+    .preview-arrow.is-left { left: -8px; justify-content: flex-start; padding-left: 10px; background: linear-gradient(to left, rgba(255,255,255,0), #fff 60%); }
+    .preview-arrow.is-right:hover svg { transform: translateX(2px); }
+    .preview-arrow.is-left:hover svg { transform: translateX(-2px); }
+    .preview-arrow:focus-visible { outline: none; }
+    .preview-arrow:focus-visible svg { outline: 2px solid var(--black); outline-offset: 2px; }
+    .section-title { display: none; }
+    .formats {
+      display: grid;
+      gap: 0;
+      margin-bottom: 4px;
+    }
+    .option {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 43px;
+      padding: 0 5px;
+      border-radius: 10px;
+      color: var(--ink-soft);
+      font-size: 14px;
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 120ms ease;
+    }
+    .option:hover { background: rgba(0,0,0,.04); }
+    .option:active { background: rgba(0,0,0,.07); }
+    .option input { position: absolute; opacity: 0; pointer-events: none; }
+    .check {
+      display: grid;
+      place-items: center;
+      width: 22px; height: 22px;
+      border: 1.5px solid var(--border-strong);
+      border-radius: 5px;
+      background: #fff;
+      transition: background-color 120ms ease, border-color 120ms ease, transform 120ms ease;
+    }
+    .check::after {
+      content: '';
+      width: 10px; height: 5px;
+      border-left: 2px solid #fff;
+      border-bottom: 2px solid #fff;
+      transform: translateY(-1px) rotate(-45deg) scale(.65);
+      opacity: 0;
+      transition: opacity 100ms ease, transform 130ms ease;
+    }
+    .option input:checked + .check { border-color: var(--black); background: var(--black); }
+    .option input:checked + .check::after { opacity: 1; transform: translateY(-1px) rotate(-45deg) scale(1); }
+    .option input:focus-visible + .check { box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--black); }
+    .option-row { display: flex; align-items: center; gap: 6px; min-height: 43px; position: relative; }
+    .info-icon { position: relative; display: inline-grid; place-items: center; width: 22px; height: 22px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--muted); cursor: default; margin-left: -9px; }
+    .info-icon:hover, .info-icon:focus-visible { color: var(--black); outline: none; }
+    .info-icon:focus-visible { box-shadow: 0 0 0 2px var(--black); }
+    /* The tooltip text itself now shows through the shared fixed-position #tooltip element (see the
+       "Button tooltips" JS below) instead of this span popping up in place: that span's own CSS tooltip
+       was positioned relative to the option row, but the row lives inside #export-panel's
+       .collapse-inner, which is permanently overflow:hidden (it has to be, for the collapse/expand
+       height animation) — so a tip opening either direction got sliced off by that ancestor's edge
+       long before it ran out of actual window to render in. A position:fixed tooltip anchored to the
+       viewport sidesteps that clipping entirely, wherever the icon sits. This span just carries the
+       text for the shared tooltip to read, and stays for screen readers via aria-describedby. */
+    .info-tip { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+    #pdf-image-info { margin-left: -6px; }
+    #pdf-vector-info { margin-left: 0; margin-right: 0; }
+    /* Compress + level sit flush right so their right edge lines up with the SVG label above. */
+    #compress-toggle { margin-left: 0; }
+    .compress-level { margin-right: 0; margin-left: 0; }
+    .formats-extra .option-row:last-child > .option { padding-right: 0; }
+    .formats-extra { grid-template-columns: minmax(0, 1fr); }
+    .formats-extra .compress-level { margin-left: 3px; margin-right: 0; padding: 0 22px 0 9px; }
+    .formats-extra .compress-level::after { right: 8px; }
+    #compress-toggle { gap: 4px; }
+    /* Compact Compress toggle (~25% smaller than the base switch): 29x16 track, 12px knob. */
+    #compress-toggle .switch-track { width: 29px; height: 16px; border-radius: 8px; }
+    #compress-toggle .switch-knob { top: 2px; left: 2px; width: 12px; height: 12px; }
+    #compress-toggle input:checked ~ .switch-track .switch-knob { transform: translateX(13px); }
+    /* The PDF type pill hugs its text ("PDF — Merged" / "PDF — Individual"); the info icon, Compress and the level pill follow it. */
+    .pdf-mode-pill { padding: 0 22px 0 9px; margin-left: 5px; flex: 0 0 auto; } /* label-to-pill gap matches the JPEG / PNG rows */
+    .pdf-mode-pill::after { right: 8px; }
+    .pdf-mode-pill .scale-value { min-width: 0; white-space: nowrap; }
+    #compress-toggle .switch-label { font-size: 12px; }
+    /* Breathing room: an invisible hit area around Compress + its switch, so the click doesn't have to land exactly on the tiny label or track.
+       It stays inside the row's height and clear of the neighbouring controls, so nothing else is disturbed. */
+    #compress-toggle::before { content: ''; position: absolute; top: -9px; bottom: -9px; left: -2px; right: -3px; }
+    .formats:not(.formats-extra) .option-row { min-height: 38px; }
+    .option-row .option { min-height: 0; padding: 6px 5px; }
+    .formats-divider { height: 1px; margin: 5px 4px 7px; background: var(--line); }
+    .formats-extra { margin-bottom: 19px; }
+    .formats:not(.formats-extra) { padding-top: 8px; } /* nudges the JPEG / PNG rows down, away from the drop box */
+    .formats-extra .option-row { min-height: 38px; }
+    .option-row-triple { justify-content: flex-start; gap: 8px; }
+    .option-cell { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+    /* Shared columns so JPEG/PDF — Image line up with PNG/WebP, and every checkbox, label and scale pill sits on the same vertical line. */
+    .formats .option-row-triple { display: grid; grid-template-columns: 127px max-content max-content; column-gap: 10px; justify-content: start; }
+    .formats .option-row-triple .option-cell:nth-child(n+2) { padding-left: 0; }
+    .option-cell .option:has(+ .scale-pill) { min-width: 71px; padding-right: 2px !important; box-sizing: border-box; }
+    .formats .option-row-triple .option-cell { gap: 2px; }
+    .formats .option-row > .option, .option-cell .option { padding: 6px 4px; gap: 6px; white-space: nowrap; }
+    .option-cell .option { gap: 6px; padding: 6px 4px; }
+    .option-cell .option:has(#webp) { gap: 5px; } /* the W's open left edge reads as extra space, so pull the label in closer */
+    .formats-extra .option-row:last-child { margin-top: 6px; gap: 2px; } /* PDF — Vector + Compress: a little lower, tighter together */
+    .scale-pill {
+      position: relative; display: inline-flex; align-items: center;
+      height: 28px; padding: 0 22px 0 11px;
+      border: 1px solid var(--border); border-radius: 10px;
+      color: var(--ink-soft); background: var(--surface);
+      font-size: 12px; font-weight: 500; line-height: 1;
+      cursor: pointer;
+      transition: border-color 120ms ease, background-color 120ms ease;
+    }
+    .scale-pill:hover { border-color: var(--border-strong); background: #e8e8e8; }
+    .scale-pill:focus-within { border-color: var(--black); box-shadow: 0 0 0 1px var(--black); }
+    .scale-pill .scale-value { min-width: 18px; pointer-events: none; }
+    .scale-pill::after {
+      content: ''; position: absolute; right: 9px; top: 50%;
+      width: 6px; height: 6px; margin-top: -5px;
+      border-right: 1.8px solid var(--ink); border-bottom: 1.8px solid var(--ink);
+      transform: rotate(45deg); pointer-events: none;
+    }
+    /* The real <select> covers the whole pill (invisible) so a click anywhere — text or chevron — opens it. */
+    .scale-pill select {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      margin: 0; padding: 0; border: 0;
+      opacity: 0; cursor: pointer;
+      font: inherit;
+    }
+    .scale-pill option { color: var(--ink); background: #fff; }
+    /* A plain, visible pill-styled select — unlike .scale-pill, which overlays an invisible <select> on a
+       separately-synced label span (wrong fit here: these aren't export-scale pills, and wiring up that
+       sync for each one isn't worth it for a handful of dialog dropdowns). */
+    /* The native <select> arrow is drawn by the browser itself — padding alone only reserves space for
+       it, it can't actually move it, which is why it kept sitting closer to the edge than intended no
+       matter how much padding-right was added. appearance:none removes that native glyph entirely and a
+       background-image chevron (positioned exactly where we want, independent of the UA) replaces it. */
+    .select-pill { height: 28px; padding: 0 26px 0 10px; border: 1px solid var(--border); border-radius: 10px; color: var(--ink-soft); background-color: var(--surface); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%233a3a3a' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 7px center; background-size: 11px 11px; -webkit-appearance: none; -moz-appearance: none; appearance: none; font: inherit; cursor: pointer; transition: border-color 120ms ease, background-color 120ms ease; }
+    .select-pill:hover { border-color: var(--border-strong); background-color: #e8e8e8; }
+    .select-pill:focus-visible { outline: 2px solid var(--black); outline-offset: 1px; }
+    .compress-level { margin-left: 2px; animation: pill-in 160ms ease; }
+    .compress-level[hidden] { display: none; }
+    @keyframes pill-in { from { opacity: 0; transform: translateX(-4px); } to { opacity: 1; transform: none; } }
+    .switch { position: relative; display: inline-flex; align-items: center; gap: 7px; margin-left: 0; cursor: pointer; user-select: none; transition: opacity 160ms ease; }
+    .switch.is-disabled { opacity: .42; cursor: default; }
+    .switch input { position: absolute; opacity: 0; pointer-events: none; }
+    .switch-label { color: var(--ink-soft); font-size: 13px; }
+    .switch-track { position: relative; width: 38px; height: 21px; border-radius: 11px; background: #c4c4c8; transition: background-color 160ms ease; }
+    .switch-knob { position: absolute; top: 2px; left: 2px; width: 17px; height: 17px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.25); transition: transform 180ms cubic-bezier(.2,.8,.2,1); }
+    .switch input:checked ~ .switch-track { background: var(--black); }
+    .switch input:checked ~ .switch-track .switch-knob { transform: translateX(17px); }
+    .switch input:focus-visible ~ .switch-track { box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--black); }
+    .filename-input {
+      height: 40px;
+      min-width: 0;
+      padding: 0 15px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      color: var(--ink);
+      background: var(--surface);
+      font: inherit; font-size: 14px;
+      outline: none;
+      transition: border-color 120ms ease, box-shadow 120ms ease, background-color 120ms ease;
+    }
+    .filename-input:focus { border-color: var(--black); box-shadow: 0 0 0 1px var(--black); background: #fff; }
+    .filename-input::placeholder { color: #66666c; } /* darker, so it reads clearly as the file-name box and not the Drive link box */
+    .file-name-field { display: grid; gap: 8px; margin: 0 0 24px; padding: 0; }
+    /* The placeholder already says "Enter your filename", so the visible label is dropped; it stays for screen readers. */
+    .file-name-field label { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+    #file-name { display: block; width: auto; min-width: 0; max-width: 100%; justify-self: stretch; }
+    .actions { display: flex; align-items: stretch; gap: 10px; }
+    #export-button {
+      position: relative;
+      flex: 1 1 0; min-width: 0;
+      width: 100%; height: 40px;
+      overflow: hidden;
+      border: 0; border-radius: 22px;
+      color: #fff; background: var(--black);
+      font: inherit; font-size: 14px; font-weight: 500; letter-spacing: .05em;
+      cursor: pointer;
+      transition: transform 160ms ease, box-shadow 200ms ease, background-color 200ms ease;
+    }
+    #export-button::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(110deg, transparent 25%, rgba(255,255,255,.28) 48%, transparent 72%);
+      transform: translateX(-130%);
+    }
+    #export-button:hover:not(:disabled) { background: #2a2a2a; transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0,0,0,.18); }
+    #export-button:active:not(:disabled) { transform: translateY(1px) scale(.992); box-shadow: none; }
+    #export-button:focus-visible { outline: 2px solid var(--black); outline-offset: 2px; }
+    #export-button:disabled:not(.is-busy) { background: #c9c9cc; color: #fff; cursor: default; pointer-events: none; }
+    #export-button.is-busy { cursor: wait; }
+    #export-button.is-busy::before { animation: buttonSweep 1.15s linear infinite; }
+    #export-button.is-success { background: var(--ok); }
+    #export-button.is-error { animation: buttonShake 340ms ease; }
+    .button-content { display: inline-flex; align-items: center; justify-content: center; gap: 9px; white-space: nowrap; }
+    #export-button.is-busy .button-content { font-size: 12px; letter-spacing: .03em; }
+    .button-download {
+      display: block;
+      width: 21px;
+      height: 17px;
+      overflow: visible;
+      transition: transform 180ms ease;
+    }
+    .button-download .download-arrow { transform-origin: 17px 12px; }
+    .button-download .download-tray { transform-origin: 17px 20px; }
+    #export-button:hover:not(:disabled) .button-download { transform: scale(1.08); }
+    #export-button:hover:not(:disabled) .button-download .download-arrow { animation: arrowHover 820ms cubic-bezier(.25,.75,.3,1) infinite; }
+    #export-button:active:not(:disabled) .button-download .download-arrow,
+    #export-button.is-busy .button-download .download-arrow { animation: arrowDrop 620ms cubic-bezier(.3,.7,.35,1) infinite; }
+    #export-button.is-busy .button-download .download-tray { animation: trayPulse 620ms ease infinite; }
+    .button-spinner {
+      display: none;
+      width: 13px; height: 13px;
+      border: 1.7px solid rgba(255,255,255,.38);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .72s linear infinite;
+    }
+    #export-button.is-busy .button-spinner { display: none; }
+    .button-check { display: none; width: 12px; height: 7px; border-left: 2px solid #fff; border-bottom: 2px solid #fff; transform: translateY(-1px) rotate(-45deg); }
+    #export-button.is-success .button-check { display: block; animation: checkIn 260ms cubic-bezier(.2,.9,.25,1.4); }
+    #export-button.is-success .button-download { display: none; }
+    #export-button.is-success .button-spinner { display: none; }
+    /* Google Drive upload — second action in the footer row (always visible) */
+    .upload-pill {
+      position: relative;
+      flex: 1.45 1 0; min-width: 0;
+      height: 40px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      background: var(--surface);
+      transition: border-color 200ms ease, box-shadow 200ms ease, background-color 200ms ease;
+    }
+    .upload-pill.is-focused { border-color: var(--black); box-shadow: 0 0 0 1px var(--black); background: #fff; }
+    .upload-form {
+      position: absolute; inset: 0;
+      display: flex; align-items: stretch;
+      margin: 0;
+    }
+    #drive-url {
+      flex: 1 1 0; min-width: 0;
+      padding: 0 8px 0 15px;
+      border: 0; outline: none;
+      color: var(--ink); background: transparent;
+      font: inherit; font-size: 12.5px;
+    }
+    #drive-url::placeholder { color: #8c8c91; }
+    #drive-submit {
+      flex: 0 0 52px;
+      display: grid; place-items: center;
+      border: 0; padding: 0;
+      color: #fff; background: var(--black);
+      cursor: pointer;
+      transition: background-color 160ms ease;
+    }
+    #drive-submit:hover:not(:disabled) { background: #2a2a2a; }
+    #drive-submit:active:not(:disabled) { background: #000; }
+    #drive-submit:disabled { cursor: default; background: #c9c9cc; pointer-events: none; } /* lets the pill underneath see the hover, so the tooltip can explain why it's off */
+    .tooltip {
+      position: fixed; z-index: 50; left: 0; top: 0;
+      padding: 6px 10px; border-radius: 8px;
+      background: var(--black); color: #fff; box-shadow: 0 8px 22px rgba(0,0,0,.18);
+      font-size: 11px; line-height: 1.3; white-space: nowrap;
+      pointer-events: none;
+      visibility: hidden; opacity: 0; transform: translateY(2px);
+      transition: opacity 120ms ease, transform 120ms ease, visibility 0s linear 120ms;
+    }
+    .tooltip.is-visible { visibility: visible; opacity: 1; transform: none; transition-delay: 0s; }
+    #drive-submit svg { width: 28px; height: 28px; display: block; overflow: visible; }
+    #drive-submit .upload-arrow { transform-origin: 256px 256px; }
+    #drive-submit:hover:not(:disabled) .upload-arrow { animation: arrowLift 1.3s cubic-bezier(.45,.05,.35,1) infinite; }
+    #drive-submit .submit-spinner { display: none; width: 15px; height: 15px; border: 2px solid rgba(255,255,255,.35); border-top-color: #fff; border-radius: 50%; animation: spin .72s linear infinite; }
+    #drive-submit .submit-check { display: none; width: 12px; height: 7px; border-left: 2.2px solid #fff; border-bottom: 2.2px solid #fff; transform: translateY(-2px) rotate(-45deg); }
+    .upload-pill.is-busy #drive-submit svg { display: none; }
+    .upload-pill.is-busy #drive-submit .submit-spinner { display: block; }
+    .upload-pill.is-success #drive-submit { background: var(--link-accent); }
+    .upload-pill.is-success #drive-submit svg { display: none; }
+    .upload-pill.is-success #drive-submit .submit-check { display: block; animation: checkIn 260ms cubic-bezier(.2,.9,.25,1.4); }
+    .upload-pill.is-error { animation: buttonShake 340ms ease; border-color: var(--bad); }
+    .drive-area > .drive-area-inner { min-height: 0; }
+    .drive-status {
+      display: flex; align-items: center; gap: 8px;
+      min-height: 20px;
+      margin: 12px 6px 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .drive-status .status-text { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; transition: color 200ms ease, opacity 350ms ease; }
+    .drive-status .status-spacer { flex: 1 1 auto; }
+    :root { --link-accent: #1d72e8; --link-accent-deep: #0b57c4; } /* soft system blue, not browser-hyperlink blue */
+    .status-result { flex: 0 1 auto; min-width: 0; display: inline-flex; align-items: center; gap: 5px; color: var(--link-accent); text-decoration: none; cursor: pointer; transition: color 120ms ease; }
+    .status-result[hidden] { display: none; }
+    .status-result-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-decoration: underline; text-underline-offset: 2px; text-decoration-thickness: 1px; }
+    .status-result svg { flex: 0 0 auto; width: 14px; height: 14px; display: block; }
+    .status-result:hover { color: var(--link-accent-deep); }
+    .status-result:focus-visible { outline: 2px solid var(--link-accent); outline-offset: 3px; border-radius: 4px; }
+    .drive-status.is-fading .status-text { opacity: 0; }
+    .status-cancel { flex: 0 0 auto; padding: 0; border: 0; background: none; font: inherit; font-size: 11px; color: var(--muted); text-decoration: underline; text-underline-offset: 2px; text-decoration-thickness: 1px; cursor: pointer; }
+    .status-cancel[hidden] { display: none; }
+    .status-cancel:hover { color: var(--black); }
+    /* Was the same soft gray as any other secondary label, so "Downloading…"/"Getting image 2 of 5…" sat
+       there quietly next to the pulsing dot instead of reading as an active, ongoing thing. Darkened to
+       full black and given a bit more weight — not a color change, just more contrast, so it actually
+       draws the eye the way the dot already does. */
+    .drive-status.is-busy .status-text { color: var(--black); font-weight: 600; }
+    .drive-status.is-success .status-text { color: var(--link-accent); }
+    .drive-status.is-error .status-text { color: var(--bad); white-space: normal; }
+    .status-dot { display: none; flex: 0 0 auto; width: 7px; height: 7px; border-radius: 50%; background: var(--black); animation: statusPulse 1s ease-in-out infinite; }
+    .drive-status.is-busy .status-dot { display: block; }
+    .icon-button {
+      flex: 0 0 auto;
+      display: grid; place-items: center;
+      width: 24px; height: 24px; padding: 0;
+      border: 0; border-radius: 50%;
+      color: var(--muted); background: transparent;
+      cursor: pointer;
+      transition: color 120ms ease, background-color 120ms ease, transform 200ms ease;
+    }
+    .icon-button:hover { color: var(--black); background: rgba(0,0,0,.06); }
+    .icon-button:focus { outline: none; }
+    .icon-button:focus-visible { box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--black); }
+    .icon-button svg { width: 15px; height: 15px; display: block; transition: transform 240ms ease; }
+    .icon-button.is-active { color: var(--black); }
+    .icon-button.is-active svg { transform: rotate(60deg); }
+    .drive-drawer {
+      display: grid;
+      grid-template-rows: 0fr;
+      transition: grid-template-rows var(--dur) var(--ease);
+    }
+    .drive-drawer.is-open { grid-template-rows: 1fr; }
+    /* Drawer grows to fit its content (the plugin window resizes via syncHeight), so no inner scrollbar is needed. */
+    .drive-drawer > .drawer-inner { min-height: 0; min-width: 0; overflow: hidden; padding: 0 2px 0 0; }
+    .drive-area, .drive-drawer, .drive-status { min-width: 0; }
+    .drawer-card {
+      display: grid; gap: 7px;
+      min-width: 0; max-width: 100%;
+      margin-top: 9px;
+      padding: 10px 10px 9px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--surface-2);
+    }
+    .drawer-card[hidden] { display: none; }
+    .drawer-card p { margin: 0; color: var(--ink-soft); font-size: 12px; line-height: 1.45; }
+    #drawer-auth > p:first-child { font-size: 11px; line-height: 1.4; }
+    .drawer-card a { color: var(--black); font-weight: 500; text-decoration: underline; text-underline-offset: 2px; }
+    .drawer-card a:hover { text-decoration-thickness: 2px; }
+    .drawer-card .filename-input { height: 36px; padding: 0 12px; font-size: 12px; border-radius: 12px; background: #fff; }
+    .drawer-card label { color: var(--ink); font-size: 12px; font-weight: 500; }
+    .drawer-field { display: grid; gap: 5px; min-width: 0; }
+    .drawer-field input { width: 100%; min-width: 0; }
+    .drawer-actions { display: flex; align-items: center; gap: 8px; margin-top: 0; min-width: 0; }
+    .drawer-actions .spacer { flex: 1 1 0; min-width: 0; }
+    .drawer-actions .small-button { flex: 0 0 auto; }
+    .drawer-note { min-width: 0; overflow-wrap: anywhere; color: var(--muted); font-size: 11px; line-height: 1.4; }
+    .drawer-msg.is-error { color: var(--bad); }
+    .drawer-msg.is-busy { color: var(--muted); }
+    .drawer-msg.is-ok { color: var(--link-accent); }
+    .account-card { display: flex; align-items: center; gap: 11px; min-width: 0; padding: 9px 10px 9px 12px; border: 1px solid var(--border); border-radius: 14px; background: var(--panel); }
+    .account-card[hidden] { display: none; }
+    .g-logo { width: 20px; height: 20px; flex: 0 0 auto; }
+    .account-text { flex: 1 1 auto; min-width: 0; display: grid; gap: 1px; }
+    .account-kicker { font-size: 11px; line-height: 1.3; color: var(--muted); }
+    .account-email { font-size: 13px; line-height: 1.3; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .account-card .small-button { flex: 0 0 auto; }
+    .connect-block { display: grid; gap: 8px; }
+    .connect-block[hidden] { display: none; }
+    .google-button { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; height: 40px; padding: 0 16px; border: 1px solid var(--border); border-radius: 999px; color: var(--ink); background: #fff; font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; transition: background-color 120ms ease, opacity 120ms ease; }
+    .google-button .g-logo { width: 18px; height: 18px; }
+    .google-button:hover:not(:disabled) { background: #f6f6f6; }
+    .google-button:disabled { opacity: .5; cursor: default; }
+    .google-button:focus-visible { outline: 2px solid var(--link-accent); outline-offset: 2px; }
+    .drawer-card .filename-input.is-invalid, .drawer-card .filename-input.is-invalid:focus { border-color: var(--bad); box-shadow: 0 0 0 1px var(--bad); }
+    .drawer-links { display: flex; flex-wrap: wrap; gap: 2px 14px; }
+    .drawer-card .drawer-links a { font-size: 10px; font-weight: 400; color: var(--muted); text-decoration: underline; text-underline-offset: 2px; text-decoration-thickness: 1px; }
+    .drawer-card .drawer-links a:hover { color: var(--black); text-decoration-thickness: 1px; }
+    .small-button {
+      height: 32px;
+      padding: 0 16px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      color: var(--ink); background: #fff;
+      font: inherit; font-size: 12px; font-weight: 500;
+      cursor: pointer;
+      transition: background-color 120ms ease, border-color 120ms ease, opacity 120ms ease;
+    }
+    .small-button:hover:not(:disabled) { background: var(--surface); border-color: var(--border-strong); }
+    .small-button:disabled { opacity: .45; cursor: default; }
+    .small-button:focus-visible { outline: 2px solid var(--black); outline-offset: 2px; }
+    .small-button.is-primary { border: 0; color: #fff; background: var(--black); }
+    .small-button.is-primary:hover:not(:disabled) { background: #2a2a2a; }
+    .small-button.is-danger { color: var(--bad); border-color: rgba(201,50,50,.35); }
+    .small-button.is-danger:hover:not(:disabled) { background: rgba(201,50,50,.07); }
+    /* Account switcher (header) and folder picker */
+    #drive-url { text-overflow: ellipsis; }
+    .account-switch { position: relative; margin-left: auto; flex: 0 0 auto; }
+    .account-chip { display: grid; place-items: center; width: 34px; height: 34px; padding: 0; border: 1px solid var(--border); border-radius: 50%; color: var(--ink); background: #fff; font: inherit; font-size: 13px; font-weight: 600; text-transform: uppercase; cursor: pointer; transition: border-color 120ms ease, background-color 120ms ease; }
+    .account-chip:hover, .account-chip[aria-expanded="true"] { border-color: var(--black); }
+    .account-chip.is-connected { color: #fff; background: var(--black); border-color: var(--black); }
+    .account-chip:focus-visible { outline: 2px solid var(--black); outline-offset: 2px; }
+    .account-chip .g-logo { width: 18px; height: 18px; }
+    .account-menu { position: absolute; z-index: 40; top: calc(100% + 8px); right: 0; width: min(330px, calc(100vw - 30px)); padding: 6px; border: 1px solid var(--border); border-radius: 16px; background: #fff; box-shadow: 0 10px 28px rgba(0,0,0,.14); }
+    .account-menu[hidden] { display: none; }
+    .account-row { display: flex; align-items: center; min-width: 0; border-radius: 10px; }
+    .account-row:hover { background: var(--surface-2); }
+    .account-pick, .account-add { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 7px 8px; border: 0; border-radius: 10px; background: transparent; color: var(--ink); font: inherit; font-size: 12.5px; text-align: left; cursor: pointer; }
+    .account-pick { flex: 1 1 auto; }
+    .account-add { width: 100%; }
+    .account-add:hover { background: var(--surface-2); }
+    .account-pick:focus-visible, .account-add:focus-visible, .account-remove:focus-visible { outline: 2px solid var(--black); outline-offset: -2px; }
+    .account-pick .dot { flex: 0 0 24px; width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%; background: var(--surface); font-size: 11px; font-weight: 600; text-transform: uppercase; }
+    .account-row.is-active .dot { color: #fff; background: var(--black); }
+    .account-pick .mail { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .account-add .g-logo { width: 18px; height: 18px; margin: 0 3px; }
+    .account-remove { flex: 0 0 24px; height: 24px; margin-right: 6px; padding: 0; border: 0; border-radius: 50%; color: var(--muted); background: transparent; font-size: 15px; line-height: 1; cursor: pointer; visibility: hidden; }
+    .account-row:hover .account-remove, .account-remove:focus-visible { visibility: visible; }
+    .account-remove:hover { color: var(--bad); background: rgba(201,50,50,.08); }
+    .account-sep { height: 1px; margin: 5px 4px; background: var(--line); }
+    .account-chip, .account-pick .dot { overflow: hidden; }
+    .account-chip img, .account-pick .dot img { display: block; width: 100%; height: 100%; object-fit: cover; }
+    /* Only shown as the Move-to popup's header (see "Move to…" below) — in the ordinary folder-browsing
+       drawer there's no "Choose a folder" label any more; the home/search/sort/star/view controls live
+       on their own quickbar row instead (see .picker-quickbar below), the same order Google Drive's own
+       toolbar uses. */
+    .picker-top { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .picker-top[hidden] { display: none; }
+    .picker-title { flex: 1 1 auto; min-width: 0; color: var(--ink); font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    /* home icon -> search pillbox -> sort -> star -> list -> grid, all in one shorter row, instead of the
+       old layout (search on its own full-width line, sort/star/home tucked into the tabs row, and a
+       single list<->grid toggle button down on the breadcrumb row). The search box uses a compact
+       height here (see .picker-search-input) so the row doesn't get tall just because an input sits in it. */
+    .picker-quickbar { display: flex; align-items: center; gap: 4px; }
+    .picker-quickbar .icon-button svg { width: 16px; height: 16px; }
+    /* Color only, no filled background chip — the same quiet active state the sort icon already used
+       (#picker-sort-button.is-on below) before the view toggle got its own heavier treatment: a solid
+       background behind an already solid-filled star read as noticeably darker than every other icon
+       here once both were on at the same time. */
+    .picker-quickbar .icon-button.is-on { color: var(--black); }
+    .picker-quickbar .icon-button.is-on svg { fill: currentColor; }
+    #picker-search.picker-search-input { flex: 1 1 auto; min-width: 0; height: 26px; padding: 0 10px; font-size: 12px; border-radius: 13px; }
+    /* List/grid as one segmented pill (Google Drive's own look for this control) instead of two separate
+       floating icon buttons: a light track with the active side on a raised white chip reads as a much
+       quieter "which one is active" cue than a solid dark fill ever did, which is what made the grid icon
+       in particular (four outlined squares that is-on used to fill solid black) look so heavy. */
+    .picker-view-pill { flex: 0 0 auto; display: flex; align-items: center; gap: 1px; padding: 2px; border-radius: 999px; background: var(--surface); }
+    .picker-view-btn { flex: 0 0 auto; display: grid; place-items: center; width: 22px; height: 22px; padding: 0; border: 0; border-radius: 999px; color: var(--muted); background: transparent; cursor: pointer; transition: color 120ms ease, background-color 120ms ease; }
+    .picker-view-btn svg { width: 15px; height: 15px; display: block; }
+    .picker-view-btn:hover { color: var(--black); }
+    .picker-view-btn:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--black); }
+    .picker-view-btn.is-on { color: var(--black); background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.16); }
+    /* The selection bar and the tabs row share one fixed-height slot instead of the selection bar being
+       inserted as an extra row above the tabs — stacking the two used to push the folder list down by a
+       whole row the instant something got selected, so a fast second click (select, then immediately
+       click again to open) could land on whatever had shifted into that same spot, usually the item just
+       above the one actually meant. Swapping which one is visible in place, via opacity, never changes
+       this box's size, so the list underneath never moves. */
+    /* 38px left a lot of dead air above the tab labels — this box only needs to be as tall as the taller
+       of the two rows it swaps between (the selection bar, ~30px), not 8px taller than that, and the tabs
+       being bottom-aligned meant every spare pixel landed above them, not below the line they sit on. */
+    .picker-toolbar { position: relative; height: 32px; }
+    .picker-toolbar > .picker-selbar, .picker-toolbar > .picker-tabs { position: absolute; inset: 0; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 140ms ease; }
+    .picker-toolbar > .picker-tabs { opacity: 1; visibility: visible; pointer-events: auto; }
+    .picker-toolbar.is-selecting > .picker-selbar { opacity: 1; visibility: visible; pointer-events: auto; }
+    .picker-toolbar.is-selecting > .picker-tabs { opacity: 0; visibility: hidden; pointer-events: none; }
+    .picker-tabs { display: flex; align-items: flex-end; gap: 10px; border-bottom: 1px solid var(--line); }
+    .picker-tabs-scroll { display: flex; gap: 16px; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+    .picker-tabs-scroll::-webkit-scrollbar { display: none; }
+    .picker-tab { margin-bottom: -1px; padding: 5px 0 7px; border: 0; border-bottom: 2px solid transparent; color: var(--muted); background: transparent; font: inherit; font-size: 12px; font-weight: 500; white-space: nowrap; cursor: pointer; }
+    .picker-tab:hover { color: var(--ink); }
+    .picker-tab.is-active { color: var(--black); border-bottom-color: var(--black); }
+    .picker-tab:focus-visible { outline: 2px solid var(--black); outline-offset: 2px; }
+    .picker-head { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .picker-head[hidden] { display: none; }
+    .picker-head .icon-button svg { width: 15px; height: 15px; }
+    .picker-path { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink); font-size: 12px; font-weight: 500; }
+    /* overflow-x: hidden is load-bearing, not decorative: leaving overflow-x unset while overflow-y is
+       auto makes it compute to auto too (CSS overflow computed-value rule), and the swipe arrows below
+       translate a few px past the edge — enough for that axis to register scrollable overflow and show
+       an unwanted horizontal scrollbar. Pin it to hidden so only the intended vertical scrollbar can show. */
+    .picker-list { position: relative; display: grid; align-content: start; gap: 5px; min-height: 115px; max-height: 240px; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; padding: 2px 4px; }
+    /* The swipe-back/forward arrow (see the wheel listener on pickerList): a plain absolutely-positioned
+       pseudo-element rather than a real DOM node, since renderPicker() clears pickerList's children on
+       every navigation and a real node would just get wiped along with everything else. --swipe-back and
+       --swipe-fwd (0 to 1) are updated live by that listener and drive both the fade and the slide-in, so
+       the arrow visibly tracks the gesture instead of just appearing once some threshold is already
+       crossed. Flush against the edge and rounded only on the inward-facing side — flat where it meets
+       the frame, like it's part of the frame's own edge rather than a badge floating in front of it —
+       and it only ever slides inward from there, never past the edge, so nothing adds to the list's own
+       scrollable area. */
+    .picker-list::before, .picker-list::after { content: ''; position: absolute; top: 50%; width: 28px; height: 60px; margin-top: -30px; background-color: rgba(20,20,22,.82); background-repeat: no-repeat; background-position: center; background-size: 14px; pointer-events: none; z-index: 6; transition: opacity 120ms ease, transform 120ms ease; }
+    .picker-list.is-swiping::before, .picker-list.is-swiping::after { transition: none; }
+    .picker-list::before { left: 0; border-radius: 0 30px 30px 0; opacity: var(--swipe-back, 0); transform: translateX(calc((var(--swipe-back, 0) - 1) * 18px)); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 18l-6-6 6-6'/%3E%3C/svg%3E"); }
+    .picker-list::after { right: 0; border-radius: 30px 0 0 30px; opacity: var(--swipe-fwd, 0); transform: translateX(calc((1 - var(--swipe-fwd, 0)) * 18px)); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 18l6-6-6-6'/%3E%3C/svg%3E"); }
+    .picker-item { display: flex; align-items: center; gap: 8px; min-width: 0; height: 32px; padding: 0 6px 0 10px; border: 1px solid var(--border); border-radius: 11px; color: var(--ink); background: #fff; font-size: 12.5px; cursor: pointer; user-select: none; transition: border-color 120ms ease; }
+    .picker-list:not(.is-grid) .picker-item { height: 30px; }
+    .picker-item:hover { border-color: var(--border-strong); }
+    /* Just the ring, not border-color too — stacking a black border directly against a same-color
+       box-shadow of the same width read as one noticeably thick ~2px line; a single ring stays crisp. */
+    .picker-item.is-selected { box-shadow: 0 0 0 1px var(--black); }
+    .picker-item:focus-visible { outline: 2px solid var(--black); outline-offset: 1px; }
+    .picker-item > svg { flex: 0 0 18px; width: 18px; height: 18px; color: var(--muted); }
+    .picker-item > span { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .picker-star { flex: 0 0 22px; height: 22px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; color: var(--muted); background: transparent; cursor: pointer; visibility: hidden; }
+    .picker-item:hover .picker-star, .picker-item.is-selected .picker-star, .picker-star.is-on, .picker-star:focus-visible { visibility: visible; }
+    .picker-star:hover { color: var(--black); background: rgba(0,0,0,.06); }
+    .picker-star svg { width: 15px; height: 15px; fill: none; }
+    .picker-star.is-on { color: var(--black); }
+    .picker-star.is-on svg { fill: currentColor; }
+    .picker-note { padding: 8px 2px; color: var(--muted); font-size: 12px; }
+    .picker-summary { display: none; margin: 2px 5px 0; color: var(--muted); font-size: 12px; }
+    body.is-picking .picker-summary { display: block; }
+    .account-menu .drawer-card { margin: 0; padding: 8px; border: 0; background: transparent; }
+    .account-menu #account-card { display: none; }
+    .account-back { display: flex; align-items: center; gap: 6px; padding: 6px 8px; border: 0; color: var(--muted); background: transparent; font: inherit; font-size: 12px; cursor: pointer; }
+    .account-back[hidden] { display: none; }
+    .account-back:hover { color: var(--black); }
+    .account-link { display: block; width: 100%; margin-top: 2px; padding: 7px 8px; border: 0; border-radius: 10px; color: var(--muted); background: transparent; font: inherit; font-size: 11px; text-align: left; cursor: pointer; }
+    .account-link:hover { color: var(--black); background: var(--surface-2); }
+
+    /* ---- Smoothness: one easing and one duration for every drawer / panel move -------------------- */
+    /* --ease: a smooth, monotonic deceleration (no overshoot) for anything that changes the window's own
+       size (grid-template-rows on the drawer/collapse) — overshoot there would mean briefly resizing past
+       the final height and snapping back, which reads as a glitch rather than a spring.
+       --spring: the same duration with a soft overshoot, for small pop-ins (menus, the modal card, list
+       items) that don't drive the window size — this is what gives those moments the springy, Apple-like
+       settle the rest of the UI can't safely have. */
+    :root { --ease: cubic-bezier(.16,1,.3,1); --spring: cubic-bezier(.34,1.56,.64,1); --dur: 320ms; }
+    /* The export options fold away with the same curve as the drawer opening, so the two move as one. */
+    .collapse { display: grid; grid-template-rows: 1fr; transition: grid-template-rows var(--dur) var(--ease); }
+    .collapse-inner { min-height: 0; min-width: 0; overflow: hidden; padding: 4px; margin: -4px; transition: opacity 220ms ease; }
+    body.is-picking .collapse { grid-template-rows: 0fr; }
+    body.is-picking .collapse-inner { opacity: 0; visibility: hidden; transition: opacity 140ms ease, visibility 0s linear var(--dur); }
+    .drawer-inner { opacity: 0; transition: opacity 160ms ease; }
+    .drive-drawer.is-open .drawer-inner { opacity: 1; transition: opacity 240ms ease 90ms; }
+    /* Used for one synchronous moment to measure the final layout, so the window can be resized once, up front. */
+    body.no-anim .collapse, body.no-anim .collapse-inner, body.no-anim .drive-drawer, body.no-anim .drawer-inner { transition: none !important; }
+    .account-menu:not([hidden]) { animation: menuIn 220ms var(--spring); transform-origin: top right; }
+    @keyframes menuIn { from { opacity: 0; transform: translateY(-4px) scale(.98); } }
+    @keyframes itemIn { from { opacity: 0; transform: translateY(5px); } }
+    /* A flat 2px/.4-opacity ring held to 55% then cut was easy to miss next to the new, equally-blue
+       selection ring — widened and darkened at peak, paired with a background tint so a freshly-uploaded
+       tile reads as "lit up" rather than just outlined, and held a bit longer before it lets go. */
+    @keyframes itemFlash {
+      0% { box-shadow: 0 0 0 0 rgba(29,114,232,0); background-color: rgba(29,114,232,.18); }
+      10% { box-shadow: 0 0 0 3px rgba(29,114,232,.6); background-color: rgba(29,114,232,.18); }
+      60% { box-shadow: 0 0 0 3px rgba(29,114,232,.55); background-color: rgba(29,114,232,.13); }
+      100% { box-shadow: 0 0 0 0 rgba(29,114,232,0); background-color: rgba(29,114,232,0); }
+    }
+    @keyframes folderNudge { 0%, 100% { transform: none; } 25% { transform: translateY(-4px) scale(1.15); } 50% { transform: none; } 70% { transform: translateY(-2px) scale(1.08); } }
+
+    /* ---- Folder button inside the link pill --------------------------------------------------------- */
+
+    /* ---- Confirmation pop-up ---------------------------------------------------------------------- */
+    /* display:grid + place-items:center used to mean a card taller than the plugin window overflowed
+       equally off both the top and bottom of the fixed, inset:0 modal layer — with no scrollbar on
+       either the modal or the window, the overflowing part (often the footer buttons) was just gone,
+       unreachable. Flex + align-items:flex-start + overflow-y:auto keeps the horizontal centering but
+       anchors the card to the top and lets the modal layer itself scroll, so a tall card is always
+       fully reachable instead of silently clipped. */
+    /* align-items: center (with the safe-center fallback right after, for browsers that support it) so the
+       confirm dialog sits in the middle of the window instead of pinned 20px from the top; "safe" keeps it
+       falling back to top-aligned rather than clipping unreachable content if a message is ever tall enough
+       to exceed the viewport. */
+    .modal { position: fixed; inset: 0; z-index: 80; display: flex; align-items: center; align-items: safe center; justify-content: center; padding: 20px; overflow-y: auto; background: rgba(17,17,17,0); transition: background-color 180ms ease; }
+    .modal[hidden] { display: none; }
+    .modal.is-open { background: rgba(17,17,17,.34); }
+    .modal-card { flex: 0 0 auto; width: min(320px, 100%); max-height: calc(100vh - 40px); padding: 18px 18px 14px; border-radius: 18px; background: #fff; box-shadow: 0 18px 48px rgba(0,0,0,.26); opacity: 0; transform: translateY(8px) scale(.97); transition: opacity 180ms ease, transform 280ms var(--spring); }
+    .modal.is-open .modal-card { opacity: 1; transform: none; }
+    .modal-card h2 { margin: 0 0 6px; font-size: 14px; font-weight: 600; line-height: 1.35; }
+    .modal-card p { margin: 0 0 16px; color: var(--ink-soft); font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
+    .small-button.is-danger-solid { border: 0; color: #fff; background: var(--bad); }
+    .small-button.is-danger-solid:hover:not(:disabled) { background: #a92727; }
+    .small-button.has-icon { display: inline-flex; align-items: center; gap: 6px; padding: 0 13px 0 10px; }
+    .small-button.has-icon svg { width: 14px; height: 14px; display: block; }
+
+    /* ---- Share dialog: its own pop-up (not the ctx-menu), since adding people, a per-person role and the
+       general-access toggle need real form controls rather than a list of one-line actions. ------------- */
+    /* The card itself is also a flex column with its own max-height/overflow: title and the Cancel/Done
+       footer stay put, and only the middle (which grows with however many people are added) scrolls —
+       the same "header and footer pinned" shape as Google's own share dialog, and a second safety net
+       under the .modal-level scroll fix above. */
+    .share-card { width: min(360px, 100%); max-height: calc(100vh - 40px); padding: 18px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }
+    .share-card > * { flex: 0 0 auto; }
+    .share-card #share-people-wrap { min-height: 0; }
+    .share-add { display: flex; gap: 6px; }
+    .share-add .filename-input { flex: 1 1 auto; min-width: 0; height: 36px; }
+    #share-general-select, #share-general-role { font-size: 12px; }
+    /* A fixed container width with no horizontal scrollbar — overflow-x: hidden forces every row to
+       actually shrink to fit (the role select below is the one piece given a hard width instead of
+       letting its own content set one) rather than silently growing the row past the edge, which is
+       what was pushing the remove (X) button out of view to the right. */
+    .share-people-wrap { position: relative; min-height: 0; }
+    .share-people { display: grid; gap: 2px; max-height: 180px; overflow-y: auto; overflow-x: hidden; }
+    .share-people:empty { display: none; }
+    /* A soft fade at the bottom hints there's more to scroll — only shown while the list actually has
+       more content below the fold (see updateShareFade), not permanently. */
+    .share-people-wrap::after { content: ''; position: absolute; left: 0; right: 6px; bottom: 0; height: 22px; border-radius: 0 0 8px 8px; background: linear-gradient(to bottom, rgba(255,255,255,0), #fff); opacity: 0; pointer-events: none; transition: opacity 140ms ease; }
+    .share-people-wrap.has-fade::after { opacity: 1; }
+    .share-person { display: flex; align-items: center; gap: 6px; padding: 6px 2px; min-width: 0; }
+    .share-person .dot { flex: 0 0 26px; width: 26px; height: 26px; display: grid; place-items: center; border-radius: 50%; overflow: hidden; background: var(--surface); font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--ink); }
+    .share-person .dot img { display: block; width: 100%; height: 100%; object-fit: cover; }
+    .share-person .mail { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12.5px; }
+    .share-person .mail small { display: block; color: var(--muted); font-size: 10.5px; font-weight: 400; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .share-person .mail small.is-deleted { color: var(--bad); font-style: italic; }
+    .share-person .mail.is-deleted { color: var(--bad); font-style: italic; }
+    /* Given a hard width (rather than sizing to its own text) so "Commenter" can't force the row wider
+       than the dialog — the four role labels are short enough to still read fine at this width. */
+    .share-person select { flex: 0 0 76px; width: 76px; padding: 0 20px 0 8px; font-size: 11.5px; }
+    .share-person .icon-button { flex: 0 0 auto; }
+    .share-person .icon-button svg { width: 14px; height: 14px; }
+    .share-divider { height: 1px; background: var(--line); }
+    .share-general-row { display: flex; align-items: center; gap: 10px; }
+    .share-general-row + .share-general-row { margin-top: 8px; }
+    .share-general-icon { flex: 0 0 28px; width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%; background: var(--surface); color: var(--muted); }
+    .share-general-icon svg { width: 15px; height: 15px; }
+    .share-general-text { flex: 1 1 auto; min-width: 0; display: grid; }
+    .share-general-text span:first-child { font-size: 12.5px; font-weight: 500; color: var(--ink); }
+    .share-general-sub { font-size: 11px; color: var(--muted); }
+    .share-actions { align-items: center; }
+    /* .spacer's flex-grow rule was scoped to .drawer-actions only, so reused here (Share dialog's footer)
+       it did nothing — .modal-actions' justify-content: flex-end then bunched Copy link in with
+       Cancel/Done on the right instead of pinning it to the left like the drawer buttons do. */
+    .share-actions .spacer { flex: 1 1 0; min-width: 0; }
+
+    /* ---- Client ID / secret panel: roomier, with Delete + Save underneath -------------------------- */
+    .account-menu #drawer-settings { gap: 12px; padding: 12px 10px 10px; }
+    .account-menu #drawer-settings .filename-input { height: 40px; }
+    .settings-actions { padding-top: 2px; }
+    .account-remove { display: grid; place-items: center; }
+    .account-remove svg { width: 15px; height: 15px; display: block; }
+
+    /* ---- Folder picker ------------------------------------------------------------------------------ */
+    #drawer-picker { margin-top: 6px; gap: 7px; }
+    .picker-note { grid-column: 1 / -1; padding: 18px 2px; text-align: center; }
+    .picker-note.is-loading { display: grid; place-items: center; min-height: 110px; padding: 0; }
+    .picker-list > .picker-item, .picker-list > .picker-files, .picker-folders-body > .picker-item { animation: itemIn 260ms var(--spring) both; }
+    .picker-item { position: relative; transition: border-color 140ms ease, background-color 140ms ease, transform 140ms ease, opacity 180ms ease; }
+    #drawer-picker .drawer-actions { gap: 6px; }
+    #drawer-picker .drawer-actions .small-button { padding: 0 12px; }
+    #drawer-picker .drawer-actions .small-button.has-icon { padding: 0 12px 0 9px; }
+    .picker-item:hover { background: var(--surface-2); }
+    .picker-item:active { transform: scale(.985); }
+
+    /* ---- "Move to…": a real pop-up, not the same list repurposed in place ------------------------- */
+    /* startMove() physically relocates #drawer-picker out from the drawer (whose ancestor is paint-
+       contained, so position:fixed on it would just fix relative to that box) to directly under <body>,
+       where it can center itself over the whole plugin window as its own floating dialog; endMove()
+       / a finished move puts it back at #picker-anchor. Everything inside — tabs, search, breadcrumbs,
+       the list, selection — is untouched, so the only thing that changes is where it's drawn. */
+    body.is-moving::before {
+      content: ''; position: fixed; inset: 0; z-index: 85;
+      background: rgba(17,17,17,.4);
+      animation: fadeIn 160ms ease;
+    }
+    @keyframes fadeIn { from { opacity: 0; } }
+    #drawer-picker.is-floating {
+      position: fixed; z-index: 86; inset: 0; margin: auto;
+      width: min(380px, calc(100vw - 32px));
+      max-height: min(70vh, 560px);
+      display: flex; flex-direction: column; gap: 8px;
+      box-shadow: 0 24px 60px rgba(0,0,0,.32);
+      animation: menuIn 220ms var(--spring);
+    }
+    #drawer-picker.is-floating #picker-list { flex: 1 1 auto; max-height: none; }
+    #drawer-picker.is-floating .picker-tabs,
+    #drawer-picker.is-floating .picker-head { flex: 0 0 auto; }
+    #picker-top-close { flex: 0 0 auto; }
+
+    /* ---- Sort menu ----------------------------------------------------------------------------------- */
+    .sort-menu { display: contents; }
+    #picker-sort-button.is-on { color: var(--black); }
+
+    /* ---- Drive toggle under the link box ---------------------------------------------------------- */
+    .drive-status { min-height: 28px; }
+    .drive-toggle { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 8px 0 9px; border: 1px solid var(--border); border-radius: 13px; color: var(--ink); background: #fff; font: inherit; font-size: 12px; font-weight: 500; cursor: pointer; transition: background-color 120ms ease, border-color 120ms ease; }
+    .drive-toggle:hover { background: var(--surface); border-color: var(--border-strong); }
+    .drive-toggle:focus-visible { outline: 2px solid var(--black); outline-offset: 2px; }
+    .drive-toggle > svg { width: 15px; height: 15px; display: block; }
+    .drive-toggle .toggle-chevron { width: 14px; height: 14px; color: var(--muted); transition: transform 280ms var(--ease); }
+    .drive-toggle[aria-expanded="true"] .toggle-chevron { transform: rotate(180deg); }
+    .drive-toggle.is-nudge > svg:first-child { animation: folderNudge 560ms var(--ease); }
+    .drive-toggle.is-nudge { border-color: var(--black); }
+    .drive-drawer .drawer-inner { contain: paint; }
+
+    /* ---- Breadcrumbs ------------------------------------------------------------------------------- */
+    /* Scrolls horizontally instead of clipping, so a deep folder-in-folder path stays navigable rather
+       than every segment being squeezed down to a sliver of ellipsised text. The trail auto-scrolls to its
+       end (see renderCrumbs), so the current folder is what's in view by default — the fade on the left
+       is the only hint that there's more to scroll back through. */
+    .picker-head { position: relative; }
+    .crumbs {
+      display: flex; align-items: center; gap: 1px; min-width: 0;
+      overflow-x: auto; overflow-y: hidden; white-space: nowrap;
+      scrollbar-width: none; scroll-behavior: smooth;
+      -webkit-mask-image: linear-gradient(to right, transparent, #000 14px);
+      mask-image: linear-gradient(to right, transparent, #000 14px);
+    }
+    .crumbs.is-at-start { -webkit-mask-image: none; mask-image: none; }
+    .crumbs::-webkit-scrollbar { display: none; }
+    .crumb { flex: 0 0 auto; min-width: 0; max-width: 150px; padding: 3px 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border: 0; border-radius: 8px; color: var(--muted); background: transparent; font: inherit; font-size: 12.5px; cursor: pointer; transition: background-color 120ms ease, color 120ms ease; }
+    .crumb:hover { color: var(--ink); background: rgba(0,0,0,.06); }
+    /* The current folder: no longer squeezed with the rest of the trail — it's the one thing here the
+       user most needs to read, so it gets its own pill instead of competing for space. */
+    .crumb.is-current { flex: 0 0 auto; max-width: 220px; padding: 3px 10px; color: var(--ink); font-weight: 600; background: var(--surface-2); border-radius: 999px; cursor: default; }
+    .crumb.is-current:hover { background: var(--surface-2); }
+    .crumb-sep { flex: 0 0 auto; color: var(--muted); font-size: 12px; }
+    .crumb-more { flex: 0 0 auto; display: grid; place-items: center; width: 22px; height: 22px; padding: 0; border: 0; border-radius: 50%; color: var(--muted); background: transparent; cursor: pointer; }
+    .crumb-more:hover { color: var(--black); background: rgba(0,0,0,.06); }
+    .crumb-more svg { width: 14px; height: 14px; display: block; }
+    .picker-head .icon-button[hidden] { display: none; }
+
+    /* ---- Selection bar ------------------------------------------------------------------------------ */
+    /* A shade under full-pill (999px) — it reads as its own rounded rectangle, with a curve that matches
+       the drawer's own corner radius instead of ballooning out into a stadium shape of its own. */
+    .picker-selbar { display: flex; align-items: center; gap: 2px; min-width: 0; padding: 2px 5px 2px 4px; border-radius: 14px; color: #fff; background: var(--black); }
+    .picker-top[hidden] { display: none; }
+    .picker-selbar .icon-button { color: #fff; width: 26px; height: 26px; }
+    .picker-selbar .icon-button:hover:not(:disabled) { color: #fff; background: rgba(255,255,255,.16); }
+    .picker-selbar .icon-button:disabled { opacity: .35; cursor: default; }
+    .picker-selbar .icon-button svg { width: 15px; height: 15px; }
+    .sel-count { flex: 1 1 auto; min-width: 0; padding: 0 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12.5px; font-weight: 500; }
+
+    /* ---- Items --------------------------------------------------------------------------------------- */
+    .picker-list { scrollbar-width: auto; }
+    .picker-list::-webkit-scrollbar { width: 14px; }
+    .picker-list::-webkit-scrollbar-track { background: transparent; }
+    .picker-list::-webkit-scrollbar-thumb { background: #bcbcc2; border: 4px solid transparent; border-radius: 8px; background-clip: content-box; }
+    .picker-list::-webkit-scrollbar-thumb:hover { background: #8d8d92; background-clip: content-box; }
+    .picker-item, .picker-file { user-select: none; -webkit-user-select: none; }
+    /* A 1px black hairline read as barely-there next to the hover border it sits beside — bumped to a
+       2px accent-blue ring plus a faint matching tint, the same move Google Drive's own picker makes, so
+       what's selected is obvious at a glance without the tile turning into a solid block of color. */
+    .picker-item.is-picked, .picker-file.is-picked { border-color: var(--link-accent); box-shadow: 0 0 0 2px var(--link-accent); background: rgba(29,114,232,.07); }
+    .picker-item .fi { position: relative; flex: 0 0 16px; width: 16px; height: 16px; display: block; color: var(--muted); }
+    .picker-item .fi > svg { width: 18px; height: 18px; display: block; }
+    .picker-item .fi-star { position: absolute; right: -5px; bottom: -4px; width: 11px; height: 11px; display: grid; place-items: center; border-radius: 50%; color: var(--black); background: #fff; }
+    .picker-item .fi-star svg { width: 9px; height: 9px; fill: currentColor; stroke: none; }
+    .picker-item .fi { overflow: visible; }
+    .fi-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .more-btn { flex: 0 0 24px; width: 24px; height: 24px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; color: var(--muted); background: transparent; cursor: pointer; transition: color 120ms ease, background-color 120ms ease; }
+    .more-btn:hover, .more-btn[aria-expanded="true"] { color: var(--black); background: rgba(0,0,0,.08); }
+    .more-btn:focus-visible { outline: 2px solid var(--black); outline-offset: -2px; }
+    .more-btn svg { width: 16px; height: 16px; display: block; }
+    .more-btn.is-confirm { color: var(--black); }
+    .picker-item { position: relative; transition: border-color 140ms ease, background-color 140ms ease, box-shadow 140ms ease, opacity 180ms ease, transform 140ms ease; }
+    .picker-item.is-new { border-color: var(--black); box-shadow: 0 0 0 1px var(--black); padding-right: 4px; cursor: default; background: #fff; }
+    .new-folder-input { flex: 1 1 auto; min-width: 0; height: 100%; padding: 0; border: 0; outline: none; color: var(--ink); background: transparent; font: inherit; font-size: 12.5px; }
+    .picker-item.is-busy, .picker-file.is-busy { opacity: .5; pointer-events: none; }
+    /* Same highlight for a freshly-created folder and for files that just landed from an upload (see
+       revealUploadedFiles) — .picker-file needed adding explicitly, since without it the class was being
+       set on the uploaded tiles with nothing in the stylesheet actually matching it, so nothing visibly
+       happened. Held a couple of seconds rather than one quick 1.4s pulse, so it reads as "these are the
+       new ones" rather than a flicker easy to miss. */
+    .picker-item.is-flash, .picker-file.is-flash { animation: itemFlash 3.4s ease; }
+    .picker-item.is-removing, .picker-file.is-removing { opacity: 0; transform: scale(.96); pointer-events: none; transition: opacity 180ms ease, transform 180ms ease; }
+    .picker-list.is-moving .picker-file, .picker-item.is-moving { opacity: .4; pointer-events: none; }
+    .picker-list.is-moving .picker-file { pointer-events: none; }
+    .picker-files { grid-column: 1 / -1; display: grid; gap: 6px; margin-top: 4px; }
+    .picker-files:first-child { margin-top: 0; }
+    .picker-files-label { grid-column: 1 / -1; padding: 4px 2px 0; color: var(--muted); font-size: 11px; font-weight: 500; }
+    .picker-files-body { display: grid; gap: 2px; }
+    .picker-list.is-grid .picker-files-body { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .picker-folders-body { display: grid; gap: 2px; }
+    /* Folders stay compact cards of their own in grid view — same 2-column grid as the files below them,
+       but without stretching into the big thumbnail tiles files get, since a folder has no thumbnail to
+       show. */
+    .picker-list.is-grid .picker-folders-body { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 6px; }
+    .picker-file { position: relative; min-width: 0; border-radius: 12px; color: var(--ink); transition: background-color 140ms ease, border-color 140ms ease, box-shadow 140ms ease, opacity 180ms ease, transform 180ms ease; cursor: default; }
+    .picker-file:focus-visible { outline: 2px solid var(--black); outline-offset: 1px; }
+    /* Figma's desktop app embeds an older Chromium build where a plain draggable="true" div doesn't
+       reliably kick off a native drag — it wants the drag-source behavior spelled out explicitly.
+       Harmless everywhere else (an unprefixed, unsupported property is simply ignored). The thumbnail
+       img is explicitly excluded so starting a drag over it still drags the whole tile (with its
+       Drive file payload) instead of the browser's own "save this picture" image drag taking over. */
+    .picker-file[draggable="true"] { -webkit-user-drag: element; }
+    .pf-thumb img { -webkit-user-drag: none; }
+    .pf-head { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .pf-ico { flex: 0 0 18px; width: 18px; height: 18px; display: block; }
+    .pf-ico svg { width: 18px; height: 18px; display: block; }
+    .pf-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
+    .pf-date { display: none; flex: 0 0 auto; color: var(--muted); font-size: 11px; }
+    .pf-thumb { position: relative; overflow: hidden; display: grid; place-items: center; background: #ececef; }
+    .pf-big { width: 30px; height: 30px; display: block; opacity: .9; }
+    .pf-big svg { width: 30px; height: 30px; display: block; }
+    .pf-thumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 260ms ease; }
+    .pf-thumb img.is-loaded { opacity: 1; }
+    .pf-play { position: absolute; left: 50%; top: 50%; width: 30px; height: 30px; margin: -15px 0 0 -15px; display: grid; place-items: center; border-radius: 50%; color: #fff; background: rgba(17,17,17,.62); pointer-events: none; }
+    .pf-play svg { width: 18px; height: 18px; display: block; }
+    /* grid: a card like Drive's — type icon and name on top, the preview below */
+    .picker-list.is-grid .picker-file { border: 1px solid var(--border); background: #fff; padding: 5px 5px 6px 10px; }
+    .picker-list.is-grid .picker-file:hover { border-color: var(--border-strong); }
+    .picker-list.is-grid .pf-head { height: 26px; padding-right: 0; }
+    .picker-list.is-grid .pf-thumb { margin: 4px 5px 0 0; height: 64px; border-radius: 8px; }
+    /* list: one compact row */
+    .picker-list:not(.is-grid) .picker-file { padding: 3px 4px 3px 11px; border: 1px solid transparent; }
+    .picker-list:not(.is-grid) .picker-file:hover { background: var(--surface); }
+    .picker-list:not(.is-grid) .pf-thumb { display: none; }
+    .picker-list:not(.is-grid) .pf-date { display: block; }
+    .picker-list:not(.is-grid) .picker-file.is-picked { background: rgba(29,114,232,.07); }
+
+    /* ---- Context menu --------------------------------------------------------------------------------- */
+    .ctx-menu { position: fixed; z-index: 70; min-width: 188px; max-width: calc(100vw - 16px); padding: 5px; border: 1px solid var(--border); border-radius: 14px; background: #fff; box-shadow: 0 12px 32px rgba(0,0,0,.18); animation: menuIn 180ms var(--spring); transform-origin: top right; }
+    .ctx-menu[hidden] { display: none; }
+    .ctx-item { display: flex; align-items: center; gap: 10px; width: 100%; height: 32px; padding: 0 10px; border: 0; border-radius: 9px; color: var(--ink); background: transparent; font: inherit; font-size: 12.5px; text-align: left; cursor: pointer; }
+    .ctx-item:hover:not(:disabled), .ctx-item:focus-visible { background: var(--surface); outline: none; }
+    .ctx-item:disabled { opacity: .4; cursor: default; }
+    .ctx-item svg { flex: 0 0 15px; width: 15px; height: 15px; display: block; color: var(--muted); }
+    .ctx-item.is-danger, .ctx-item.is-danger svg { color: var(--bad); }
+    .ctx-item.is-danger:hover:not(:disabled) { background: rgba(201,50,50,.08); }
+    .ctx-sep { height: 1px; margin: 4px 6px; background: var(--line); }
+
+    /* ---- Preview (Space / double-click) ----------------------------------------------------------------- */
+    .qlook { position: fixed; inset: 0; z-index: 60; display: flex; flex-direction: column; color: #fff; background: #101012; opacity: 0; transition: opacity 180ms ease; }
+    .qlook[hidden] { display: none; }
+    .qlook.is-open { opacity: 1; }
+    /* overflow-x: auto is a safety net, not the primary fix — ql-name and ql-count both shrink first (see
+       below), so this only ever kicks in on an extremely narrow window, and even then the close/download/
+       open buttons stay reachable by scrolling instead of being clipped clean off with no way back. */
+    .ql-bar { flex: 0 0 auto; display: flex; align-items: center; gap: 4px; padding: 10px 16px 8px 14px; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
+    .ql-bar::-webkit-scrollbar { display: none; }
+    .ql-icon { flex: 0 0 20px; width: 20px; height: 20px; }
+    .ql-icon svg { width: 20px; height: 20px; display: block; }
+    .ql-name { flex: 1 1 auto; min-width: 0; margin-left: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 500; }
+    .ql-count { flex: 0 1 auto; min-width: 0; margin-right: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: rgba(255,255,255,.55); font-size: 11px; }
+    .ql-btn { flex: 0 0 auto; width: 30px; height: 30px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; color: #fff; background: transparent; cursor: pointer; transition: background-color 120ms ease; }
+    .ql-btn:hover:not(:disabled) { background: rgba(255,255,255,.14); }
+    .ql-btn:disabled { opacity: .3; cursor: default; }
+    .ql-btn:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
+    .ql-btn svg { width: 17px; height: 17px; display: block; }
+    .ql-body { flex: 1 1 auto; min-height: 0; display: flex; }
+    .ql-stage { position: relative; flex: 1 1 auto; min-width: 0; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 12px 14px; }
+    /* The file-to-file swipe arrow (see the wheel listener below) — same edge-flush shape and the same
+       live-drag/release-to-commit mechanism as the folder picker's swipe arrow, just bigger to suit the
+       larger preview stage. */
+    .ql-stage::before, .ql-stage::after { content: ''; position: absolute; top: 50%; width: 34px; height: 80px; margin-top: -40px; background-color: rgba(20,20,22,.74); background-repeat: no-repeat; background-position: center; background-size: 18px; pointer-events: none; z-index: 8; transition: opacity 120ms ease, transform 120ms ease; }
+    .ql-stage.is-swiping::before, .ql-stage.is-swiping::after { transition: none; }
+    .ql-stage::before { left: 0; border-radius: 0 40px 40px 0; opacity: var(--swipe-back, 0); transform: translateX(calc((var(--swipe-back, 0) - 1) * 22px)); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 18l-6-6 6-6'/%3E%3C/svg%3E"); }
+    .ql-stage::after { right: 0; border-radius: 40px 0 0 40px; opacity: var(--swipe-fwd, 0); transform: translateX(calc((1 - var(--swipe-fwd, 0)) * 22px)); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 18l6-6-6-6'/%3E%3C/svg%3E"); }
+    /* flex (not grid place-items) so a percentage-sized child — the video wrap, the PDF iframe — gets a
+       real height to resolve against instead of collapsing to its own content size; that's also what let
+       tall media overflow the holder and have overflow:hidden slice a flat, unrounded edge off the bottom
+       while the top (which had room to spare) stayed properly rounded. The border-radius here is a second,
+       belt-and-suspenders guard: whatever does get clipped is clipped to a rounded edge, not a square one. */
+    /* overflow-anchor: none turns off the browser's scroll-anchoring heuristic, which otherwise watches a
+       scrollable element's content for layout shifts and silently nudges its scroll position to compensate
+       — exactly the kind of "something else quietly changed my scrollTop a moment later" behavior that
+       would fight the manual centering this holder does on every zoom step (see applyZoom). It's aimed at
+       a different problem (keeping your place in a feed that's loading content above you) that doesn't
+       apply here, where every scroll position change in this holder is already deliberate. */
+    .ql-holder { position: relative; flex: 1 1 auto; min-height: 0; width: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden; overflow-anchor: none; border-radius: 6px; }
+    /* Zoomed in: switches to real scrolling instead of the fixed centered layout. Anchoring top-left
+       (instead of staying centered) means all of the now-larger image's overflow extends right/down —
+       reachable by scrolling the normal way — rather than splitting half off-screen in a direction
+       scrolling can't reach. */
+    .ql-holder.is-zoomed { overflow: auto; cursor: grab; align-items: flex-start; justify-content: flex-start; }
+    .ql-holder.is-zoomed:active { cursor: grabbing; }
+    /* Overlaid prev/next arrows, inside the preview content itself (not just the top bar) — permanent
+       children of #ql-stage so qlCleanup's per-file reset (which only clears the stage's *other*
+       children) never wipes them out. Moved to the bottom corners (out of the way of the creative itself)
+       and hidden until the stage is hovered or a button has keyboard focus, instead of sitting on screen
+       permanently. */
+    /* z-index 4, above the video controls bar's 3 (.ql-vctrl below): over a video, that bar's hit area
+       spans the full width right along the bottom edge — the same corners these arrows sit in — so with
+       a lower z-index the bar was winning every hover and click there and the arrows never received
+       either, even though they were visibly still in the DOM and still "there" to look at. */
+    .ql-nav { position: absolute; bottom: 14px; z-index: 4; width: 38px; height: 38px; display: grid; place-items: center; border: 1.5px solid rgba(255,255,255,.22); border-radius: 50%; color: #fff; background: rgba(20,20,22,.6); box-shadow: 0 2px 12px rgba(0,0,0,.3); cursor: pointer; opacity: 0; pointer-events: none; transition: background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease, transform 160ms var(--ease), opacity 140ms ease; }
+    .ql-stage:hover .ql-nav:not(:disabled), .ql-nav:focus-visible { opacity: 1; pointer-events: auto; }
+    .ql-nav:hover:not(:disabled), .ql-nav:focus-visible { background: rgba(255,255,255,.32); border-color: rgba(255,255,255,.6); box-shadow: 0 0 0 1px rgba(255,255,255,.15), 0 4px 16px rgba(255,255,255,.2), 0 2px 12px rgba(0,0,0,.3); transform: scale(1.08); }
+    .ql-nav:active:not(:disabled) { transform: scale(.96); }
+    .ql-nav:disabled { display: none; }
+    .ql-nav svg { width: 20px; height: 20px; display: block; }
+    .ql-nav-prev { left: 14px; }
+    .ql-nav-next { right: 14px; }
+    /* New media fades in over whatever was already showing (the quick thumbnail, or nothing) rather than
+       the stage going blank and snapping straight to it — that bare instant is what read as "jerk",
+       worst of all for a PDF's native viewer, which paints its own white chrome before the page does. */
+    .ql-media, .ql-pdf { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 6px; opacity: 1; transition: opacity 220ms ease, transform 200ms var(--ease); }
+    .ql-media.is-loading, .ql-pdf.is-loading { opacity: 0; }
+    .ql-holder video.ql-media { width: 100%; background: #000; }
+    .ql-pdf { position: relative; width: 100%; height: 100%; border: 0; background: #fff; }
+
+    /* ---- Custom video controls: native <video controls> can't be restyled (the mute button in
+       particular sits wherever the browser puts it, not where we want it), so a small custom bar
+       replaces it — play/pause, ±10s, a seek bar, time, then mute / speed / fullscreen on the right.
+       Shown on hover or while paused, hidden while playing and the pointer is elsewhere, so an untouched
+       video still just plays normally. ---------------------------------------------------------------- */
+    .ql-video-wrap { position: relative; width: 100%; height: 100%; display: grid; place-items: center; }
+    .ql-video-wrap video.ql-media { cursor: pointer; }
+    .ql-vctrl { position: absolute; left: 0; right: 0; bottom: 0; z-index: 3; display: flex; flex-direction: column; gap: 9px; padding: 22px 12px 10px; border-radius: 0 0 6px 6px; background: linear-gradient(to top, rgba(0,0,0,.72), rgba(0,0,0,0)); opacity: 0; pointer-events: none; transition: opacity 160ms ease; }
+    .ql-video-wrap:hover .ql-vctrl, .ql-video-wrap.is-paused .ql-vctrl, .ql-vctrl:focus-within { opacity: 1; pointer-events: auto; }
+    /* Seek bar and the volume slider both used to be a plain native <input type=range> with the thumb
+       centered via -webkit-slider-thumb's margin-top — that math is correct on paper, but a few pixels of
+       engine-specific rounding in Figma's own embedded webview still left the dot visibly off the line.
+       Rather than keep chasing that, the native input is kept (full width/height, for real pointer drag,
+       click-to-seek and keyboard support) but made fully invisible, and a plain div underneath draws the
+       track and a thumb dot positioned in JS straight from the input's own value — so the visible dot is
+       always exactly where the value says, regardless of how any particular browser draws a native thumb. */
+    .ql-range { position: relative; display: flex; align-items: center; }
+    .ql-range input[type=range] { position: relative; z-index: 2; width: 100%; height: 16px; margin: 0; background: transparent; opacity: 0; cursor: pointer; }
+    /* The earlier version of this rule left out `top` entirely, so the track's vertical position fell
+       back to CSS's "static position" algorithm for an absolutely positioned box with no offsets — which
+       is engine-dependent and, in practice, not guaranteed to land in the same place as the thumb's own
+       explicit top:50%/translateY(-50%) below. Declaring both explicitly, the same way, is what actually
+       guarantees the line and the dot sit on the same axis. */
+    .ql-range-track { position: absolute; left: 0; right: 0; top: 50%; height: 4px; transform: translateY(-50%); border-radius: 2px; background: rgba(255,255,255,.3); pointer-events: none; }
+    .ql-range-thumb { position: absolute; top: 50%; left: 0; width: 11px; height: 11px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.35); pointer-events: none; transform: translate(-50%, -50%); }
+    .ql-vrow { display: flex; align-items: center; justify-content: center; }
+    .ql-vpill { display: flex; align-items: center; gap: 2px; padding: 3px 8px 3px 6px; border-radius: 999px; background: rgba(255,255,255,.14); }
+    .ql-vbtn { flex: 0 0 auto; width: 28px; height: 28px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; color: #fff; background: transparent; cursor: pointer; transition: background-color 120ms ease; }
+    .ql-vbtn:hover { background: rgba(255,255,255,.16); }
+    .ql-vbtn svg { width: 16px; height: 16px; display: block; }
+    .ql-vtime { flex: 0 0 auto; margin: 0 2px 0 4px; color: rgba(255,255,255,.9); font-size: 11px; white-space: nowrap; }
+    /* Volume: just the mute/unmute icon, inside the pill after the time; hovering or focusing it reveals
+       a small vertical slider above the button, the same shape as YouTube's, instead of a slider sitting
+       in the row permanently. */
+    .ql-vvol-group { position: relative; flex: 0 0 auto; }
+    /* A plain horizontal range input turned vertical with a rotation, not the writing-mode: vertical-lr +
+       direction: rtl trick — that renders fine in a recent desktop Chromium, but Figma's own embedded
+       webview is a different (and not always as current) build, and the report from inside Figma itself
+       was that it showed up barely visible and didn't actually respond to drags. A rotated plain slider
+       is the same technique most video players use for this and doesn't depend on that CSS feature. */
+    .ql-vvol-pop { position: absolute; left: 50%; bottom: 100%; z-index: 1; width: 32px; height: 86px; margin-bottom: 6px; opacity: 0; pointer-events: none; transform: translateX(-50%); transition: opacity 120ms ease; }
+    .ql-vvol-group:hover .ql-vvol-pop, .ql-vvol-group:focus-within .ql-vvol-pop { opacity: 1; pointer-events: auto; }
+    .ql-vvol-pop::before { content: ''; position: absolute; inset: 0; border-radius: 8px; background: rgba(16,16,18,.85); }
+    .ql-vvol-box { position: absolute; top: 50%; left: 50%; width: 4px; height: 64px; transform: translate(-50%, -50%); }
+    .ql-vvol-box .ql-range-track { left: 0; right: 0; top: 0; bottom: 0; height: auto; transform: none; }
+    .ql-vvol-box .ql-range-thumb { left: 50%; top: auto; bottom: 0; transform: translate(-50%, 50%); }
+    .ql-vvol { position: absolute; top: 50%; left: 50%; z-index: 2; -webkit-appearance: none; appearance: none; width: 64px; height: 16px; margin: 0; background: transparent; opacity: 0; cursor: pointer; transform: translate(-50%, -50%) rotate(-90deg); }
+    .ql-bigicon svg { width: 72px; height: 72px; display: block; }
+    .ql-progress { flex: 0 0 auto; padding-top: 8px; color: rgba(255,255,255,.6); font-size: 11px; text-align: center; }
+    .ql-msg { display: grid; justify-items: center; gap: 12px; padding: 14px 10px; text-align: center; }
+    .ql-msg p { margin: 0; color: rgba(255,255,255,.75); font-size: 12px; }
+
+    /* ---- Zoom (images + PDFs) -------------------------------------------------------------------------- */
+    .ql-zoom { flex: 0 0 auto; display: flex; align-items: center; gap: 2px; margin-right: 2px; }
+    .ql-zoom[hidden] { display: none; }
+    .ql-zoom-pct { min-width: 38px; height: 30px; padding: 0 2px; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; color: rgba(255,255,255,.75); font-size: 11px; text-align: center; cursor: pointer; }
+
+    /* ---- PDF page strip: Google's own preview pairs the page with a thumbnail rail + count; without a
+       PDF renderer on hand (pdf-lib only reads structure, it doesn't rasterize) this is a rail of
+       page-shaped cards instead of real bitmap thumbnails, but it gives the same left-side "which page,
+       how many, jump to one" layout, over the real page count (read with pdf-lib). ---- */
+    .ql-pages { flex: 0 0 72px; width: 72px; display: flex; flex-direction: column; align-items: center; gap: 8px; margin: 0; padding: 14px 10px; overflow-y: auto; overflow-x: hidden; border-right: 1px solid rgba(255,255,255,.1); }
+    .ql-pages[hidden] { display: none; }
+    .ql-pages::-webkit-scrollbar { width: 6px; }
+    .ql-pages::-webkit-scrollbar-thumb { background: rgba(255,255,255,.22); border-radius: 3px; }
+    .ql-page-chip {
+      position: relative; flex: 0 0 auto; width: 44px; height: 58px; overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+      border: 1px solid rgba(255,255,255,.18); border-radius: 5px;
+      color: rgba(255,255,255,.65); background: rgba(255,255,255,.07);
+      font: inherit; font-size: 10.5px; cursor: pointer; padding: 0;
+      transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease, box-shadow 120ms ease;
+    }
+    .ql-page-chip:hover { background: rgba(255,255,255,.16); color: #fff; }
+    .ql-page-chip.is-current { color: #101012; background: #fff; border-color: #fff; font-weight: 600; box-shadow: 0 2px 10px rgba(0,0,0,.35); }
+    /* The real page thumbnail (pdf.js), rendered lazily once its chip scrolls into view; a small page
+       number stays overlaid at the bottom so you can still tell pages apart before/while it loads. */
+    .ql-page-thumb { display: block; background: #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.08); }
+    .ql-page-num { position: absolute; left: 0; right: 0; bottom: 0; padding: 2px 0; background: linear-gradient(to top, rgba(0,0,0,.6), rgba(0,0,0,0)); color: #fff; font-size: 9.5px; text-align: center; }
+    .ql-page-chip.is-current .ql-page-num { color: #fff; }
+    .modal-input { display: block; width: 100%; margin: 0 0 14px; height: 38px; font-size: 13px; }
+    .modal-input[hidden] { display: none; }
+    @keyframes arrowLift { 0% { transform: translateY(0); opacity: 1; } 42% { transform: translateY(-150px); opacity: 0; } 50% { transform: translateY(130px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
+    @keyframes statusPulse { 0%, 100% { opacity: .3; transform: scale(.85); } 50% { opacity: 1; transform: scale(1); } }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes buttonSweep { to { transform: translateX(130%); } }
+    @keyframes arrowHover { 0%, 100% { transform: translateY(-1px); } 48% { transform: translateY(2.8px); } 68% { transform: translateY(1.6px); } }
+    @keyframes arrowDrop { 0% { opacity: 0; transform: translateY(-5px); } 28% { opacity: 1; } 66% { opacity: 1; transform: translateY(3px); } 100% { opacity: 0; transform: translateY(4.5px); } }
+    @keyframes trayPulse { 0%, 100% { opacity: .62; transform: scaleX(.94); } 58% { opacity: 1; transform: scaleX(1.06); } }
+    @keyframes checkIn { from { opacity: 0; transform: translateY(-1px) rotate(-45deg) scale(.3); } to { opacity: 1; transform: translateY(-1px) rotate(-45deg) scale(1); } }
+    @keyframes buttonShake { 25% { transform: translateX(-4px); } 50% { transform: translateX(4px); } 75% { transform: translateX(-2px); } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; } }
+  

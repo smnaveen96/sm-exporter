@@ -13,6 +13,13 @@ type ExportOptions = {
   order?: string[] // frame node ids in the order chosen in the UI (drag-reordered thumbnails)
 }
 
+// One image, as the UI hands it back for canvas placement: either raster bytes (any format Figma's
+// own createImage() can decode) or SVG markup text (SVGs need figma.createNodeFromSvg() instead —
+// createImage() only ever accepts raster bytes).
+type PlaceableImage =
+  | { name: string; bytes: Uint8Array; svg?: undefined }
+  | { name: string; svg: string; bytes?: undefined }
+
 type UiMessage =
   | { type: 'export'; options: ExportOptions }
   | { type: 'resize'; height: number }
@@ -20,6 +27,7 @@ type UiMessage =
   | { type: 'storage-set'; values: { [key: string]: unknown } }
   | { type: 'open-url'; url: string }
   | { type: 'notify'; message: string; error?: boolean }
+  | { type: 'place-images'; images: PlaceableImage[]; x: number | null; y: number | null }
 
 type RasterSource = {
   baseName: string
@@ -96,18 +104,35 @@ function numberedName(index: number, total: number): string {
 async function sendSelection(): Promise<void> {
   const version = ++selectionVersion
   const frames = selectedFrames()
-  try {
-    const thumbnails = await Promise.all(
-      frames.map((frame) => frame.exportAsync({
+  const ids = frames.map((frame) => frame.id)
+  const names = frames.map((frame) => frame.name)
+  if (frames.length === 0) {
+    figma.ui.postMessage({ type: 'selection', count: 0, thumbnails: [], ids, names, version })
+    return
+  }
+  // Tell the UI which frames are selected right away (count, names, Export button), then send
+  // each thumbnail the moment it is ready instead of waiting for the slowest frame. The
+  // thumbnails themselves are rendered exactly as before: same size, all started at once.
+  figma.ui.postMessage({ type: 'selection', count: frames.length, thumbnails: [], ids, names, pending: true, version })
+  let failed = 0
+  await Promise.all(frames.map(async (frame) => {
+    try {
+      const bytes = await frame.exportAsync({
         format: 'PNG',
-        constraint: { type: 'WIDTH', value: 224 }, // crisp on Retina at the 112px thumbnail size
-      })),
-    )
-    if (version !== selectionVersion) return
-    figma.ui.postMessage({ type: 'selection', count: frames.length, thumbnails, ids: frames.map((frame) => frame.id), names: frames.map((frame) => frame.name) })
-  } catch {
-    if (version !== selectionVersion) return
-    figma.ui.postMessage({ type: 'selection', count: frames.length, thumbnails: [], ids: frames.map((frame) => frame.id), names: frames.map((frame) => frame.name) })
+        constraint: { type: 'WIDTH', value: 224 }, // crisp on Retina at the thumbnail size
+      })
+      if (version !== selectionVersion) return
+      figma.ui.postMessage({ type: 'thumbnail', version, id: frame.id, bytes })
+    } catch {
+      failed += 1
+      if (version !== selectionVersion) return
+      figma.ui.postMessage({ type: 'thumbnail', version, id: frame.id, bytes: null })
+    }
+  }))
+  if (version !== selectionVersion) return
+  // Nothing could be rendered at all: behave as before ("Preview unavailable").
+  if (failed === frames.length) {
+    figma.ui.postMessage({ type: 'selection', count: frames.length, thumbnails: [], ids, names, version })
   }
 }
 
@@ -180,6 +205,60 @@ async function writeStorage(values: { [key: string]: unknown }): Promise<void> {
   figma.ui.postMessage({ type: 'storage-saved', keys: Object.keys(values) })
 }
 
+// ---- Drive -> canvas: dragging a file onto the canvas, or "Place on canvas" in the ⋮ menu ---------------
+// The UI starts a drag (or sends place-images directly) carrying the file's bytes; both paths end up here.
+// figma.on('drop') fires for an in-canvas drag; the UI's own drag payload is tagged "smDriveImages" so a
+// drop of something else (a layer, a normal image) is left for Figma to handle as usual.
+figma.on('drop', (event: DropEvent) => {
+  // Matching on the marker string alone (not a strict type === 'text/plain') in case the host ever
+  // reports the dataTransfer item's type with different casing or an added charset suffix — the goal
+  // here is just "is this one of ours", not an exact MIME match.
+  const item = (event.items || []).find((i) => typeof i.data === 'string' && i.data.indexOf('"smDriveImages"') !== -1)
+  console.log('[SM exporter] canvas drop', { itemTypes: (event.items || []).map((i) => i.type), matched: Boolean(item) })
+  if (!item) return true // not ours: let Figma handle it
+  figma.ui.postMessage({ type: 'drive-drop', data: item.data, x: event.absoluteX, y: event.absoluteY })
+  return false
+})
+
+async function placeImages(msg: { images: PlaceableImage[]; x: number | null; y: number | null }): Promise<void> {
+  let x = msg.x == null ? figma.viewport.center.x : msg.x
+  const y = msg.y == null ? figma.viewport.center.y : msg.y
+  const nodes: SceneNode[] = []
+  for (const img of msg.images) {
+    try {
+      let node: SceneNode
+      if (img.svg) {
+        // createImage() only accepts raster bytes (PNG/JPEG/GIF) — an SVG has to come in as markup
+        // text through createNodeFromSvg() instead, which builds real vector layers from it.
+        const svgNode = figma.createNodeFromSvg(img.svg)
+        svgNode.name = img.name
+        svgNode.x = x
+        svgNode.y = y
+        node = svgNode
+      } else {
+        const image = figma.createImage(img.bytes as Uint8Array)
+        const size = await image.getSizeAsync()
+        const rect = figma.createRectangle()
+        rect.name = img.name
+        rect.resize(size.width, size.height)
+        rect.x = x
+        rect.y = y
+        rect.fills = [{ type: 'IMAGE', scaleMode: 'FILL', imageHash: image.hash }]
+        node = rect
+      }
+      figma.currentPage.appendChild(node)
+      nodes.push(node)
+      x += node.width + 40
+    } catch (e) {
+      figma.notify(`Couldn’t place ${img.name}: Figma can’t read that image type.`)
+    }
+  }
+  if (nodes.length) {
+    figma.currentPage.selection = nodes
+    figma.viewport.scrollAndZoomIntoView(nodes)
+  }
+}
+
 figma.showUI(__html__, { width: PANEL_WIDTH, height: PANEL_HEIGHT })
 void sendSelection()
 figma.on('selectionchange', () => { void sendSelection() })
@@ -211,5 +290,9 @@ figma.ui.onmessage = (message: UiMessage) => {
   }
   if (message.type === 'notify') {
     figma.notify(message.message, { error: message.error === true, timeout: 4000 })
+    return
+  }
+  if (message.type === 'place-images') {
+    void placeImages(message).catch((error: unknown) => console.error('[SM exporter] place-images failed', error))
   }
 }

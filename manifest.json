@@ -17,8 +17,9 @@
   "networkAccess": {
     "allowedDomains": [
       "https://oauth2.googleapis.com",
-      "https://www.googleapis.com"
+      "https://www.googleapis.com",
+      "https://*.googleusercontent.com"
     ],
-    "reasoning": "Signs in with Google (OAuth token exchange) and uploads the exported files to the user's Google Drive folder."
+    "reasoning": "Signs in with Google (OAuth token exchange), uploads the exported files to the user's Google Drive folder, and shows the connected account's Google profile photo."
   }
 }

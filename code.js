@@ -168,6 +168,61 @@ async function writeStorage(values) {
     }
     figma.ui.postMessage({ type: 'storage-saved', keys: Object.keys(values) });
 }
+// ---- Drive -> canvas: dragging a file onto the canvas, or "Place on canvas" in the ⋮ menu ---------------
+// The UI starts a drag (or sends place-images directly) carrying the file's bytes; both paths end up here.
+// figma.on('drop') fires for an in-canvas drag; the UI's own drag payload is tagged "smDriveImages" so a
+// drop of something else (a layer, a normal image) is left for Figma to handle as usual.
+figma.on('drop', (event) => {
+    // Matching on the marker string alone (not a strict type === 'text/plain') in case the host ever
+    // reports the dataTransfer item's type with different casing or an added charset suffix — the goal
+    // here is just "is this one of ours", not an exact MIME match.
+    const item = (event.items || []).find((i) => typeof i.data === 'string' && i.data.indexOf('"smDriveImages"') !== -1);
+    console.log('[SM exporter] canvas drop', { itemTypes: (event.items || []).map((i) => i.type), matched: Boolean(item) });
+    if (!item)
+        return true; // not ours: let Figma handle it
+    figma.ui.postMessage({ type: 'drive-drop', data: item.data, x: event.absoluteX, y: event.absoluteY });
+    return false;
+});
+async function placeImages(msg) {
+    let x = msg.x == null ? figma.viewport.center.x : msg.x;
+    const y = msg.y == null ? figma.viewport.center.y : msg.y;
+    const nodes = [];
+    for (const img of msg.images) {
+        try {
+            let node;
+            if (img.svg) {
+                // createImage() only accepts raster bytes (PNG/JPEG/GIF) — an SVG has to come in as markup
+                // text through createNodeFromSvg() instead, which builds real vector layers from it.
+                const svgNode = figma.createNodeFromSvg(img.svg);
+                svgNode.name = img.name;
+                svgNode.x = x;
+                svgNode.y = y;
+                node = svgNode;
+            }
+            else {
+                const image = figma.createImage(img.bytes);
+                const size = await image.getSizeAsync();
+                const rect = figma.createRectangle();
+                rect.name = img.name;
+                rect.resize(size.width, size.height);
+                rect.x = x;
+                rect.y = y;
+                rect.fills = [{ type: 'IMAGE', scaleMode: 'FILL', imageHash: image.hash }];
+                node = rect;
+            }
+            figma.currentPage.appendChild(node);
+            nodes.push(node);
+            x += node.width + 40;
+        }
+        catch (e) {
+            figma.notify(`Couldn’t place ${img.name}: Figma can’t read that image type.`);
+        }
+    }
+    if (nodes.length) {
+        figma.currentPage.selection = nodes;
+        figma.viewport.scrollAndZoomIntoView(nodes);
+    }
+}
 figma.showUI(__html__, { width: PANEL_WIDTH, height: PANEL_HEIGHT });
 void sendSelection();
 figma.on('selectionchange', () => { void sendSelection(); });
@@ -199,5 +254,9 @@ figma.ui.onmessage = (message) => {
     }
     if (message.type === 'notify') {
         figma.notify(message.message, { error: message.error === true, timeout: 4000 });
+        return;
+    }
+    if (message.type === 'place-images') {
+        void placeImages(message).catch((error) => console.error('[SM exporter] place-images failed', error));
     }
 };
