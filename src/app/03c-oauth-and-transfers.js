@@ -463,8 +463,7 @@
       if (uploadRun && uploadRun.cancelled) throw uploadCancelledError()
     }
 
-    // Shared by uploads and downloads — they never run at the same time, and both just need the one
-    // "Cancel" control next to the status line.
+    // Shared by uploads, downloads and canvas placement — they use the one "Cancel" control next to the status line.
     function showUploadCancel(visible) {
       driveCancel.hidden = !visible
       syncHeight()
@@ -501,6 +500,11 @@
         showUploadCancel(false)
         setDriveStatus('busy', 'Cancelling...')
         downloadRun.controller.abort()
+      } else if (canvasPlaceRun && !canvasPlaceRun.cancelled) {
+        canvasPlaceRun.cancelled = true
+        showUploadCancel(false)
+        setDriveStatus('busy', 'Cancelling...')
+        canvasPlaceRun.controller.abort()
       }
     })
 
@@ -612,4 +616,3 @@
         if (el) el.classList.add('is-flash')
       }
     }
-

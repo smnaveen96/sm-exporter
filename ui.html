@@ -468,7 +468,7 @@
     .status-cancel { flex: 0 0 auto; padding: 0; border: 0; background: none; font: inherit; font-size: 11px; color: var(--muted); text-decoration: underline; text-underline-offset: 2px; text-decoration-thickness: 1px; cursor: pointer; }
     .status-cancel[hidden] { display: none; }
     .status-cancel:hover { color: var(--black); }
-    /* Was the same soft gray as any other secondary label, so "Downloading…"/"Getting image 2 of 5…" sat
+    /* Was the same soft gray as any other secondary label, so "Downloading…"/"Getting file 2 of 5…" sat
        there quietly next to the pulsing dot instead of reading as an active, ongoing thing. Darkened to
        full black and given a bit more weight — not a color change, just more contrast, so it actually
        draws the eye the way the dot already does. */
@@ -3604,6 +3604,7 @@ class SwipeAxis {
     let selectedIds = []             // ids of the selected frames, as last reported by the plugin
     let uploadRun = null             // { cancelled, controller, uploaded, total } while an upload to Drive runs
     let downloadRun = null           // { cancelled, controller } while a download (or multi-download zip) is in flight
+    let canvasPlaceRun = null        // { cancelled, controller } while files are fetched for canvas placement
     let statusFadeTimer = 0          // fades quiet status messages away
     let resizeFrame = 0
 
@@ -4537,8 +4538,7 @@ class SwipeAxis {
       if (uploadRun && uploadRun.cancelled) throw uploadCancelledError()
     }
 
-    // Shared by uploads and downloads — they never run at the same time, and both just need the one
-    // "Cancel" control next to the status line.
+    // Shared by uploads, downloads and canvas placement — they use the one "Cancel" control next to the status line.
     function showUploadCancel(visible) {
       driveCancel.hidden = !visible
       syncHeight()
@@ -4575,6 +4575,11 @@ class SwipeAxis {
         showUploadCancel(false)
         setDriveStatus('busy', 'Cancelling...')
         downloadRun.controller.abort()
+      } else if (canvasPlaceRun && !canvasPlaceRun.cancelled) {
+        canvasPlaceRun.cancelled = true
+        showUploadCancel(false)
+        setDriveStatus('busy', 'Cancelling...')
+        canvasPlaceRun.controller.abort()
       }
     })
 
@@ -4686,7 +4691,6 @@ class SwipeAxis {
         if (el) el.classList.add('is-flash')
       }
     }
-
     // ---- Google profile photos ---------------------------------------------------------------------
     // Shows the account's Google photo; the first letter stays if there is none or it can't be loaded
     // (the photo host must be allowed in manifest.json → networkAccess).
@@ -5899,12 +5903,21 @@ class SwipeAxis {
 
     // Place images on the Figma canvas. The plugin's code side creates the layers (see code-additions.js).
     async function placeOnCanvas(images, at) {
+      if (canvasPlaceRun) {
+        failDrive('A canvas placement is already in progress.')
+        return
+      }
+      const run = { cancelled: false, controller: new AbortController() }
+      canvasPlaceRun = run
+      showUploadCancel(true)
       try {
         const out = []
         let n = 0
         for (const entry of images) {
-          setDriveStatus('busy', images.length > 1 ? `Getting image ${++n} of ${images.length}…` : 'Getting image…')
-          const blob = await fetchMedia(entry)
+          if (run.cancelled) throw new Error('Canvas placement cancelled')
+          setDriveStatus('busy', images.length > 1 ? `Getting file ${++n} of ${images.length}…` : 'Getting file…')
+          const blob = await fetchMedia(entry, { signal: run.controller.signal })
+          if (run.cancelled) throw new Error('Canvas placement cancelled')
           const name = entry.name.replace(/\.[^.]+$/, '')
           // Figma's createImage() only takes raster bytes (PNG/JPEG/GIF) — handing it an SVG's bytes is
           // exactly what was throwing "Figma can't read that image type." An SVG has to go through
@@ -5914,13 +5927,23 @@ class SwipeAxis {
           if (isSvg) { out.push({ name, svg: await blob.text() }); continue }
           const mimeType = blob.type || entry.mimeType || ''
           const resized = await downscaleForCanvas(blob, mimeType)
+          if (run.cancelled) throw new Error('Canvas placement cancelled')
           out.push({ name, bytes: resized || new Uint8Array(await blob.arrayBuffer()) })
         }
+        if (run.cancelled) throw new Error('Canvas placement cancelled')
         post({ type: 'place-images', images: out, x: at ? at.x : null, y: at ? at.y : null })
         setDriveStatus('', '')
         flashDriveStatus(out.length > 1 ? `Placed ${out.length} images` : 'Placed on the canvas', 2200)
       } catch (error) {
-        failDrive(actionFailMessage(error, 'place'))
+        if (run.cancelled) {
+          console.log(LOG, 'Canvas placement cancelled')
+          setDriveStatus('', 'Cancelled.')
+        } else {
+          failDrive(actionFailMessage(error, 'place'))
+        }
+      } finally {
+        showUploadCancel(false)
+        canvasPlaceRun = null
       }
     }
 
@@ -5979,7 +6002,6 @@ class SwipeAxis {
         updatePickerSelect()
       }
     }
-
     // ---- Items -------------------------------------------------------------------------------------
     function moreButton(entry) {
       const button = document.createElement('button')

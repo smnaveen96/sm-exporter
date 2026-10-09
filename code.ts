@@ -241,6 +241,7 @@ async function placeImages(msg: { images: PlaceableImage[]; x: number | null; y:
         const rect = figma.createRectangle()
         rect.name = img.name
         rect.resize(size.width, size.height)
+        rect.constrainProportions = true
         rect.x = x
         rect.y = y
         rect.fills = [{ type: 'IMAGE', scaleMode: 'FILL', imageHash: image.hash }]

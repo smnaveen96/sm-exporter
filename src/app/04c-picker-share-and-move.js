@@ -443,12 +443,21 @@
 
     // Place images on the Figma canvas. The plugin's code side creates the layers (see code-additions.js).
     async function placeOnCanvas(images, at) {
+      if (canvasPlaceRun) {
+        failDrive('A canvas placement is already in progress.')
+        return
+      }
+      const run = { cancelled: false, controller: new AbortController() }
+      canvasPlaceRun = run
+      showUploadCancel(true)
       try {
         const out = []
         let n = 0
         for (const entry of images) {
-          setDriveStatus('busy', images.length > 1 ? `Getting image ${++n} of ${images.length}…` : 'Getting image…')
-          const blob = await fetchMedia(entry)
+          if (run.cancelled) throw new Error('Canvas placement cancelled')
+          setDriveStatus('busy', images.length > 1 ? `Getting file ${++n} of ${images.length}…` : 'Getting file…')
+          const blob = await fetchMedia(entry, { signal: run.controller.signal })
+          if (run.cancelled) throw new Error('Canvas placement cancelled')
           const name = entry.name.replace(/\.[^.]+$/, '')
           // Figma's createImage() only takes raster bytes (PNG/JPEG/GIF) — handing it an SVG's bytes is
           // exactly what was throwing "Figma can't read that image type." An SVG has to go through
@@ -458,13 +467,23 @@
           if (isSvg) { out.push({ name, svg: await blob.text() }); continue }
           const mimeType = blob.type || entry.mimeType || ''
           const resized = await downscaleForCanvas(blob, mimeType)
+          if (run.cancelled) throw new Error('Canvas placement cancelled')
           out.push({ name, bytes: resized || new Uint8Array(await blob.arrayBuffer()) })
         }
+        if (run.cancelled) throw new Error('Canvas placement cancelled')
         post({ type: 'place-images', images: out, x: at ? at.x : null, y: at ? at.y : null })
         setDriveStatus('', '')
         flashDriveStatus(out.length > 1 ? `Placed ${out.length} images` : 'Placed on the canvas', 2200)
       } catch (error) {
-        failDrive(actionFailMessage(error, 'place'))
+        if (run.cancelled) {
+          console.log(LOG, 'Canvas placement cancelled')
+          setDriveStatus('', 'Cancelled.')
+        } else {
+          failDrive(actionFailMessage(error, 'place'))
+        }
+      } finally {
+        showUploadCancel(false)
+        canvasPlaceRun = null
       }
     }
 
@@ -523,4 +542,3 @@
         updatePickerSelect()
       }
     }
-

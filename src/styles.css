@@ -458,7 +458,7 @@
     .status-cancel { flex: 0 0 auto; padding: 0; border: 0; background: none; font: inherit; font-size: 11px; color: var(--muted); text-decoration: underline; text-underline-offset: 2px; text-decoration-thickness: 1px; cursor: pointer; }
     .status-cancel[hidden] { display: none; }
     .status-cancel:hover { color: var(--black); }
-    /* Was the same soft gray as any other secondary label, so "Downloading…"/"Getting image 2 of 5…" sat
+    /* Was the same soft gray as any other secondary label, so "Downloading…"/"Getting file 2 of 5…" sat
        there quietly next to the pulsing dot instead of reading as an active, ongoing thing. Darkened to
        full black and given a bit more weight — not a color change, just more contrast, so it actually
        draws the eye the way the dot already does. */

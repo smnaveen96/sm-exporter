@@ -176,6 +176,7 @@
     let selectedIds = []             // ids of the selected frames, as last reported by the plugin
     let uploadRun = null             // { cancelled, controller, uploaded, total } while an upload to Drive runs
     let downloadRun = null           // { cancelled, controller } while a download (or multi-download zip) is in flight
+    let canvasPlaceRun = null        // { cancelled, controller } while files are fetched for canvas placement
     let statusFadeTimer = 0          // fades quiet status messages away
     let resizeFrame = 0
 
