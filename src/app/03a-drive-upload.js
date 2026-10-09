@@ -76,22 +76,20 @@
       if (target) showTooltip(target)
     }
 
-    // The pointer is matched against the element actually under it (not just a button's box), because
-    // a disabled button has pointer-events:none (so the hit lands on its parent pill — still a match),
-    // while the export/upload row itself can be geometrically "behind" an open Drive drawer or the Quick
-    // Look preview even though its box technically overlaps that area (it's collapsed to 0 height, or
-    // covered by a fixed-position overlay). Going by paint order rather than raw box math keeps the
-    // tooltip from firing over content that only happens to share the same coordinates.
+    // Match the element actually under the pointer so covered controls don't trigger tooltips. Disabled
+    // buttons have pointer-events:none, so allow their direct parent as the hit only within the button's
+    // own bounds.
     function targetAt(event) {
-      // The "contains" check below is DOM structure, not paint order — when the Drive drawer is open it
-      // visually covers the Export/upload row underneath, but since that row still lives inside the same
-      // wrapper the drawer sits in, the hit element can structurally "contain" driveSubmit/exportButton
-      // even while they're hidden behind the drawer, firing their tooltip ("Select frames first") right
-      // on top of the drawer's own controls. Nothing in the drawer should trigger those tooltips at all.
       if (driveDrawer.classList.contains('is-open')) return null
       const hit = document.elementFromPoint(event.clientX, event.clientY)
       if (!hit) return null
-      return tipTargets.find((target) => target === hit || target.contains(hit) || hit.contains(target)) || null
+      return tipTargets.find((target) => {
+        if (target === hit || target.contains(hit)) return true
+        if (!target.disabled || target.parentElement !== hit) return false
+        const box = target.getBoundingClientRect()
+        return event.clientX >= box.left && event.clientX <= box.right &&
+          event.clientY >= box.top && event.clientY <= box.bottom
+      }) || null
     }
 
     document.addEventListener('pointermove', (event) => {
@@ -480,4 +478,3 @@
         return { status: 'offline' }
       }
     }
-
