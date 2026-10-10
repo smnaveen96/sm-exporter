@@ -5075,6 +5075,21 @@ class SwipeAxis {
       if (container.id === DRIVES_ID) return 'https://drive.google.com/drive/shared-drives'
       return `https://drive.google.com/drive/folders/${container.id}`
     }
+    function parseDriveItemLink(value) {
+      const input = String(value || '').trim()
+      if (!input) return null
+      let url
+      try {
+        url = new URL(/^(?:drive|docs)\.google\.com\//i.test(input) ? `https://${input}` : input)
+      } catch { return null }
+      if (url.protocol !== 'https:' || url.port || !['drive.google.com', 'docs.google.com'].includes(url.hostname)) return null
+      const pathMatch = url.pathname.match(/^\/drive\/(?:u\/\d+\/)?folders\/([A-Za-z0-9_-]{10,})(?:\/|$)/)
+        || url.pathname.match(/^\/(?:file|document|spreadsheets|presentation|drawings|forms)\/d\/([A-Za-z0-9_-]{10,})(?:\/|$)/)
+      const queryId = ['/open', '/uc'].includes(url.pathname) ? url.searchParams.get('id') : ''
+      const id = pathMatch ? pathMatch[1] : queryId
+      if (!id || !/^[A-Za-z0-9_-]{10,}$/.test(id)) return null
+      return { id, url: url.href }
+    }
     function copyText(text) {
       const done = () => flashDriveStatus('Link copied', 2200)
       if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(text).then(done, () => legacyCopy(text, done)); return }
@@ -5177,6 +5192,30 @@ class SwipeAxis {
       return (await response.json()).id
     }
 
+    async function openDriveItemLink(link) {
+      setDriveStatus('busy', 'Opening Drive link…')
+      try {
+        const response = await driveFetch(`${DRIVE_API}/files/${encodeURIComponent(link.id)}?fields=id,name,mimeType&supportsAllDrives=true`)
+        if (!response.ok) throw await driveError(response, 'link lookup')
+        const item = await response.json()
+        setDriveStatus('', '')
+        if (item.mimeType === FOLDER_MIME) {
+          clearTimeout(pickerSearchTimer)
+          pickerTab = 'mine'
+          pickerStack = [{ id: item.id, name: item.name, kind: 'folder' }]
+          pickerRedoStack = []
+          pickerSearch.value = ''
+          picked.clear()
+          void renderPicker()
+        } else {
+          post({ type: 'open-url', url: link.url })
+        }
+      } catch (error) {
+        console.warn(LOG, 'Could not open the Drive link', error)
+        failDrive(actionFailMessage(error, 'open'))
+      }
+    }
+
     function pickerNote(text, loading) {
       const note = document.createElement('div')
       note.className = `picker-note${loading ? ' is-loading' : ''}`
@@ -5197,7 +5236,6 @@ class SwipeAxis {
       if (!pickerList.querySelector('.picker-item, .picker-file, .picker-note')) pickerNote(emptyText(pickerContainer(), pickerSearch.value.trim()))
       syncHeight()
     }
-
     // ---- Breadcrumbs: My Drive › Print Files › Thank you Card ▾ -------------------------------------
     function renderCrumbs() {
       const query = pickerSearch.value.trim()
@@ -6221,12 +6259,21 @@ class SwipeAxis {
       let folders
       let files = []
       try {
-        const [found, inside] = await Promise.all([
-          listFolders(container, query),
-          container.id === DRIVES_ID && !query ? [] : listFiles(container, query).catch(() => []),
-        ])
-        folders = sortEntries(found)
-        files = sortEntries(inside)
+        const link = parseDriveItemLink(query)
+        if (link) {
+          const response = await driveFetch(`${DRIVE_API}/files/${encodeURIComponent(link.id)}?fields=id,name,mimeType,thumbnailLink,webViewLink,starred,size,modifiedTime,parents,shared&supportsAllDrives=true`)
+          if (!response.ok) throw await driveError(response, 'link lookup')
+          const item = await response.json()
+          if (item.mimeType === FOLDER_MIME) { folders = [item]; files = [] }
+          else { folders = []; files = [item] }
+        } else {
+          const [found, inside] = await Promise.all([
+            listFolders(container, query),
+            container.id === DRIVES_ID && !query ? [] : listFiles(container, query).catch(() => []),
+          ])
+          folders = sortEntries(found)
+          files = sortEntries(inside)
+        }
         // Remembering "the last place I visited" means on every successful navigation into a real folder,
         // not only when a folder gets used as an upload destination — browsing around without uploading
         // anything used to leave nothing saved at all, so the plugin always reopened at My Drive.
@@ -6449,6 +6496,20 @@ class SwipeAxis {
     pickerSearch.addEventListener('input', () => {
       clearTimeout(pickerSearchTimer)
       pickerSearchTimer = setTimeout(() => { void renderPicker() }, 300)
+    })
+    pickerSearch.addEventListener('paste', () => {
+      setTimeout(() => {
+        clearTimeout(pickerSearchTimer)
+        void renderPicker()
+      }, 0)
+    })
+    pickerSearch.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter') return
+      event.preventDefault()
+      clearTimeout(pickerSearchTimer)
+      const link = parseDriveItemLink(pickerSearch.value)
+      if (link) void openDriveItemLink(link)
+      else void renderPicker()
     })
     pickerBack.addEventListener('click', () => {
       if (pickerSearch.value) pickerSearch.value = ''

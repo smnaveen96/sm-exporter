@@ -19,12 +19,21 @@
       let folders
       let files = []
       try {
-        const [found, inside] = await Promise.all([
-          listFolders(container, query),
-          container.id === DRIVES_ID && !query ? [] : listFiles(container, query).catch(() => []),
-        ])
-        folders = sortEntries(found)
-        files = sortEntries(inside)
+        const link = parseDriveItemLink(query)
+        if (link) {
+          const response = await driveFetch(`${DRIVE_API}/files/${encodeURIComponent(link.id)}?fields=id,name,mimeType,thumbnailLink,webViewLink,starred,size,modifiedTime,parents,shared&supportsAllDrives=true`)
+          if (!response.ok) throw await driveError(response, 'link lookup')
+          const item = await response.json()
+          if (item.mimeType === FOLDER_MIME) { folders = [item]; files = [] }
+          else { folders = []; files = [item] }
+        } else {
+          const [found, inside] = await Promise.all([
+            listFolders(container, query),
+            container.id === DRIVES_ID && !query ? [] : listFiles(container, query).catch(() => []),
+          ])
+          folders = sortEntries(found)
+          files = sortEntries(inside)
+        }
         // Remembering "the last place I visited" means on every successful navigation into a real folder,
         // not only when a folder gets used as an upload destination — browsing around without uploading
         // anything used to leave nothing saved at all, so the plugin always reopened at My Drive.
@@ -247,6 +256,20 @@
     pickerSearch.addEventListener('input', () => {
       clearTimeout(pickerSearchTimer)
       pickerSearchTimer = setTimeout(() => { void renderPicker() }, 300)
+    })
+    pickerSearch.addEventListener('paste', () => {
+      setTimeout(() => {
+        clearTimeout(pickerSearchTimer)
+        void renderPicker()
+      }, 0)
+    })
+    pickerSearch.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter') return
+      event.preventDefault()
+      clearTimeout(pickerSearchTimer)
+      const link = parseDriveItemLink(pickerSearch.value)
+      if (link) void openDriveItemLink(link)
+      else void renderPicker()
     })
     pickerBack.addEventListener('click', () => {
       if (pickerSearch.value) pickerSearch.value = ''

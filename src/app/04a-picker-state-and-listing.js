@@ -161,6 +161,21 @@
       if (container.id === DRIVES_ID) return 'https://drive.google.com/drive/shared-drives'
       return `https://drive.google.com/drive/folders/${container.id}`
     }
+    function parseDriveItemLink(value) {
+      const input = String(value || '').trim()
+      if (!input) return null
+      let url
+      try {
+        url = new URL(/^(?:drive|docs)\.google\.com\//i.test(input) ? `https://${input}` : input)
+      } catch { return null }
+      if (url.protocol !== 'https:' || url.port || !['drive.google.com', 'docs.google.com'].includes(url.hostname)) return null
+      const pathMatch = url.pathname.match(/^\/drive\/(?:u\/\d+\/)?folders\/([A-Za-z0-9_-]{10,})(?:\/|$)/)
+        || url.pathname.match(/^\/(?:file|document|spreadsheets|presentation|drawings|forms)\/d\/([A-Za-z0-9_-]{10,})(?:\/|$)/)
+      const queryId = ['/open', '/uc'].includes(url.pathname) ? url.searchParams.get('id') : ''
+      const id = pathMatch ? pathMatch[1] : queryId
+      if (!id || !/^[A-Za-z0-9_-]{10,}$/.test(id)) return null
+      return { id, url: url.href }
+    }
     function copyText(text) {
       const done = () => flashDriveStatus('Link copied', 2200)
       if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(text).then(done, () => legacyCopy(text, done)); return }
@@ -263,6 +278,30 @@
       return (await response.json()).id
     }
 
+    async function openDriveItemLink(link) {
+      setDriveStatus('busy', 'Opening Drive link…')
+      try {
+        const response = await driveFetch(`${DRIVE_API}/files/${encodeURIComponent(link.id)}?fields=id,name,mimeType&supportsAllDrives=true`)
+        if (!response.ok) throw await driveError(response, 'link lookup')
+        const item = await response.json()
+        setDriveStatus('', '')
+        if (item.mimeType === FOLDER_MIME) {
+          clearTimeout(pickerSearchTimer)
+          pickerTab = 'mine'
+          pickerStack = [{ id: item.id, name: item.name, kind: 'folder' }]
+          pickerRedoStack = []
+          pickerSearch.value = ''
+          picked.clear()
+          void renderPicker()
+        } else {
+          post({ type: 'open-url', url: link.url })
+        }
+      } catch (error) {
+        console.warn(LOG, 'Could not open the Drive link', error)
+        failDrive(actionFailMessage(error, 'open'))
+      }
+    }
+
     function pickerNote(text, loading) {
       const note = document.createElement('div')
       note.className = `picker-note${loading ? ' is-loading' : ''}`
@@ -283,4 +322,3 @@
       if (!pickerList.querySelector('.picker-item, .picker-file, .picker-note')) pickerNote(emptyText(pickerContainer(), pickerSearch.value.trim()))
       syncHeight()
     }
-
