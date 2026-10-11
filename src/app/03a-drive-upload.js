@@ -1,14 +1,6 @@
     // ===================== Google Drive upload =====================
-    // OAuth 2.0 authorization-code flow (with PKCE when WebCrypto is available), run
-    // entirely by the plugin. The OAuth client and the tokens are kept in
-    // figma.clientStorage on this machine — nothing is embedded in the source.
-    const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth'
-    const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token'
     const DRIVE_API = 'https://www.googleapis.com/drive/v3'
     const DRIVE_UPLOAD_API = 'https://www.googleapis.com/upload/drive/v3/files'
-    const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive'
-    const DEFAULT_REDIRECT_URI = DEFAULT_GOOGLE_REDIRECT_URI
-    const STORAGE_CLIENT_KEY = 'tier2-google-oauth-client'
     const STORAGE_TOKENS_KEY = 'tier2-google-tokens'   // the active account
     const STORAGE_ACCOUNTS_KEY = 'tier2-google-accounts' // every connected account
     const STORAGE_LAST_FOLDER_KEY = 'tier2-last-drive-folder' // the folder last used, so the plugin reopens there
@@ -122,24 +114,12 @@
     const driveOpenText = document.getElementById('drive-open-text')
     const driveCancel = document.getElementById('drive-cancel')
     const driveDrawer = document.getElementById('drive-drawer')
-    const drawerSettings = document.getElementById('drawer-settings')
     const drawerAuth = document.getElementById('drawer-auth')
-    const clientIdInput = document.getElementById('client-id')
-    const clientSecretInput = document.getElementById('client-secret')
-    const disconnectButton = document.getElementById('disconnect-button')
-    const accountCard = document.getElementById('account-card')
-    const accountKicker = document.getElementById('account-kicker')
-    const accountEmail = document.getElementById('account-email')
     const connectBlock = document.getElementById('connect-block')
     const connectButton = document.getElementById('connect-google')
-    const connectHint = document.getElementById('connect-hint')
     const authLink = document.getElementById('auth-link')
-    const authCodeInput = document.getElementById('auth-code')
-    const authContinue = document.getElementById('auth-continue')
     const authCancel = document.getElementById('auth-cancel')
-    const authEditClient = document.getElementById('auth-edit-client')
     const authError = document.getElementById('auth-error')
-    const settingsMsg = document.getElementById('settings-msg')
     const accountSwitch = document.getElementById('account-switch')
     const accountChip = document.getElementById('account-chip')
     const accountMenu = document.getElementById('account-menu')
@@ -152,8 +132,6 @@
     const pickerSelect = document.getElementById('picker-select')
     const pickerNew = document.getElementById('picker-new')
     const driveFolderButton = document.getElementById('drive-toggle')
-    const clientSaveButton = document.getElementById('client-save')
-    const clientDeleteButton = document.getElementById('client-delete')
     const modalEl = document.getElementById('modal')
     const modalTitle = document.getElementById('modal-title')
     const modalText = document.getElementById('modal-text')
@@ -163,13 +141,9 @@
     const TRASH_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16"/><path d="M9 7V4.5h6V7"/><path d="M6.5 7l.8 12a1.5 1.5 0 0 0 1.5 1.4h6.4a1.5 1.5 0 0 0 1.5-1.4l.8-12"/><path d="M10 11v6M14 11v6"/></svg>'
     const CHECK_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>'
 
-    let drawerMode = null            // null | 'settings' | 'auth'
-    let oauthClient = null           // { clientId, clientSecret, redirectUri }
+    let drawerMode = null            // null | 'auth' | 'picker'
     let tokens = null                // { accessToken, refreshToken, expiresAt, account }
     let accounts = []                // tokens of every connected Google account; `tokens` is the active one
-    let pendingAuth = null           // { state, timer, resolve, reject } while waiting for the pasted code
-    let checkingClient = false       // true while the Client ID / secret is being checked with Google
-    let autosaveTimer = 0, autosaveRun = 0, settingsMsgTimer = 0
     const AUTH_TIMEOUT_MS = 10 * 60 * 1000
     let pendingExport = null         // { resolve, reject } while waiting for the sandbox's export-ready
     let uploadedKey = ''             // fingerprint of what the tick on the cloud button stands for
@@ -297,15 +271,14 @@
       setDriveStatus('error', text)
     }
 
-    // The bottom drawer holds only the folder picker. The client settings and the paste-the-redirect step of
-    // signing in open inside the account panel at the top.
+    // The bottom drawer holds only the folder picker; OAuth status stays in the account menu.
     function setPickingState(on) {
       document.body.classList.toggle('is-picking', on) // folds the export options away while a folder is chosen
       driveDrawer.classList.toggle('is-open', on)
     }
 
     function showDrawer(mode) {
-      const wasInMenu = drawerMode === 'settings' || drawerMode === 'auth'
+      const wasInMenu = drawerMode === 'auth'
       const picking = mode === 'picker'
       const wasPicking = document.body.classList.contains('is-picking')
       drawerMode = mode
@@ -332,16 +305,9 @@
         setPickingState(picking)
         animateResize(from, to)
       }
-      if (mode === 'settings' || mode === 'auth') openAccountMenu(mode)
+      if (mode === 'auth') openAccountMenu(mode)
       else if (wasInMenu) closeAccountMenu()
       syncHeight()
-    }
-
-    // The client baked into this file (see TEAM SETUP at the top), if any.
-    function builtInClient() {
-      const clientId = DEFAULT_GOOGLE_CLIENT_ID.trim()
-      if (!clientId) return null
-      return { clientId, clientSecret: DEFAULT_GOOGLE_CLIENT_SECRET.trim(), redirectUri: DEFAULT_GOOGLE_REDIRECT_URI.trim() || 'http://127.0.0.1:53682/', builtIn: true }
     }
 
     // The status line stays empty until something happens (progress, success or an error).
@@ -365,22 +331,11 @@
     }
     fileNameInput.addEventListener('input', dropStaleTick)
 
-    // The bottom of the settings panel: who is connected, or the way to connect.
+    // Keep the account menu and its connection action in sync with active account state.
     function refreshAccountLabel() {
       renderAccountSwitcher()
-      updateClientButtons()
-      const connected = Boolean(tokens)
-      accountCard.hidden = !connected
-      connectBlock.hidden = connected
-      if (connected) {
-        accountKicker.textContent = tokens.account ? 'Connected as' : 'Connected to'
-        accountEmail.textContent = tokens.account || 'Google Drive'
-      } else {
-        connectButton.disabled = !oauthClient || checkingClient
-        connectHint.textContent = oauthClient
-          ? 'Opens Google in your browser. Allow access, then copy the URL and paste it here.'
-          : 'Add your Client ID and secret above first.'
-      }
+      connectButton.disabled = busy
+      connectButton.querySelector('span').textContent = accounts.length ? 'Add account' : 'Connect Google'
       syncHeight()
     }
 
@@ -390,40 +345,10 @@
       syncHeight()
     }
 
-    function setSettingsMessage(state, text, invalidInputs) {
-      clearTimeout(settingsMsgTimer)
-      settingsMsg.hidden = !text
-      settingsMsg.textContent = text || ''
-      settingsMsg.classList.remove('is-error', 'is-busy', 'is-ok')
-      if (state && text) settingsMsg.classList.add(`is-${state}`)
-      for (const input of [clientIdInput, clientSecretInput]) {
-        const invalid = Boolean(text) && state === 'error' && (invalidInputs || []).includes(input)
-        input.classList.toggle('is-invalid', invalid)
-        if (invalid) input.setAttribute('aria-invalid', 'true'); else input.removeAttribute('aria-invalid')
-      }
-      if (state === 'ok' && text) settingsMsgTimer = setTimeout(() => setSettingsMessage('', ''), Math.max(2400, 1500 + text.length * 45))
-      if (text) revealMessage(settingsMsg); else syncHeight()
-    }
-
     function setAuthError(text) {
       authError.hidden = !text
       authError.textContent = text || ''
-      authCodeInput.classList.toggle('is-invalid', Boolean(text))
-      if (text) authCodeInput.setAttribute('aria-invalid', 'true'); else authCodeInput.removeAttribute('aria-invalid')
       if (text) revealMessage(authError); else syncHeight()
-    }
-
-    function setAuthBusy(isBusy) {
-      authContinue.disabled = isBusy
-      authCancel.disabled = isBusy
-      authContinue.textContent = isBusy ? 'Connecting…' : 'Continue'
-    }
-
-    function fillSettingsFields() {
-      clientIdInput.value = oauthClient ? oauthClient.clientId : ''
-      clientSecretInput.value = oauthClient ? oauthClient.clientSecret : ''
-      setSettingsMessage('', '')
-      refreshAccountLabel()
     }
 
     function saveTokens() {
@@ -438,7 +363,7 @@
     driveUrlInput.addEventListener('focus', () => uploadPill.classList.add('is-focused'))
     driveUrlInput.addEventListener('blur', () => uploadPill.classList.remove('is-focused'))
     driveUrlInput.addEventListener('input', () => {
-      if (busy || !oauthClient) return
+      if (busy) return
       if (driveStatus.classList.contains('is-error') || driveStatus.classList.contains('is-success') || !driveOpenFolder.hidden) setDriveStatus('', idleStatusText())
     })
     driveForm.addEventListener('submit', (event) => {
@@ -453,29 +378,4 @@
       driveFolderButton.classList.add('is-nudge')
       flashDriveStatus('Paste a folder link, or open Drive folders', 2800)
       setTimeout(() => driveFolderButton.classList.remove('is-nudge'), 700)
-    }
-
-    const CLIENT_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]*\.apps\.googleusercontent\.com$/i
-    const stripQuotes = (value) => String(value || '').trim().replace(/^[\s"'`“”‘’]+|[\s"'`“”‘’]+$/g, '')
-
-    // Asks Google whether this Client ID + secret pair exists. A made-up code is sent on purpose:
-    // a wrong ID or secret comes back as invalid_client, a right pair as invalid_grant (bad code).
-    async function verifyOAuthClient(clientId, clientSecret, redirectUri) {
-      try {
-        const response = await fetch(GOOGLE_TOKEN_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: new URLSearchParams({ code: 'verify', client_id: clientId, client_secret: clientSecret, redirect_uri: redirectUri, grant_type: 'authorization_code' }).toString(),
-        })
-        const data = await response.json().catch(() => ({}))
-        if (data.error === 'invalid_client') {
-          const description = String(data.error_description || '').toLowerCase()
-          if (description.includes('not found') || description.includes('deleted')) return { status: 'bad-id', message: 'Google doesn’t recognise this Client ID. Check it for typos.' }
-          return { status: 'bad-secret', message: 'Google rejected the Client ID or secret. Check the secret for typos, and that it belongs to this Client ID.' }
-        }
-        return { status: 'ok' }
-      } catch (error) {
-        console.warn(LOG, 'Could not verify the OAuth client', error)
-        return { status: 'offline' }
-      }
     }

@@ -505,10 +505,6 @@
     #drawer-auth > p:first-child { font-size: 11px; line-height: 1.4; }
     .drawer-card a { color: var(--black); font-weight: 500; text-decoration: underline; text-underline-offset: 2px; }
     .drawer-card a:hover { text-decoration-thickness: 2px; }
-    .drawer-card .filename-input { height: 36px; padding: 0 12px; font-size: 12px; border-radius: 12px; background: #fff; }
-    .drawer-card label { color: var(--ink); font-size: 12px; font-weight: 500; }
-    .drawer-field { display: grid; gap: 5px; min-width: 0; }
-    .drawer-field input { width: 100%; min-width: 0; }
     .drawer-actions { display: flex; align-items: center; gap: 8px; margin-top: 0; min-width: 0; }
     .drawer-actions .spacer { flex: 1 1 0; min-width: 0; }
     .drawer-actions .small-button { flex: 0 0 auto; }
@@ -516,21 +512,9 @@
     .drawer-msg.is-error { color: var(--bad); }
     .drawer-msg.is-busy { color: var(--muted); }
     .drawer-msg.is-ok { color: var(--link-accent); }
-    .account-card { display: flex; align-items: center; gap: 11px; min-width: 0; padding: 9px 10px 9px 12px; border: 1px solid var(--border); border-radius: 14px; background: var(--panel); }
-    .account-card[hidden] { display: none; }
     .g-logo { width: 20px; height: 20px; flex: 0 0 auto; }
-    .account-text { flex: 1 1 auto; min-width: 0; display: grid; gap: 1px; }
-    .account-kicker { font-size: 11px; line-height: 1.3; color: var(--muted); }
-    .account-email { font-size: 13px; line-height: 1.3; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .account-card .small-button { flex: 0 0 auto; }
     .connect-block { display: grid; gap: 8px; }
     .connect-block[hidden] { display: none; }
-    .google-button { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; height: 40px; padding: 0 16px; border: 1px solid var(--border); border-radius: 999px; color: var(--ink); background: #fff; font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; transition: background-color 120ms ease, opacity 120ms ease; }
-    .google-button .g-logo { width: 18px; height: 18px; }
-    .google-button:hover:not(:disabled) { background: #f6f6f6; }
-    .google-button:disabled { opacity: .5; cursor: default; }
-    .google-button:focus-visible { outline: 2px solid var(--link-accent); outline-offset: 2px; }
-    .drawer-card .filename-input.is-invalid, .drawer-card .filename-input.is-invalid:focus { border-color: var(--bad); box-shadow: 0 0 0 1px var(--bad); }
     .drawer-links { display: flex; flex-wrap: wrap; gap: 2px 14px; }
     .drawer-card .drawer-links a { font-size: 10px; font-weight: 400; color: var(--muted); text-decoration: underline; text-underline-offset: 2px; text-decoration-thickness: 1px; }
     .drawer-card .drawer-links a:hover { color: var(--black); text-decoration-thickness: 1px; }
@@ -567,6 +551,7 @@
     .account-pick { flex: 1 1 auto; }
     .account-add { width: 100%; }
     .account-add:hover { background: var(--surface-2); }
+    .account-add:disabled { opacity: .5; cursor: default; }
     .account-pick:focus-visible, .account-add:focus-visible, .account-remove:focus-visible { outline: 2px solid var(--black); outline-offset: -2px; }
     .account-pick .dot { flex: 0 0 24px; width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%; background: var(--surface); font-size: 11px; font-weight: 600; text-transform: uppercase; }
     .account-row.is-active .dot { color: #fff; background: var(--black); }
@@ -670,12 +655,9 @@
     .picker-summary { display: none; margin: 2px 5px 0; color: var(--muted); font-size: 12px; }
     body.is-picking .picker-summary { display: block; }
     .account-menu .drawer-card { margin: 0; padding: 8px; border: 0; background: transparent; }
-    .account-menu #account-card { display: none; }
     .account-back { display: flex; align-items: center; gap: 6px; padding: 6px 8px; border: 0; color: var(--muted); background: transparent; font: inherit; font-size: 12px; cursor: pointer; }
     .account-back[hidden] { display: none; }
     .account-back:hover { color: var(--black); }
-    .account-link { display: block; width: 100%; margin-top: 2px; padding: 7px 8px; border: 0; border-radius: 10px; color: var(--muted); background: transparent; font: inherit; font-size: 11px; text-align: left; cursor: pointer; }
-    .account-link:hover { color: var(--black); background: var(--surface-2); }
 
     /* ---- Smoothness: one easing and one duration for every drawer / panel move -------------------- */
     /* --ease: a smooth, monotonic deceleration (no overshoot) for anything that changes the window's own
@@ -784,9 +766,6 @@
     .share-actions .spacer { flex: 1 1 0; min-width: 0; }
 
     /* ---- Client ID / secret panel: roomier, with Delete + Save underneath -------------------------- */
-    .account-menu #drawer-settings { gap: 12px; padding: 12px 10px 10px; }
-    .account-menu #drawer-settings .filename-input { height: 40px; }
-    .settings-actions { padding-top: 2px; }
     .account-remove { display: grid; place-items: center; }
     .account-remove svg { width: 15px; height: 15px; display: block; }
 

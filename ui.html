@@ -515,10 +515,6 @@
     #drawer-auth > p:first-child { font-size: 11px; line-height: 1.4; }
     .drawer-card a { color: var(--black); font-weight: 500; text-decoration: underline; text-underline-offset: 2px; }
     .drawer-card a:hover { text-decoration-thickness: 2px; }
-    .drawer-card .filename-input { height: 36px; padding: 0 12px; font-size: 12px; border-radius: 12px; background: #fff; }
-    .drawer-card label { color: var(--ink); font-size: 12px; font-weight: 500; }
-    .drawer-field { display: grid; gap: 5px; min-width: 0; }
-    .drawer-field input { width: 100%; min-width: 0; }
     .drawer-actions { display: flex; align-items: center; gap: 8px; margin-top: 0; min-width: 0; }
     .drawer-actions .spacer { flex: 1 1 0; min-width: 0; }
     .drawer-actions .small-button { flex: 0 0 auto; }
@@ -526,21 +522,9 @@
     .drawer-msg.is-error { color: var(--bad); }
     .drawer-msg.is-busy { color: var(--muted); }
     .drawer-msg.is-ok { color: var(--link-accent); }
-    .account-card { display: flex; align-items: center; gap: 11px; min-width: 0; padding: 9px 10px 9px 12px; border: 1px solid var(--border); border-radius: 14px; background: var(--panel); }
-    .account-card[hidden] { display: none; }
     .g-logo { width: 20px; height: 20px; flex: 0 0 auto; }
-    .account-text { flex: 1 1 auto; min-width: 0; display: grid; gap: 1px; }
-    .account-kicker { font-size: 11px; line-height: 1.3; color: var(--muted); }
-    .account-email { font-size: 13px; line-height: 1.3; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .account-card .small-button { flex: 0 0 auto; }
     .connect-block { display: grid; gap: 8px; }
     .connect-block[hidden] { display: none; }
-    .google-button { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; height: 40px; padding: 0 16px; border: 1px solid var(--border); border-radius: 999px; color: var(--ink); background: #fff; font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; transition: background-color 120ms ease, opacity 120ms ease; }
-    .google-button .g-logo { width: 18px; height: 18px; }
-    .google-button:hover:not(:disabled) { background: #f6f6f6; }
-    .google-button:disabled { opacity: .5; cursor: default; }
-    .google-button:focus-visible { outline: 2px solid var(--link-accent); outline-offset: 2px; }
-    .drawer-card .filename-input.is-invalid, .drawer-card .filename-input.is-invalid:focus { border-color: var(--bad); box-shadow: 0 0 0 1px var(--bad); }
     .drawer-links { display: flex; flex-wrap: wrap; gap: 2px 14px; }
     .drawer-card .drawer-links a { font-size: 10px; font-weight: 400; color: var(--muted); text-decoration: underline; text-underline-offset: 2px; text-decoration-thickness: 1px; }
     .drawer-card .drawer-links a:hover { color: var(--black); text-decoration-thickness: 1px; }
@@ -577,6 +561,7 @@
     .account-pick { flex: 1 1 auto; }
     .account-add { width: 100%; }
     .account-add:hover { background: var(--surface-2); }
+    .account-add:disabled { opacity: .5; cursor: default; }
     .account-pick:focus-visible, .account-add:focus-visible, .account-remove:focus-visible { outline: 2px solid var(--black); outline-offset: -2px; }
     .account-pick .dot { flex: 0 0 24px; width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%; background: var(--surface); font-size: 11px; font-weight: 600; text-transform: uppercase; }
     .account-row.is-active .dot { color: #fff; background: var(--black); }
@@ -680,12 +665,9 @@
     .picker-summary { display: none; margin: 2px 5px 0; color: var(--muted); font-size: 12px; }
     body.is-picking .picker-summary { display: block; }
     .account-menu .drawer-card { margin: 0; padding: 8px; border: 0; background: transparent; }
-    .account-menu #account-card { display: none; }
     .account-back { display: flex; align-items: center; gap: 6px; padding: 6px 8px; border: 0; color: var(--muted); background: transparent; font: inherit; font-size: 12px; cursor: pointer; }
     .account-back[hidden] { display: none; }
     .account-back:hover { color: var(--black); }
-    .account-link { display: block; width: 100%; margin-top: 2px; padding: 7px 8px; border: 0; border-radius: 10px; color: var(--muted); background: transparent; font: inherit; font-size: 11px; text-align: left; cursor: pointer; }
-    .account-link:hover { color: var(--black); background: var(--surface-2); }
 
     /* ---- Smoothness: one easing and one duration for every drawer / panel move -------------------- */
     /* --ease: a smooth, monotonic deceleration (no overshoot) for anything that changes the window's own
@@ -794,9 +776,6 @@
     .share-actions .spacer { flex: 1 1 0; min-width: 0; }
 
     /* ---- Client ID / secret panel: roomier, with Delete + Save underneath -------------------------- */
-    .account-menu #drawer-settings { gap: 12px; padding: 12px 10px 10px; }
-    .account-menu #drawer-settings .filename-input { height: 40px; }
-    .settings-actions { padding-top: 2px; }
     .account-remove { display: grid; place-items: center; }
     .account-remove svg { width: 15px; height: 15px; display: block; }
 
@@ -1225,6 +1204,18 @@
       <div id="account-menu" class="account-menu" hidden>
         <button id="account-back" class="account-back" type="button" hidden>← Accounts</button>
         <div id="account-list" role="menu"></div>
+        <div id="connect-block" class="connect-block">
+          <button id="connect-google" class="account-add" type="button" role="menuitem"><svg class="g-logo" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg><span>Connect Google</span></button>
+        </div>
+        <div id="drawer-auth" class="drawer-card" hidden>
+          <p>Complete Google sign-in in your browser. This panel will connect your account automatically when sign-in finishes.</p>
+          <p class="drawer-links"><a id="auth-link" href="#" target="_blank" rel="noopener">Open the Google sign-in page again</a></p>
+          <span id="auth-error" class="drawer-note drawer-msg is-error" role="alert" hidden></span>
+          <div class="drawer-actions">
+            <span class="spacer"></span>
+            <button id="auth-cancel" class="small-button" type="button">Cancel</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -1325,25 +1316,6 @@
       </div>
       <div id="drive-drawer" class="drive-drawer">
         <div class="drawer-inner">
-          <div id="drawer-settings" class="drawer-card" hidden>
-            <div class="drawer-field"><label for="client-id">Client ID</label><input id="client-id" class="filename-input" type="text" spellcheck="false" autocomplete="off" placeholder="…apps.googleusercontent.com"></div>
-            <div class="drawer-field"><label for="client-secret">Client secret</label><input id="client-secret" class="filename-input" type="password" spellcheck="false" autocomplete="off" placeholder="GOCSPX-…"></div>
-            <span id="settings-msg" class="drawer-note drawer-msg" role="alert" hidden></span>
-            <div class="drawer-actions settings-actions">
-              <button id="client-delete" class="small-button is-danger" type="button">Delete</button>
-              <span class="spacer"></span>
-              <button id="client-save" class="small-button is-primary" type="button">Save</button>
-            </div>
-            <div id="account-card" class="account-card" hidden>
-              <svg class="g-logo" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
-              <div class="account-text"><span id="account-kicker" class="account-kicker">Connected as</span><span id="account-email" class="account-email"></span></div>
-              <button id="disconnect-button" class="small-button is-danger" type="button">Disconnect</button>
-            </div>
-            <div id="connect-block" class="connect-block">
-              <button id="connect-google" class="google-button" type="button"><svg class="g-logo" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg><span>Continue with Google</span></button>
-              <span id="connect-hint" class="drawer-note"></span>
-            </div>
-          </div>
           <div id="drawer-picker" class="drawer-card" hidden>
             <div id="picker-top" class="picker-top" hidden>
               <span id="picker-title" class="picker-title"></span>
@@ -1397,17 +1369,6 @@
             </div>
           </div>
           <span id="picker-anchor" hidden></span>
-          <div id="drawer-auth" class="drawer-card" hidden>
-            <p>Approve access in your browser. The next page may say “This site can’t be reached” — that’s expected. Copy its address and paste it below.</p>
-            <p class="drawer-links"><a id="auth-link" href="#" target="_blank" rel="noopener">Open the Google sign-in page again</a><a id="auth-edit-client" href="#">Edit client settings</a></p>
-            <div class="drawer-field"><label for="auth-code">Authorization code or redirect URL</label><input id="auth-code" class="filename-input" type="text" spellcheck="false" autocomplete="off" placeholder="4/0A… or http://127.0.0.1:53682/?code=…"></div>
-            <span id="auth-error" class="drawer-note drawer-msg is-error" role="alert" hidden></span>
-            <div class="drawer-actions">
-              <span class="spacer"></span>
-              <button id="auth-cancel" class="small-button" type="button">Cancel</button>
-              <button id="auth-continue" class="small-button is-primary" type="button">Continue</button>
-            </div>
-          </div>
         </div>
       </div>
     </div>
@@ -1602,16 +1563,7 @@ class SwipeAxis {
   }
 }
 
-    // =====================================================================================
-    //  TEAM SETUP — fill these in once, then share the plugin folder with the team.
-    //  Values come from Google Cloud → Google Auth Platform → Clients → "Figma plugin"
-    //  (Desktop app). With them filled in, teammates never see the OAuth settings drawer;
-    //  they only sign in with their own Google account once. Leave both empty to make every
-    //  user enter the client themselves in the ⚙ drawer.
-    // =====================================================================================
-    const DEFAULT_GOOGLE_CLIENT_ID = ''
-    const DEFAULT_GOOGLE_CLIENT_SECRET = ''
-    const DEFAULT_GOOGLE_REDIRECT_URI = 'http://127.0.0.1:53682/'
+    const OAUTH_WORKER_URL = 'https://sm-exporter-oauth.smnaveen96.workers.dev'
 
     const LOG = '[SM exporter]'
     // A plain build marker, printed once on load — Figma (and some browsers) can hang onto a cached copy
@@ -3427,16 +3379,8 @@ class SwipeAxis {
     }
 
     // ===================== Google Drive upload =====================
-    // OAuth 2.0 authorization-code flow (with PKCE when WebCrypto is available), run
-    // entirely by the plugin. The OAuth client and the tokens are kept in
-    // figma.clientStorage on this machine — nothing is embedded in the source.
-    const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth'
-    const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token'
     const DRIVE_API = 'https://www.googleapis.com/drive/v3'
     const DRIVE_UPLOAD_API = 'https://www.googleapis.com/upload/drive/v3/files'
-    const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive'
-    const DEFAULT_REDIRECT_URI = DEFAULT_GOOGLE_REDIRECT_URI
-    const STORAGE_CLIENT_KEY = 'tier2-google-oauth-client'
     const STORAGE_TOKENS_KEY = 'tier2-google-tokens'   // the active account
     const STORAGE_ACCOUNTS_KEY = 'tier2-google-accounts' // every connected account
     const STORAGE_LAST_FOLDER_KEY = 'tier2-last-drive-folder' // the folder last used, so the plugin reopens there
@@ -3550,24 +3494,12 @@ class SwipeAxis {
     const driveOpenText = document.getElementById('drive-open-text')
     const driveCancel = document.getElementById('drive-cancel')
     const driveDrawer = document.getElementById('drive-drawer')
-    const drawerSettings = document.getElementById('drawer-settings')
     const drawerAuth = document.getElementById('drawer-auth')
-    const clientIdInput = document.getElementById('client-id')
-    const clientSecretInput = document.getElementById('client-secret')
-    const disconnectButton = document.getElementById('disconnect-button')
-    const accountCard = document.getElementById('account-card')
-    const accountKicker = document.getElementById('account-kicker')
-    const accountEmail = document.getElementById('account-email')
     const connectBlock = document.getElementById('connect-block')
     const connectButton = document.getElementById('connect-google')
-    const connectHint = document.getElementById('connect-hint')
     const authLink = document.getElementById('auth-link')
-    const authCodeInput = document.getElementById('auth-code')
-    const authContinue = document.getElementById('auth-continue')
     const authCancel = document.getElementById('auth-cancel')
-    const authEditClient = document.getElementById('auth-edit-client')
     const authError = document.getElementById('auth-error')
-    const settingsMsg = document.getElementById('settings-msg')
     const accountSwitch = document.getElementById('account-switch')
     const accountChip = document.getElementById('account-chip')
     const accountMenu = document.getElementById('account-menu')
@@ -3580,8 +3512,6 @@ class SwipeAxis {
     const pickerSelect = document.getElementById('picker-select')
     const pickerNew = document.getElementById('picker-new')
     const driveFolderButton = document.getElementById('drive-toggle')
-    const clientSaveButton = document.getElementById('client-save')
-    const clientDeleteButton = document.getElementById('client-delete')
     const modalEl = document.getElementById('modal')
     const modalTitle = document.getElementById('modal-title')
     const modalText = document.getElementById('modal-text')
@@ -3591,13 +3521,9 @@ class SwipeAxis {
     const TRASH_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16"/><path d="M9 7V4.5h6V7"/><path d="M6.5 7l.8 12a1.5 1.5 0 0 0 1.5 1.4h6.4a1.5 1.5 0 0 0 1.5-1.4l.8-12"/><path d="M10 11v6M14 11v6"/></svg>'
     const CHECK_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>'
 
-    let drawerMode = null            // null | 'settings' | 'auth'
-    let oauthClient = null           // { clientId, clientSecret, redirectUri }
+    let drawerMode = null            // null | 'auth' | 'picker'
     let tokens = null                // { accessToken, refreshToken, expiresAt, account }
     let accounts = []                // tokens of every connected Google account; `tokens` is the active one
-    let pendingAuth = null           // { state, timer, resolve, reject } while waiting for the pasted code
-    let checkingClient = false       // true while the Client ID / secret is being checked with Google
-    let autosaveTimer = 0, autosaveRun = 0, settingsMsgTimer = 0
     const AUTH_TIMEOUT_MS = 10 * 60 * 1000
     let pendingExport = null         // { resolve, reject } while waiting for the sandbox's export-ready
     let uploadedKey = ''             // fingerprint of what the tick on the cloud button stands for
@@ -3725,15 +3651,14 @@ class SwipeAxis {
       setDriveStatus('error', text)
     }
 
-    // The bottom drawer holds only the folder picker. The client settings and the paste-the-redirect step of
-    // signing in open inside the account panel at the top.
+    // The bottom drawer holds only the folder picker; OAuth status stays in the account menu.
     function setPickingState(on) {
       document.body.classList.toggle('is-picking', on) // folds the export options away while a folder is chosen
       driveDrawer.classList.toggle('is-open', on)
     }
 
     function showDrawer(mode) {
-      const wasInMenu = drawerMode === 'settings' || drawerMode === 'auth'
+      const wasInMenu = drawerMode === 'auth'
       const picking = mode === 'picker'
       const wasPicking = document.body.classList.contains('is-picking')
       drawerMode = mode
@@ -3760,16 +3685,9 @@ class SwipeAxis {
         setPickingState(picking)
         animateResize(from, to)
       }
-      if (mode === 'settings' || mode === 'auth') openAccountMenu(mode)
+      if (mode === 'auth') openAccountMenu(mode)
       else if (wasInMenu) closeAccountMenu()
       syncHeight()
-    }
-
-    // The client baked into this file (see TEAM SETUP at the top), if any.
-    function builtInClient() {
-      const clientId = DEFAULT_GOOGLE_CLIENT_ID.trim()
-      if (!clientId) return null
-      return { clientId, clientSecret: DEFAULT_GOOGLE_CLIENT_SECRET.trim(), redirectUri: DEFAULT_GOOGLE_REDIRECT_URI.trim() || 'http://127.0.0.1:53682/', builtIn: true }
     }
 
     // The status line stays empty until something happens (progress, success or an error).
@@ -3793,22 +3711,11 @@ class SwipeAxis {
     }
     fileNameInput.addEventListener('input', dropStaleTick)
 
-    // The bottom of the settings panel: who is connected, or the way to connect.
+    // Keep the account menu and its connection action in sync with active account state.
     function refreshAccountLabel() {
       renderAccountSwitcher()
-      updateClientButtons()
-      const connected = Boolean(tokens)
-      accountCard.hidden = !connected
-      connectBlock.hidden = connected
-      if (connected) {
-        accountKicker.textContent = tokens.account ? 'Connected as' : 'Connected to'
-        accountEmail.textContent = tokens.account || 'Google Drive'
-      } else {
-        connectButton.disabled = !oauthClient || checkingClient
-        connectHint.textContent = oauthClient
-          ? 'Opens Google in your browser. Allow access, then copy the URL and paste it here.'
-          : 'Add your Client ID and secret above first.'
-      }
+      connectButton.disabled = busy
+      connectButton.querySelector('span').textContent = accounts.length ? 'Add account' : 'Connect Google'
       syncHeight()
     }
 
@@ -3818,40 +3725,10 @@ class SwipeAxis {
       syncHeight()
     }
 
-    function setSettingsMessage(state, text, invalidInputs) {
-      clearTimeout(settingsMsgTimer)
-      settingsMsg.hidden = !text
-      settingsMsg.textContent = text || ''
-      settingsMsg.classList.remove('is-error', 'is-busy', 'is-ok')
-      if (state && text) settingsMsg.classList.add(`is-${state}`)
-      for (const input of [clientIdInput, clientSecretInput]) {
-        const invalid = Boolean(text) && state === 'error' && (invalidInputs || []).includes(input)
-        input.classList.toggle('is-invalid', invalid)
-        if (invalid) input.setAttribute('aria-invalid', 'true'); else input.removeAttribute('aria-invalid')
-      }
-      if (state === 'ok' && text) settingsMsgTimer = setTimeout(() => setSettingsMessage('', ''), Math.max(2400, 1500 + text.length * 45))
-      if (text) revealMessage(settingsMsg); else syncHeight()
-    }
-
     function setAuthError(text) {
       authError.hidden = !text
       authError.textContent = text || ''
-      authCodeInput.classList.toggle('is-invalid', Boolean(text))
-      if (text) authCodeInput.setAttribute('aria-invalid', 'true'); else authCodeInput.removeAttribute('aria-invalid')
       if (text) revealMessage(authError); else syncHeight()
-    }
-
-    function setAuthBusy(isBusy) {
-      authContinue.disabled = isBusy
-      authCancel.disabled = isBusy
-      authContinue.textContent = isBusy ? 'Connecting…' : 'Continue'
-    }
-
-    function fillSettingsFields() {
-      clientIdInput.value = oauthClient ? oauthClient.clientId : ''
-      clientSecretInput.value = oauthClient ? oauthClient.clientSecret : ''
-      setSettingsMessage('', '')
-      refreshAccountLabel()
     }
 
     function saveTokens() {
@@ -3866,7 +3743,7 @@ class SwipeAxis {
     driveUrlInput.addEventListener('focus', () => uploadPill.classList.add('is-focused'))
     driveUrlInput.addEventListener('blur', () => uploadPill.classList.remove('is-focused'))
     driveUrlInput.addEventListener('input', () => {
-      if (busy || !oauthClient) return
+      if (busy) return
       if (driveStatus.classList.contains('is-error') || driveStatus.classList.contains('is-success') || !driveOpenFolder.hidden) setDriveStatus('', idleStatusText())
     })
     driveForm.addEventListener('submit', (event) => {
@@ -3882,96 +3759,6 @@ class SwipeAxis {
       flashDriveStatus('Paste a folder link, or open Drive folders', 2800)
       setTimeout(() => driveFolderButton.classList.remove('is-nudge'), 700)
     }
-
-    const CLIENT_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]*\.apps\.googleusercontent\.com$/i
-    const stripQuotes = (value) => String(value || '').trim().replace(/^[\s"'`“”‘’]+|[\s"'`“”‘’]+$/g, '')
-
-    // Asks Google whether this Client ID + secret pair exists. A made-up code is sent on purpose:
-    // a wrong ID or secret comes back as invalid_client, a right pair as invalid_grant (bad code).
-    async function verifyOAuthClient(clientId, clientSecret, redirectUri) {
-      try {
-        const response = await fetch(GOOGLE_TOKEN_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: new URLSearchParams({ code: 'verify', client_id: clientId, client_secret: clientSecret, redirect_uri: redirectUri, grant_type: 'authorization_code' }).toString(),
-        })
-        const data = await response.json().catch(() => ({}))
-        if (data.error === 'invalid_client') {
-          const description = String(data.error_description || '').toLowerCase()
-          if (description.includes('not found') || description.includes('deleted')) return { status: 'bad-id', message: 'Google doesn’t recognise this Client ID. Check it for typos.' }
-          return { status: 'bad-secret', message: 'Google rejected the Client ID or secret. Check the secret for typos, and that it belongs to this Client ID.' }
-        }
-        return { status: 'ok' }
-      } catch (error) {
-        console.warn(LOG, 'Could not verify the OAuth client', error)
-        return { status: 'offline' }
-      }
-    }
-    // ---- Client settings: Save and Delete ------------------------------------------------------------
-    // Save checks the Client ID + secret with Google and stores them. Delete forgets them (and, because
-    // tokens belong to the client that issued them, signs every account out) after a confirmation.
-    function scheduleAutosave() { /* kept so older call sites stay harmless: saving is now explicit */ }
-
-    function updateClientButtons() {
-      clientSaveButton.disabled = checkingClient
-      clientSaveButton.textContent = checkingClient ? 'Checking…' : 'Save'
-      const hasSaved = Boolean(oauthClient && !oauthClient.builtIn) || accounts.length > 0
-      const hasText = Boolean(clientIdInput.value.trim() || clientSecretInput.value.trim())
-      clientDeleteButton.disabled = checkingClient || !(hasSaved || hasText)
-    }
-
-    for (const input of [clientIdInput, clientSecretInput]) {
-      input.addEventListener('input', () => { setSettingsMessage('', ''); updateClientButtons() })
-      input.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); clientSaveButton.click() } })
-    }
-
-    clientSaveButton.addEventListener('click', async () => {
-      if (checkingClient) return
-      const missingId = !stripQuotes(clientIdInput.value)
-      const missingSecret = !stripQuotes(clientSecretInput.value)
-      if (missingId || missingSecret) {
-        const what = missingId && missingSecret ? 'Client ID and Client secret' : missingId ? 'Client ID' : 'Client secret'
-        setSettingsMessage('error', `Enter your ${what} to save.`, [missingId && clientIdInput, missingSecret && clientSecretInput])
-        ;(missingId ? clientIdInput : clientSecretInput).focus()
-        return
-      }
-      const ok = await autosaveClient(true)
-      if (ok && settingsMsg.hidden) setSettingsMessage('ok', 'Saved')
-    })
-
-    async function deleteClient() {
-      const hasSaved = Boolean(oauthClient && !oauthClient.builtIn) || accounts.length > 0
-      if (!hasSaved) { // only typed text: just clear it
-        clientIdInput.value = ''
-        clientSecretInput.value = ''
-        setSettingsMessage('', '')
-        updateClientButtons()
-        clientIdInput.focus()
-        return
-      }
-      const count = accounts.length
-      const ok = await confirmDialog({
-        title: 'Delete Client ID & secret?',
-        message: (count ? `The saved credentials will be removed and ${count === 1 ? 'the connected account' : `all ${count} connected accounts`} signed out. ` : 'The saved credentials will be removed. ')
-          + 'You’ll need to enter them again to use Google Drive.',
-        confirmLabel: 'Delete',
-      })
-      if (!ok) return
-      clearTimeout(autosaveTimer)
-      autosaveRun++
-      checkingClient = false
-      oauthClient = builtInClient()
-      tokens = null
-      accounts = []
-      resetPickerLocation()
-      post({ type: 'storage-set', values: { [STORAGE_CLIENT_KEY]: null, [STORAGE_TOKENS_KEY]: null, [STORAGE_ACCOUNTS_KEY]: null } })
-      fillSettingsFields()
-      dropStaleTick()
-      setSettingsMessage('ok', 'Deleted')
-      console.log(LOG, 'OAuth client deleted')
-    }
-    clientDeleteButton.addEventListener('click', () => { void deleteClient() })
-
     // ---- Confirmation pop-up -------------------------------------------------------------------------
     // Resolves true on the confirm button, false on Cancel, Esc or a click outside. Esc closes ONLY the pop-up.
     let modalResolve = null, modalReturnFocus = null, modalHideTimer = 0, modalHasInput = false
@@ -4021,206 +3808,47 @@ class SwipeAxis {
         order[(at + (event.shiftKey ? order.length - 1 : 1)) % order.length].focus()
       }
     }, true)
-
-    // Resolves true when the client in the fields is the one in effect (saved now, or already saved).
-    async function autosaveClient(report) {
-      clearTimeout(autosaveTimer)
-      const run = ++autosaveRun
-      if (checkingClient) { checkingClient = false; refreshAccountLabel() } // an older check is superseded
-      const clientId = stripQuotes(clientIdInput.value)
-      const clientSecret = stripQuotes(clientSecretInput.value)
-      const redirectUri = (oauthClient && oauthClient.redirectUri) || DEFAULT_REDIRECT_URI // not shown in the UI; the default is baked in above
-      if (settingsMsg.classList.contains('is-busy')) setSettingsMessage('', '')
-
-      if (!clientId && !clientSecret) return false // nothing to save; a saved client is left untouched
-      if (oauthClient && oauthClient.clientId === clientId && oauthClient.clientSecret === clientSecret) return true // nothing new
-
-      const idProblem = clientId && (/\s/.test(clientId) || !CLIENT_ID_PATTERN.test(clientId))
-      const secretProblem = clientSecret && /\s/.test(clientSecret)
-      if (idProblem || secretProblem || !clientId || !clientSecret) {
-        if (report && idProblem) setSettingsMessage('error', 'That doesn’t look like a Google Client ID. It should end with .apps.googleusercontent.com.', [clientIdInput])
-        else if (report && secretProblem) setSettingsMessage('error', 'The Client secret can’t contain spaces. Copy it again from Google Cloud.', [clientSecretInput])
-        return false // incomplete or malformed: keep waiting
-      }
-
-      checkingClient = true
-      refreshAccountLabel()
-      setSettingsMessage('busy', 'Checking with Google…')
-      const check = await verifyOAuthClient(clientId, clientSecret, redirectUri)
-      if (run !== autosaveRun) return false // the fields changed meanwhile: the newer run owns the result
-      checkingClient = false
-      if (check.status === 'bad-id' || check.status === 'bad-secret') {
-        if (drawerMode === 'settings') setSettingsMessage('error', check.message, [check.status === 'bad-id' ? clientIdInput : clientSecretInput])
-        else { setSettingsMessage('', ''); failDrive(check.message) }
-        refreshAccountLabel()
-        return false
-      }
-
-      const changedClient = !oauthClient || oauthClient.clientId !== clientId || oauthClient.clientSecret !== clientSecret
-      oauthClient = { clientId, clientSecret, redirectUri }
-      const values = { [STORAGE_CLIENT_KEY]: oauthClient }
-      if (changedClient && accounts.length) {
-        tokens = null // tokens are bound to the client that issued them
-        accounts = []
-        values[STORAGE_TOKENS_KEY] = null
-        values[STORAGE_ACCOUNTS_KEY] = null
-      }
-      post({ type: 'storage-set', values })
-      setSettingsMessage('ok', check.status === 'offline' ? 'Saved. Couldn’t reach Google to check it — it will be checked when you sign in.' : 'Saved')
-      refreshAccountLabel()
-      setTimeout(() => { if (drawerMode === 'settings' && !connectBlock.hidden) connectBlock.scrollIntoView({ block: 'nearest' }) }, 60)
-      console.log(LOG, 'OAuth client saved', check.status === 'offline' ? '(not verified — offline)' : '(verified)')
-      return true
-    }
-
-    // ---- Continue with Google (from the settings panel) -------------------------------------------
-    // The same sign-in an upload would trigger, started on purpose. Afterwards the settings panel
-    // comes back so the connected account is right there.
-    async function connectFromSettings() {
+    // ---- Connect Google through the OAuth Worker ------------------------------------------------
+    async function connectGoogleAccount() {
+      if (busy) return
       busy = true
       updateButton()
-      let justConnected = false
+      refreshAccountLabel()
+      let connected = false
       try {
         await interactiveSignIn()
-        justConnected = true
+        connected = true
         setDriveStatus('', '')
       } catch (error) {
         if (error && error.cancelled) {
           setDriveStatus('', error.userMessage || '')
-        } else if (error && error.oauthError === 'invalid_client') {
-          fillSettingsFields()
-          showDrawer('settings')
-          setSettingsMessage('error', 'Google rejected this Client ID or secret. Check both for typos.', [clientIdInput, clientSecretInput])
-          setDriveStatus('', '')
         } else {
           console.error(LOG, 'Google sign-in failed', error)
+          showDrawer(null)
           failDrive(friendlyDriveMessage(error))
         }
       } finally {
-        if (pendingAuth) { clearTimeout(pendingAuth.timer); pendingAuth = null }
-        setAuthBusy(false)
         busy = false
         updateButton()
-        if (justConnected && tokens) {
-          // Signed in: fold the panel away and flash who is connected for a moment, instead of leaving the form open.
+        refreshAccountLabel()
+        if (connected && tokens) {
           showDrawer(null)
           flashDriveStatus(tokens.account ? `Connected as ${tokens.account}` : 'Connected to Google Drive', 3500)
         }
       }
     }
 
-    connectButton.addEventListener('click', async () => {
-      if (busy || checkingClient || tokens) return
-      const missingId = !stripQuotes(clientIdInput.value)
-      const missingSecret = !stripQuotes(clientSecretInput.value)
-      if (missingId || missingSecret) {
-        const what = missingId && missingSecret ? 'Client ID and Client secret' : missingId ? 'Client ID' : 'Client secret'
-        setSettingsMessage('error', `Enter your ${what} to continue.`, [missingId && clientIdInput, missingSecret && clientSecretInput])
-        ;(missingId ? clientIdInput : clientSecretInput).focus()
-        return
-      }
-      const ready = await autosaveClient(true) // anything still being typed is checked and saved first
-      if (!ready || !oauthClient || busy || tokens) return
-      await connectFromSettings()
-    })
-
-    disconnectButton.addEventListener('click', () => { void confirmRemoveAccount(tokens) })
-
-    authContinue.addEventListener('click', submitAuthCode)
-    authCodeInput.addEventListener('keydown', (event) => {
-      if (event.key === 'Enter') { event.preventDefault(); submitAuthCode() }
-    })
-    authCodeInput.addEventListener('input', () => setAuthError(''))
+    connectButton.addEventListener('click', () => { void connectGoogleAccount() })
     authCancel.addEventListener('click', () => cancelSignIn())
-    authEditClient.addEventListener('click', (event) => {
-      event.preventDefault()
-      if (pendingAuth) cancelSignIn({ openSettings: true })
-    })
 
-    // Backing out of sign-in is a choice, not a failure: close the panel and show no error.
-    function cancelSignIn(options) {
-      const openSettings = Boolean(options && options.openSettings)
-      const waiting = pendingAuth
-      if (!waiting) { if (drawerMode === 'auth' && !authCancel.disabled) showDrawer(null); return }
-      pendingAuth = null
+    let oauthCancelRequested = false
+    let oauthRequestController = null
+    function cancelSignIn() {
+      oauthCancelRequested = true
+      if (oauthRequestController) oauthRequestController.abort()
       setAuthError('')
-      showDrawer(null)
-      const error = new DriveError('Sign-in cancelled by user', openSettings ? '' : 'Sign-in cancelled.')
-      error.cancelled = true
-      waiting.reject(error)
-      if (openSettings) {
-        fillSettingsFields()
-        showDrawer('settings')
-        setTimeout(() => clientIdInput.focus(), 360)
-      }
-    }
-
-    // Resolves with the pasted code. Gives up after AUTH_TIMEOUT_MS so the buttons never stay locked.
-    function waitForAuthCode(state) {
-      return new Promise((resolve, reject) => {
-        const timer = setTimeout(() => {
-          if (!pendingAuth) return
-          pendingAuth = null
-          setAuthError('')
-          showDrawer(null)
-          reject(new DriveError('Sign-in timed out', 'Sign-in timed out. Please try again.'))
-        }, AUTH_TIMEOUT_MS)
-        pendingAuth = {
-          state,
-          timer,
-          resolve: (value) => { clearTimeout(timer); resolve(value) },
-          reject: (error) => { clearTimeout(timer); reject(error) },
-        }
-      })
-    }
-
-    function submitAuthCode() {
-      if (!pendingAuth) return
-      const parsed = extractAuthCode(authCodeInput.value, pendingAuth.state)
-      if (parsed.error) {
-        setAuthError(parsed.error)
-        authCodeInput.focus()
-        return
-      }
-      setAuthError('')
-      const waiting = pendingAuth
-      pendingAuth = null
-      waiting.resolve(parsed.code)
-    }
-
-    // Accepts the bare authorization code or the full redirect URL (…?code=…&state=…), which is
-    // what the browser address bar shows after consent. Returns { code } or { error } in plain words.
-    function extractAuthCode(rawValue, expectedState) {
-      const value = stripQuotes(rawValue)
-      if (!value) return { error: 'Paste the address from the browser (or the code) to continue.' }
-      if (/^https?:\/\//i.test(value) || /(^|[?&#])(code|error)=/.test(value)) {
-        let url
-        try {
-          url = new URL(value.includes('://') ? value : `http://x/?${value.replace(/^[?#]/, '')}`)
-        } catch {
-          return { error: 'That address couldn’t be read. Copy it again from the browser, or paste just the code.' }
-        }
-        if (/(^|\.)accounts\.google\.com$/i.test(url.hostname)) return { error: 'That’s the sign-in page. Approve access first, then copy the address of the page that opens next.' }
-        const params = new URLSearchParams(url.search || url.hash.replace(/^#/, '?'))
-        const problem = params.get('error')
-        if (problem) {
-          return { error: problem === 'access_denied'
-            ? 'Access wasn’t allowed in Google. Open the sign-in page again and approve it.'
-            : `Google reported “${problem}”. Open the sign-in page again and retry.` }
-        }
-        const code = params.get('code')
-        if (!code) return { error: 'That address has no code in it. Approve access first, then copy the address of the page that opens next.' }
-        const state = params.get('state')
-        if (state && expectedState && state !== expectedState) return { error: 'That address is from a different sign-in attempt. Use the link above to sign in again.' }
-        return { code }
-      }
-      // A bare code: tidy common copy artefacts (%2F, trailing &scope=…) and check it looks like one.
-      let code = value.split(/[&\s]/)[0]
-      try { code = decodeURIComponent(code) } catch { /* keep as pasted */ }
-      if (!/^[A-Za-z0-9_\-/.~]{20,}$/.test(code)) {
-        return { error: 'That doesn’t look like a Google code. After approving, copy the full address from the browser bar.' }
-      }
-      return { code }
+      drawerMode = null
+      openAccountMenu('list')
     }
 
     driveOpenFolder.addEventListener('click', (event) => {
@@ -4243,106 +3871,126 @@ class SwipeAxis {
       return null
     }
 
-    function randomString(length) {
-      const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'
-      const bytes = new Uint8Array(length)
-      crypto.getRandomValues(bytes)
-      let output = ''
-      for (const byte of bytes) output += alphabet[byte % alphabet.length]
-      return output
-    }
-
-    async function pkceChallenge(verifier) {
-      if (!(crypto.subtle && crypto.subtle.digest)) return null
+    async function workerRequest(path, options = {}) {
+      const response = await fetch(`${OAUTH_WORKER_URL}${path}`, options)
+      let data
       try {
-        const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier))
-        const base64 = btoa(String.fromCharCode(...new Uint8Array(digest)))
-        return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
-      } catch (error) {
-        console.warn(LOG, 'PKCE unavailable, continuing without it', error)
-        return null
+        data = await response.json()
+      } catch {
+        throw new DriveError('OAuth service returned an invalid response', 'Could not connect to Google. Please try again.', response.status)
       }
-    }
-
-    async function tokenRequest(fields) {
-      const response = await fetch(GOOGLE_TOKEN_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams(fields).toString(),
-      })
-      const data = await response.json().catch(() => ({}))
+      if (!data || typeof data !== 'object' || Array.isArray(data)) {
+        throw new DriveError('OAuth service returned an invalid response', 'Could not connect to Google. Please try again.', response.status)
+      }
       if (!response.ok) {
-        const failure = new DriveError(
-          `Token request failed (${response.status}): ${data.error || ''} ${data.error_description || ''}`.trim(),
-          `Google sign-in failed (${data.error || 'HTTP ' + response.status}${data.error === 'invalid_client' ? ': check Client ID and secret' : data.error === 'invalid_grant' ? ': code used or expired, sign in again' : data.error === 'redirect_uri_mismatch' ? ': redirect address differs' : ''}).`,
-          response.status,
-        )
-        failure.oauthError = data.error || ''
-        throw failure
+        const detail = data.message || data.error || `OAuth service error (${response.status})`
+        const error = new DriveError(detail, data.message || 'Could not connect to Google. Please try again.', response.status)
+        error.oauthError = data.error || ''
+        throw error
       }
       return data
     }
 
     async function interactiveSignIn() {
-      if (!oauthClient) throw new DriveError('No OAuth client configured', 'Add your Google OAuth client to continue.')
-      const state = randomString(24)
-      const verifier = randomString(64)
-      const challenge = await pkceChallenge(verifier)
-      const params = new URLSearchParams({
-        client_id: oauthClient.clientId,
-        redirect_uri: oauthClient.redirectUri,
-        response_type: 'code',
-        scope: DRIVE_SCOPE,
-        access_type: 'offline',
-        prompt: 'consent select_account',
-        state,
-      })
-      if (challenge) {
-        params.set('code_challenge', challenge)
-        params.set('code_challenge_method', 'S256')
-      }
-      const url = `${GOOGLE_AUTH_URL}?${params.toString()}`
-      authLink.dataset.url = url
-      authLink.href = url
-      console.log(LOG, 'Opening Google sign-in', challenge ? '(PKCE S256)' : '(no PKCE)')
-      post({ type: 'open-url', url })
-      authCodeInput.value = ''
+      oauthCancelRequested = false
       setAuthError('')
-      setAuthBusy(false)
       showDrawer('auth')
-      setDriveStatus('busy', 'Waiting for Google sign-in...')
-      setTimeout(() => authCodeInput.focus(), 360)
-      let data = null
-      while (!data) {
-        const code = await waitForAuthCode(state)
-        const fields = {
-          code,
-          client_id: oauthClient.clientId,
-          client_secret: oauthClient.clientSecret,
-          redirect_uri: oauthClient.redirectUri,
-          grant_type: 'authorization_code',
-        }
-        if (challenge) fields.code_verifier = verifier
-        setAuthBusy(true)
+      setDriveStatus('busy', 'Starting secure Google sign-in…')
+      let transaction
+      let data
+      try {
+        oauthRequestController = new AbortController()
         try {
-          data = await tokenRequest(fields)
+          transaction = await workerRequest('/oauth/init', { method: 'POST', signal: oauthRequestController.signal })
         } catch (error) {
-          setAuthBusy(false)
-          // A bad or used code, or a dropped connection: keep the panel open so it can be fixed in place.
-          if (error instanceof DriveError && error.oauthError === 'invalid_grant') {
-            setAuthError('Google didn’t accept that code. It may be incomplete, already used or expired. Copy the address again, or open the sign-in page again.')
-          } else if (error instanceof TypeError) {
-            setAuthError('Couldn’t reach Google. Check your connection, then press Continue.')
-          } else {
-            throw error
+          if (oauthCancelRequested) {
+            const cancelled = new DriveError('Sign-in cancelled', 'Sign-in cancelled.')
+            cancelled.cancelled = true
+            throw cancelled
           }
-          authCodeInput.focus()
-          authCodeInput.select()
+          throw error
+        } finally {
+          oauthRequestController = null
         }
+        if (oauthCancelRequested) {
+          const cancelled = new DriveError('Sign-in cancelled', 'Sign-in cancelled.')
+          cancelled.cancelled = true
+          throw cancelled
+        }
+        if (!transaction.writeKey || !transaction.readKey || !transaction.startUrl) {
+          throw new DriveError('OAuth service returned an incomplete session', 'Could not start Google sign-in. Please try again.')
+        }
+        const startUrl = new URL(transaction.startUrl)
+        if (startUrl.protocol !== 'https:') {
+          throw new DriveError('OAuth service returned an insecure sign-in URL', 'Could not start Google sign-in. Please try again.')
+        }
+        authLink.dataset.url = startUrl.href
+        authLink.href = startUrl.href
+        post({ type: 'open-url', url: startUrl.href })
+        setDriveStatus('busy', 'Waiting for Google sign-in…')
+        const deadline = Date.now() + AUTH_TIMEOUT_MS
+        while (Date.now() < deadline) {
+          if (oauthCancelRequested) {
+            const cancelled = new DriveError('Sign-in cancelled', 'Sign-in cancelled.')
+            cancelled.cancelled = true
+            throw cancelled
+          }
+          await new Promise((resolve) => setTimeout(resolve, 1800))
+          if (oauthCancelRequested) {
+            const cancelled = new DriveError('Sign-in cancelled', 'Sign-in cancelled.')
+            cancelled.cancelled = true
+            throw cancelled
+          }
+          oauthRequestController = new AbortController()
+          try {
+            data = await workerRequest(`/oauth/poll?read=${encodeURIComponent(transaction.readKey)}`, { signal: oauthRequestController.signal })
+          } catch (error) {
+            if (oauthCancelRequested) {
+              const cancelled = new DriveError('Sign-in cancelled', 'Sign-in cancelled.')
+              cancelled.cancelled = true
+              throw cancelled
+            }
+            throw error
+          } finally {
+            oauthRequestController = null
+          }
+          if (data.status === 'complete') break
+          if (data.status === 'cancelled' || data.status === 'canceled') {
+            const cancelled = new DriveError('Google sign-in was cancelled', 'Google sign-in was cancelled.')
+            cancelled.cancelled = true
+            throw cancelled
+          }
+          if (data.status === 'denied') {
+            throw new DriveError(data.message || 'Google access was denied', data.message || 'Google access was denied. Please try again.')
+          }
+          if (data.status === 'failed' || data.status === 'expired') {
+            throw new DriveError(data.message || 'Google sign-in expired', data.message || 'Google sign-in expired. Please try again.')
+          }
+          if (data.status === 'error') {
+            throw new DriveError(data.message || 'Google sign-in failed', data.message || 'Google sign-in failed. Please try again.')
+          }
+          if (!data.status) {
+            throw new DriveError(`Unexpected OAuth status: ${data.status || 'missing'}`, 'Google sign-in returned an unexpected response. Please try again.')
+          }
+          data = null
+        }
+        if (!data || data.status !== 'complete') {
+          throw new DriveError('Google sign-in timed out', 'Google sign-in timed out. Please try again.')
+        }
+        if (!data.access_token) {
+          throw new DriveError('OAuth response did not contain an access token', 'Google sign-in did not return an access token. Please try again.')
+        }
+      } catch (error) {
+        if (oauthCancelRequested && !(error && error.cancelled)) {
+          const cancelled = new DriveError('Sign-in cancelled', 'Sign-in cancelled.')
+          cancelled.cancelled = true
+          throw cancelled
+        }
+        if (error && !error.cancelled) setAuthError(friendlyDriveMessage(error))
+        throw error
       }
-      setAuthBusy(false)
       showDrawer(null)
-      setDriveStatus('busy', 'Connecting to Google Drive...')
+      setDriveStatus('busy', 'Connecting to Google Drive…')
       tokens = {
         accessToken: data.access_token,
         refreshToken: data.refresh_token || null,
@@ -4365,26 +4013,26 @@ class SwipeAxis {
         accounts = accounts.filter((entry) => entry !== prior)
       }
       saveTokens()
-      console.log(LOG, 'Connected to Google Drive', tokens.account || '')
+      console.log(LOG, 'Connected to Google Drive through OAuth Worker', tokens.account || '')
     }
 
     async function refreshAccessToken() {
-      const data = await tokenRequest({
-        refresh_token: tokens.refreshToken,
-        client_id: oauthClient.clientId,
-        client_secret: oauthClient.clientSecret,
-        grant_type: 'refresh_token',
+      if (!tokens || !tokens.refreshToken) throw new DriveError('No refresh token', 'Please reconnect Google Drive.')
+      const data = await workerRequest('/oauth/refresh', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken: tokens.refreshToken }),
       })
+      if (!data.access_token) throw new DriveError('OAuth refresh response did not contain an access token', 'Google Drive needs to reconnect. Please try again.')
       Object.assign(tokens, {
         accessToken: data.access_token,
         expiresAt: Date.now() + (Number(data.expires_in) || 3600) * 1000,
       })
       saveTokens()
-      console.log(LOG, 'Access token refreshed')
+      console.log(LOG, 'Access token refreshed through OAuth Worker')
     }
 
     async function ensureAccessToken(forceRefresh) {
-      if (!oauthClient) throw new DriveError('No OAuth client configured', 'Add your Google OAuth client to continue.')
       if (tokens && tokens.accessToken && !forceRefresh && Date.now() < tokens.expiresAt - 60000) return tokens.accessToken
       if (tokens && tokens.refreshToken) {
         try {
@@ -4593,12 +4241,6 @@ class SwipeAxis {
         driveUrlInput.focus()
         return
       }
-      if (!oauthClient) {
-        fillSettingsFields()
-        showDrawer('settings')
-        failDrive('Add your Google OAuth client to continue.')
-        return
-      }
       busy = true
       activeDestination = 'drive'
       uploadRun = { cancelled: false, controller: new AbortController(), uploaded: 0, total: 0 }
@@ -4648,12 +4290,6 @@ class SwipeAxis {
           setDriveStatus('', uploadCancelledMessage(), uploadRun.uploaded ? uploadRun.folderUrl : '')
         } else if (error && error.cancelled) {
           setDriveStatus('', error.userMessage || '') // cancelling is a choice, not an error
-        } else if (error && error.oauthError === 'invalid_client') {
-          // Google doesn’t accept the saved client: take the user straight to the fields to fix it.
-          fillSettingsFields()
-          showDrawer('settings')
-          failDrive('Google rejected the Client ID or secret.')
-          setSettingsMessage('error', 'Google rejected this Client ID or secret. Check both for typos, then Save.', [clientIdInput, clientSecretInput])
         } else {
           failDrive(friendlyDriveMessage(error))
         }
@@ -4661,8 +4297,6 @@ class SwipeAxis {
         pendingExport = null
         showUploadCancel(false)
         uploadRun = null
-        if (pendingAuth) { clearTimeout(pendingAuth.timer); pendingAuth = null }
-        setAuthBusy(false)
         if (drawerMode === 'auth') showDrawer(null) // never leave the sign-in panel stranded open
         busy = false
         activeDestination = 'download'
@@ -4711,8 +4345,13 @@ class SwipeAxis {
 
     async function accessTokenFor(entry) {
       if (entry.accessToken && Date.now() < entry.expiresAt - 60000) return entry.accessToken
-      if (!entry.refreshToken || !oauthClient) return null
-      const data = await tokenRequest({ refresh_token: entry.refreshToken, client_id: oauthClient.clientId, client_secret: oauthClient.clientSecret, grant_type: 'refresh_token' })
+      if (!entry.refreshToken) return null
+      const data = await workerRequest('/oauth/refresh', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken: entry.refreshToken }),
+      })
+      if (!data.access_token) throw new DriveError('OAuth refresh response did not contain an access token', 'Google Drive needs to reconnect. Please try again.')
       entry.accessToken = data.access_token
       entry.expiresAt = Date.now() + (Number(data.expires_in) || 3600) * 1000
       return entry.accessToken
@@ -4738,11 +4377,9 @@ class SwipeAxis {
     }
 
     // ---- Account switcher (header) ---------------------------------------------------------------
-    // The photo / initial button opens one panel for everything Google: the accounts, adding one and,
-    // one step further in, the OAuth client settings and the paste-the-redirect step of signing in.
+    // The photo / initial button opens the account list and the Worker-based sign-in action.
     const accountList = document.getElementById('account-list')
     const accountBack = document.getElementById('account-back')
-    accountMenu.append(drawerSettings, drawerAuth) // the sign-in cards live in the panel, not at the bottom
 
     function renderAccountSwitcher() {
       accountChip.classList.toggle('is-connected', Boolean(tokens))
@@ -4786,28 +4423,15 @@ class SwipeAxis {
         sep.className = 'account-sep'
         accountList.append(sep)
       }
-      const add = document.createElement('button')
-      add.type = 'button'
-      add.className = 'account-add'
-      add.setAttribute('role', 'menuitem')
-      add.innerHTML = `${connectButton.querySelector('.g-logo').outerHTML}<span>Connect new account</span>`
-      add.addEventListener('click', () => { void connectNewAccount() })
-      accountList.append(add)
-      const client = document.createElement('button')
-      client.type = 'button'
-      client.className = 'account-link'
-      client.textContent = 'Client ID & secret'
-      client.addEventListener('click', () => { fillSettingsFields(); showDrawer('settings') })
-      accountList.append(client)
     }
 
-    // view: 'list' (accounts) | 'settings' (Client ID and secret) | 'auth' (paste the redirect URL)
+    // view: 'list' (accounts and connect action) | 'auth' (Worker sign-in status)
     function openAccountMenu(view) {
       accountMenu.dataset.view = view
       accountList.hidden = view !== 'list'
-      drawerSettings.hidden = view !== 'settings'
+      connectBlock.hidden = view !== 'list'
       drawerAuth.hidden = view !== 'auth'
-      accountBack.hidden = view !== 'settings'
+      accountBack.hidden = view !== 'auth'
       if (view === 'list') renderAccountMenu()
       accountMenu.hidden = false
       accountChip.setAttribute('aria-expanded', 'true')
@@ -4820,13 +4444,12 @@ class SwipeAxis {
       syncHeight()
     }
 
-    // Clicking away closes the panel — except mid sign-in, where Cancel or Esc ends it, so the paste step isn't lost.
+    // Keep the sign-in panel visible until the user cancels or the Worker completes.
     function dismissAccountMenu() {
       if (accountMenu.hidden) return
       const view = accountMenu.dataset.view
       if (view === 'auth') return
-      if (view === 'settings') showDrawer(null)
-      else closeAccountMenu()
+      closeAccountMenu()
     }
 
     function switchAccount(entry) {
@@ -4862,41 +4485,22 @@ class SwipeAxis {
       console.log(LOG, 'Disconnected Google account')
     }
 
-    async function connectNewAccount() {
-      closeAccountMenu()
-      if (busy || checkingClient) return
-      if (!oauthClient) {
-        fillSettingsFields()
-        showDrawer('settings')
-        setSettingsMessage('error', 'Enter your Client ID and Client secret to continue.', [clientIdInput, clientSecretInput])
-        return
-      }
-      await connectFromSettings()
-    }
-
     accountChip.addEventListener('click', () => {
       if (accountMenu.hidden) openAccountMenu('list')
       else dismissAccountMenu()
     })
-    accountBack.addEventListener('click', () => { showDrawer(null); openAccountMenu('list') })
+    accountBack.addEventListener('click', () => cancelSignIn())
     document.addEventListener('pointerdown', (event) => { if (modalResolve) return; if (!accountMenu.hidden && !accountSwitch.contains(event.target)) dismissAccountMenu() })
-    // Clicking the Figma canvas moves focus out of the plugin: the account list folds away (not the settings or sign-in steps, which you may be copying into from another window).
+    // Clicking the Figma canvas moves focus out of the plugin: the account list folds away, but sign-in stays available.
     window.addEventListener('blur', () => { if (!accountMenu.hidden && accountMenu.dataset.view === 'list') closeAccountMenu() })
-    // Esc always goes back exactly one step: sign-in → account list, client settings → account list,
-    // account list → closed, folder picker → parent folder (or clears the search) → closed.
+    // Esc goes back from sign-in to accounts, closes the account list, or navigates the folder picker.
     document.addEventListener('keydown', (event) => {
       if (event.key !== 'Escape' || event.defaultPrevented) return
       if (!ctxMenu.hidden) { event.preventDefault(); closeMenu(); return }
       const view = accountMenu.hidden ? '' : accountMenu.dataset.view
       if (view === 'auth') {
         event.preventDefault()
-        if (authCancel.disabled) return // mid-connect: nothing to go back to yet
         cancelSignIn()
-        openAccountMenu('list')
-      } else if (view === 'settings') {
-        event.preventDefault()
-        showDrawer(null)
-        openAccountMenu('list')
       } else if (view === 'list') {
         event.preventDefault()
         closeAccountMenu()
@@ -4911,7 +4515,6 @@ class SwipeAxis {
       }
     })
     renderAccountSwitcher()
-
     // ---- Folder picker -----------------------------------------------------------------------------
     // Shown when the link field is empty and the upload button is pressed. Laid out like Google's own
     // folder picker: tabs, search, grid / list; click a folder to open it. "Upload here"
@@ -6420,15 +6023,9 @@ class SwipeAxis {
 
     // ---- Opening and closing the drawer -------------------------------------------------------------------
     async function openFolderPicker() {
-      if (busy || checkingClient) return
-      if (!oauthClient) {
-        fillSettingsFields()
-        showDrawer('settings')
-        failDrive('Add your Google OAuth client to continue.')
-        return
-      }
+      if (busy) return
       if (!tokens) {
-        await connectFromSettings() // signs in first, then comes straight back here
+        await connectGoogleAccount() // signs in first, then comes straight back here
         if (!tokens) return
       }
       // The very first time the picker opens in a session, start where the last upload left off (closing
@@ -7352,8 +6949,8 @@ class SwipeAxis {
       if (images.length) await placeOnCanvas(images, { x: message.x, y: message.y })
     }
 
-    // Load the stored OAuth client and tokens from figma.clientStorage via the sandbox.
-    post({ type: 'storage-get', keys: [STORAGE_CLIENT_KEY, STORAGE_TOKENS_KEY, STORAGE_ACCOUNTS_KEY, STORAGE_SETTINGS_KEY, STORAGE_LAST_FOLDER_KEY] })
+    // Load connected accounts and plugin settings; discard credentials left by the retired manual OAuth UI.
+    post({ type: 'storage-get', keys: ['tier2-google-oauth-client', STORAGE_TOKENS_KEY, STORAGE_ACCOUNTS_KEY, STORAGE_SETTINGS_KEY, STORAGE_LAST_FOLDER_KEY] })
 
     window.addEventListener('message', (event) => {
       const message = event.data && event.data.pluginMessage
@@ -7405,7 +7002,9 @@ class SwipeAxis {
         void handleCanvasDrop(message)
       } else if (message.type === 'storage') {
         const values = message.values || {}
-        oauthClient = values[STORAGE_CLIENT_KEY] || builtInClient()
+        if (values['tier2-google-oauth-client']) {
+          post({ type: 'storage-set', values: { 'tier2-google-oauth-client': null } })
+        }
         accounts = Array.isArray(values[STORAGE_ACCOUNTS_KEY]) ? values[STORAGE_ACCOUNTS_KEY] : []
         tokens = values[STORAGE_TOKENS_KEY] || null
         if (tokens) { // the active account is one of the list (an older single-account save is added to it)
@@ -7418,10 +7017,10 @@ class SwipeAxis {
         // off (lastFolderApplied, above) — it should NOT also silently paste that folder's link into the
         // URL box, which looked like the box was remembering whatever link was last pasted into it.
         if (savedFolder && savedFolder.id) lastFolder = savedFolder
-        fillSettingsFields()
         if (!busy) setDriveStatus('', idleStatusText())
-        if (oauthClient && accounts.length) void loadProfilePhotos()
-        console.log(LOG, 'Settings loaded', oauthClient ? 'client configured' : 'no client', tokens ? 'signed in' : 'not signed in')
+        refreshAccountLabel()
+        if (accounts.length) void loadProfilePhotos()
+        console.log(LOG, 'Settings loaded', tokens ? 'signed in' : 'not signed in')
         resolveStorageReady()
       }
     })

@@ -180,15 +180,9 @@
 
     // ---- Opening and closing the drawer -------------------------------------------------------------------
     async function openFolderPicker() {
-      if (busy || checkingClient) return
-      if (!oauthClient) {
-        fillSettingsFields()
-        showDrawer('settings')
-        failDrive('Add your Google OAuth client to continue.')
-        return
-      }
+      if (busy) return
       if (!tokens) {
-        await connectFromSettings() // signs in first, then comes straight back here
+        await connectGoogleAccount() // signs in first, then comes straight back here
         if (!tokens) return
       }
       // The very first time the picker opens in a session, start where the last upload left off (closing

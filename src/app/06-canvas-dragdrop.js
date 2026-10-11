@@ -9,8 +9,8 @@
       if (images.length) await placeOnCanvas(images, { x: message.x, y: message.y })
     }
 
-    // Load the stored OAuth client and tokens from figma.clientStorage via the sandbox.
-    post({ type: 'storage-get', keys: [STORAGE_CLIENT_KEY, STORAGE_TOKENS_KEY, STORAGE_ACCOUNTS_KEY, STORAGE_SETTINGS_KEY, STORAGE_LAST_FOLDER_KEY] })
+    // Load connected accounts and plugin settings; discard credentials left by the retired manual OAuth UI.
+    post({ type: 'storage-get', keys: ['tier2-google-oauth-client', STORAGE_TOKENS_KEY, STORAGE_ACCOUNTS_KEY, STORAGE_SETTINGS_KEY, STORAGE_LAST_FOLDER_KEY] })
 
     window.addEventListener('message', (event) => {
       const message = event.data && event.data.pluginMessage
@@ -62,7 +62,9 @@
         void handleCanvasDrop(message)
       } else if (message.type === 'storage') {
         const values = message.values || {}
-        oauthClient = values[STORAGE_CLIENT_KEY] || builtInClient()
+        if (values['tier2-google-oauth-client']) {
+          post({ type: 'storage-set', values: { 'tier2-google-oauth-client': null } })
+        }
         accounts = Array.isArray(values[STORAGE_ACCOUNTS_KEY]) ? values[STORAGE_ACCOUNTS_KEY] : []
         tokens = values[STORAGE_TOKENS_KEY] || null
         if (tokens) { // the active account is one of the list (an older single-account save is added to it)
@@ -75,10 +77,10 @@
         // off (lastFolderApplied, above) — it should NOT also silently paste that folder's link into the
         // URL box, which looked like the box was remembering whatever link was last pasted into it.
         if (savedFolder && savedFolder.id) lastFolder = savedFolder
-        fillSettingsFields()
         if (!busy) setDriveStatus('', idleStatusText())
-        if (oauthClient && accounts.length) void loadProfilePhotos()
-        console.log(LOG, 'Settings loaded', oauthClient ? 'client configured' : 'no client', tokens ? 'signed in' : 'not signed in')
+        refreshAccountLabel()
+        if (accounts.length) void loadProfilePhotos()
+        console.log(LOG, 'Settings loaded', tokens ? 'signed in' : 'not signed in')
         resolveStorageReady()
       }
     })

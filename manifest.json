@@ -16,10 +16,10 @@
   "ui": "ui.html",
   "networkAccess": {
     "allowedDomains": [
-      "https://oauth2.googleapis.com",
+      "https://sm-exporter-oauth.smnaveen96.workers.dev",
       "https://www.googleapis.com",
       "https://*.googleusercontent.com"
     ],
-    "reasoning": "Signs in with Google (OAuth token exchange), uploads the exported files to the user's Google Drive folder, and shows the connected account's Google profile photo."
+    "reasoning": "Uses the SM Exporter OAuth service for Google sign-in and token refresh, uploads files to Google Drive, and shows the connected account profile photo."
   }
 }

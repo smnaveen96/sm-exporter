@@ -91,6 +91,18 @@
       <div id="account-menu" class="account-menu" hidden>
         <button id="account-back" class="account-back" type="button" hidden>← Accounts</button>
         <div id="account-list" role="menu"></div>
+        <div id="connect-block" class="connect-block">
+          <button id="connect-google" class="account-add" type="button" role="menuitem"><svg class="g-logo" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg><span>Connect Google</span></button>
+        </div>
+        <div id="drawer-auth" class="drawer-card" hidden>
+          <p>Complete Google sign-in in your browser. This panel will connect your account automatically when sign-in finishes.</p>
+          <p class="drawer-links"><a id="auth-link" href="#" target="_blank" rel="noopener">Open the Google sign-in page again</a></p>
+          <span id="auth-error" class="drawer-note drawer-msg is-error" role="alert" hidden></span>
+          <div class="drawer-actions">
+            <span class="spacer"></span>
+            <button id="auth-cancel" class="small-button" type="button">Cancel</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -191,25 +203,6 @@
       </div>
       <div id="drive-drawer" class="drive-drawer">
         <div class="drawer-inner">
-          <div id="drawer-settings" class="drawer-card" hidden>
-            <div class="drawer-field"><label for="client-id">Client ID</label><input id="client-id" class="filename-input" type="text" spellcheck="false" autocomplete="off" placeholder="…apps.googleusercontent.com"></div>
-            <div class="drawer-field"><label for="client-secret">Client secret</label><input id="client-secret" class="filename-input" type="password" spellcheck="false" autocomplete="off" placeholder="GOCSPX-…"></div>
-            <span id="settings-msg" class="drawer-note drawer-msg" role="alert" hidden></span>
-            <div class="drawer-actions settings-actions">
-              <button id="client-delete" class="small-button is-danger" type="button">Delete</button>
-              <span class="spacer"></span>
-              <button id="client-save" class="small-button is-primary" type="button">Save</button>
-            </div>
-            <div id="account-card" class="account-card" hidden>
-              <svg class="g-logo" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
-              <div class="account-text"><span id="account-kicker" class="account-kicker">Connected as</span><span id="account-email" class="account-email"></span></div>
-              <button id="disconnect-button" class="small-button is-danger" type="button">Disconnect</button>
-            </div>
-            <div id="connect-block" class="connect-block">
-              <button id="connect-google" class="google-button" type="button"><svg class="g-logo" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg><span>Continue with Google</span></button>
-              <span id="connect-hint" class="drawer-note"></span>
-            </div>
-          </div>
           <div id="drawer-picker" class="drawer-card" hidden>
             <div id="picker-top" class="picker-top" hidden>
               <span id="picker-title" class="picker-title"></span>
@@ -263,17 +256,6 @@
             </div>
           </div>
           <span id="picker-anchor" hidden></span>
-          <div id="drawer-auth" class="drawer-card" hidden>
-            <p>Approve access in your browser. The next page may say “This site can’t be reached” — that’s expected. Copy its address and paste it below.</p>
-            <p class="drawer-links"><a id="auth-link" href="#" target="_blank" rel="noopener">Open the Google sign-in page again</a><a id="auth-edit-client" href="#">Edit client settings</a></p>
-            <div class="drawer-field"><label for="auth-code">Authorization code or redirect URL</label><input id="auth-code" class="filename-input" type="text" spellcheck="false" autocomplete="off" placeholder="4/0A… or http://127.0.0.1:53682/?code=…"></div>
-            <span id="auth-error" class="drawer-note drawer-msg is-error" role="alert" hidden></span>
-            <div class="drawer-actions">
-              <span class="spacer"></span>
-              <button id="auth-cancel" class="small-button" type="button">Cancel</button>
-              <button id="auth-continue" class="small-button is-primary" type="button">Continue</button>
-            </div>
-          </div>
         </div>
       </div>
     </div>
