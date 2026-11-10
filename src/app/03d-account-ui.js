@@ -136,9 +136,17 @@
       else closeAccountMenu()
     }
 
+    // driveFetch reads `tokens` fresh on every call, so switching mid-transfer would finish an upload
+    // (or download) with the other account's token against the first account's folder.
+    function transferRunning() {
+      if (!busy && !downloadRun) return false
+      flashDriveStatus('Finish or cancel the current transfer first.', 2600)
+      return true
+    }
     function switchAccount(entry) {
       closeAccountMenu()
       if (entry === tokens) return
+      if (transferRunning()) return
       tokens = entry
       resetPickerLocation()
       if (drawerMode === 'picker') showDrawer(null)
@@ -149,6 +157,7 @@
 
     async function confirmRemoveAccount(entry) {
       if (!entry) return
+      if (entry === tokens && transferRunning()) return
       const ok = await confirmDialog({
         title: 'Remove this account?',
         message: `${entry.account || 'This Google account'} will be disconnected from the plugin. Your files in Drive aren’t touched.`,

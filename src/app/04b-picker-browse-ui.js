@@ -151,6 +151,11 @@
       if (one && one.kind === 'folder') items.push({ label: 'Open', icon: ICONS.open, run: () => openPickerFolder(one) })
       if (one && one.kind === 'file') items.push({ label: 'Preview', icon: ICONS.eye, run: () => openPreview(one) })
       if (one) items.push({ label: 'Open in Drive', icon: ICONS.external, run: () => post({ type: 'open-url', url: driveUrl(one) }) })
+      // Search results and the Starred / Shared with me / Shared drives lists mix items from all over
+      // Drive with nothing saying where each one actually lives — "Show location" opens its folder with
+      // the item selected. In an ordinary folder the location is the folder on show, so it's left out.
+      if (one && !isDriveRoot(one) && !pickerTarget()) items.push({ label: 'Show location', icon: ICONS.locate, run: () => { void showLocation(one) } })
+      if (one && !isDriveRoot(one)) items.push({ label: one.kind === 'folder' ? 'Folder info' : 'File info', icon: ICONS.info, run: () => { void showFileInfo(one) } })
       if (files.length) items.push({ label: files.length > 1 ? `Download ${files.length} files` : 'Download', icon: ICONS.download, run: () => { void downloadEntries(files) } })
       if (images.length && images.length === entries.length) items.push({ label: 'Place on canvas', icon: ICONS.canvas, run: () => { void placeOnCanvas(images) } })
       if (!roots) {
@@ -186,8 +191,15 @@
       return `Couldn’t ${what} this. Please try again.`
     }
 
+    // "ug.pdf" → 2: the length of the name without its extension, so Rename pre-selects just "ug". A
+    // folder, a name with no dot, a dotfile (".env") or an implausibly long "extension" selects everything.
+    function nameStemLength(entry) {
+      if (entry.kind === 'folder' || isNativeGoogle(entry)) return 0
+      const match = /^(.+)\.([A-Za-z0-9]{1,8})$/.exec(entry.name || '')
+      return match ? match[1].length : 0
+    }
     async function renameEntry(entry) {
-      const name = await confirmDialog({ title: 'Rename', input: entry.name, confirmLabel: 'OK', danger: false })
+      const name = await confirmDialog({ title: 'Rename', input: entry.name, confirmLabel: 'OK', danger: false, selectEnd: nameStemLength(entry) })
       if (!name || name === entry.name) return
       try {
         const response = await patchFile(entry.id, { name })

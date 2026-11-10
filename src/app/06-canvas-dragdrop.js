@@ -29,8 +29,9 @@
       } else if (message.type === 'thumbnail') {
         if (message.version === latestSelectionVersion) applyThumbnail(message.id, message.bytes)
       } else if (message.type === 'progress') {
-        if (activeDestination === 'drive') { if (!(uploadRun && uploadRun.cancelled)) setDriveStatus('busy', `Rendering ${message.current} of ${message.total}...`) }
-        else setButtonState('busy', `EXPORTING ${message.current}/${message.total}`)
+        exportPhase(`Rendering ${message.current} of ${message.total}…`)
+      } else if (message.type === 'export-cancelled') {
+        if (activeDestination === 'download' && exportRun) finishCancelledExport() // the main thread stopped rendering on request
       } else if (message.type === 'export-ready') {
         if (activeDestination === 'drive') {
           const waiting = pendingExport
@@ -41,11 +42,15 @@
           }
           return
         }
-        setButtonState('busy', 'PREPARING FILES')
+        if (exportRun && exportRun.cancelled) { finishCancelledExport(); return } // cancel landed after the last frame was already rendered
+        exportPhase('Preparing files…')
         finishExport(message).catch((error) => {
+          if (error && error.cancelled) { finishCancelledExport(); return }
           console.error(LOG, 'Export failed', error)
+          exportRun = null
           busy = false
           setButtonState('error', 'TRY AGAIN')
+          setExportStatus('', '')
           updateButton()
         })
       } else if (message.type === 'error') {
@@ -55,8 +60,10 @@
           if (waiting) waiting.reject(new DriveError(message.message, message.message === 'Select frames to export.' ? 'Select frames to upload.' : 'Export failed — please try again.'))
           return
         }
+        exportRun = null
         busy = false
         setButtonState('error', message.message === 'Select frames to export.' ? 'SELECT FRAMES' : 'TRY AGAIN')
+        setExportStatus('', '')
         updateButton()
       } else if (message.type === 'drive-drop') {
         void handleCanvasDrop(message)
@@ -66,7 +73,11 @@
         accounts = Array.isArray(values[STORAGE_ACCOUNTS_KEY]) ? values[STORAGE_ACCOUNTS_KEY] : []
         tokens = values[STORAGE_TOKENS_KEY] || null
         if (tokens) { // the active account is one of the list (an older single-account save is added to it)
-          const same = tokens.account ? accounts.find((entry) => entry.account === tokens.account) : null
+          // Matched by email, or — for an account whose email never loaded — by its tokens, so such an
+          // account isn't pushed again as a new "Google Drive" row on every launch.
+          const same = accounts.find((entry) => (tokens.account && entry.account === tokens.account)
+            || (tokens.refreshToken && entry.refreshToken === tokens.refreshToken)
+            || (!tokens.account && !tokens.refreshToken && entry.accessToken === tokens.accessToken))
           if (same) tokens = same; else accounts.push(tokens)
         }
         if (!settingsLoaded) applySettings(values[STORAGE_SETTINGS_KEY])

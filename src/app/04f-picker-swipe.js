@@ -63,7 +63,9 @@
     // Clicking the dimmed backdrop behind the Move-to pop-up cancels it, same as Cancel or Escape.
     document.addEventListener('pointerdown', (event) => {
       if (!pickerMove || !document.body.classList.contains('is-moving')) return
-      if (!drawerPicker.contains(event.target)) endMove()
+      // The context menu is a body-level element, so a click on "New folder" in the breadcrumb's ▾ menu
+      // (to create the destination) or on a Sort option landed "outside" the picker and cancelled the move.
+      if (!drawerPicker.contains(event.target) && !ctxMenu.contains(event.target)) endMove()
     })
     // Clicking any empty space — inside the drawer but off an entry, or off the plugin window entirely —
     // clears the picker selection, same as Drive itself. pickerList's own click handler already clears on

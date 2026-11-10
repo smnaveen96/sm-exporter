@@ -293,19 +293,35 @@
       console.log(LOG, 'Connected to Google Drive', tokens.account || '')
     }
 
-    async function refreshAccessToken() {
-      const data = await tokenRequest({
-        refresh_token: tokens.refreshToken,
-        client_id: oauthClient.clientId,
-        client_secret: oauthClient.clientSecret,
-        grant_type: 'refresh_token',
-      })
-      Object.assign(tokens, {
-        accessToken: data.access_token,
-        expiresAt: Date.now() + (Number(data.expires_in) || 3600) * 1000,
-      })
-      saveTokens()
-      console.log(LOG, 'Access token refreshed')
+    // One refresh at a time per account: the picker fires its folder and file listings together, and a
+    // 401 on both used to start two refreshes. The result is written to the account object the refresh
+    // was started for — `tokens` can point at a different account by the time Google answers (the
+    // person switched accounts meanwhile), and writing there would have handed account A's new token to B.
+    let refreshInFlight = null // { account, promise }
+    function refreshAccessToken() {
+      const account = tokens
+      if (!account || !account.refreshToken) return Promise.reject(new DriveError('No refresh token', 'Please reconnect Google Drive.'))
+      if (refreshInFlight && refreshInFlight.account === account) return refreshInFlight.promise
+      const promise = (async () => {
+        try {
+          const data = await tokenRequest({
+            refresh_token: account.refreshToken,
+            client_id: oauthClient.clientId,
+            client_secret: oauthClient.clientSecret,
+            grant_type: 'refresh_token',
+          })
+          Object.assign(account, {
+            accessToken: data.access_token,
+            expiresAt: Date.now() + (Number(data.expires_in) || 3600) * 1000,
+          })
+          saveTokens()
+          console.log(LOG, 'Access token refreshed')
+        } finally {
+          if (refreshInFlight && refreshInFlight.promise === promise) refreshInFlight = null
+        }
+      })()
+      refreshInFlight = { account, promise }
+      return promise
     }
 
     async function ensureAccessToken(forceRefresh) {
@@ -326,9 +342,22 @@
           }
         }
       }
-      await interactiveSignIn()
+      // Several Drive calls can hit an expired session in the same tick (the picker lists folders and
+      // files together). They all wait on one sign-in instead of each opening its own browser tab and
+      // poll loop — the extra loops never completed, which left the picker on "Loading…" for minutes.
+      if (!signInInFlight) {
+        signInInFlight = interactiveSignIn().catch((error) => {
+          // A sign-in started by a picker/download/share call has no caller resetting the status line
+          // (connectGoogleAccount and the upload flow do their own), so the spinner stayed on
+          // "Waiting for Google sign-in…" after Cancel. An upload in progress keeps its own line.
+          if (!busy) setDriveStatus('', error && error.cancelled ? 'Sign-in cancelled.' : idleStatusText())
+          throw error
+        }).finally(() => { signInInFlight = null })
+      }
+      await signInInFlight
       return tokens.accessToken
     }
+    let signInInFlight = null
 
     async function driveFetch(url, init, allowRetry = true) {
       const token = await ensureAccessToken()
@@ -346,11 +375,22 @@
 
     async function driveError(response, action) {
       let detail = ''
-      try { detail = JSON.stringify((await response.json()).error || {}) } catch { /* no JSON body */ }
+      let reason = ''
+      try {
+        const body = (await response.json()).error || {}
+        detail = JSON.stringify(body)
+        reason = String((body.errors && body.errors[0] && body.errors[0].reason) || body.status || '')
+      } catch { /* no JSON body */ }
       const message = `Google Drive ${action} failed (${response.status}) ${detail}`
-      if (response.status === 404) return new DriveError(message, 'Folder not found — check the link and that you have access to it.', 404)
-      if (response.status === 401 || response.status === 403) return new DriveError(message, 'You don’t have permission to add files to this folder.', response.status)
-      return new DriveError(message, 'Upload failed — please check the Drive link and permissions.', response.status)
+      const aboutFolder = /upload|folder/i.test(action) // the upload flow and folder lookups talk about "this folder"; everything else is a file action
+      if (response.status === 404) return new DriveError(message, aboutFolder ? 'Folder not found — check the link and that you have access to it.' : 'That item wasn’t found in Drive — it may have been moved or deleted.', 404)
+      // Drive reports a full account and rate limiting as 403 too; neither is a permission problem, and
+      // a 401 that got this far could not be refreshed, so it's the session that needs renewing.
+      if (response.status === 401) return new DriveError(message, 'Your Google sign-in has expired. Please reconnect the account.', 401)
+      if (/storageQuotaExceeded/i.test(reason)) return new DriveError(message, 'Your Google Drive storage is full.', response.status)
+      if (response.status === 429 || /rateLimitExceeded|userRateLimitExceeded/i.test(reason)) return new DriveError(message, 'Google Drive is busy right now. Please try again in a moment.', response.status)
+      if (response.status === 403) return new DriveError(message, aboutFolder ? 'You don’t have permission to add files to this folder.' : 'You don’t have permission to do that in Google Drive.', 403)
+      return new DriveError(message, aboutFolder ? 'Upload failed — please check the Drive link and permissions.' : `Google Drive couldn’t complete that (error ${response.status}). Please try again.`, response.status)
     }
 
     async function verifyFolder(folderId) {

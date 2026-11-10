@@ -147,7 +147,12 @@
       qlStage.append(holder)
       qlHolder = holder
       qlHolderObserver.observe(holder)
-      // A quick look first: Google's own preview of the file, while the real thing loads.
+      // A quick look first: Google's own preview of the file, while the real thing loads — or, when Drive
+      // has no thumbnail for it yet (typically a file uploaded moments ago), the big type icon instead.
+      // Either way it's the same `quick` placeholder, removed as soon as the real media is on screen: the
+      // icon used to be appended without being tracked, so it stayed sitting next to the rendered PDF page
+      // (a red "PDF" badge beside the page) and, being a flex sibling, squeezed the page narrower too —
+      // which is also what threw off the 100% baseline the zoom is measured from (see captureMediaFit).
       let quick = null
       if (entry.thumbnailLink) {
         quick = new Image()
@@ -155,8 +160,8 @@
         quick.alt = ''
         quick.referrerPolicy = 'no-referrer'
         quick.src = thumbUrl(entry.thumbnailLink, 1600)
-        holder.append(quick)
-      } else holder.append(Object.assign(document.createElement('div'), { className: 'ql-bigicon', innerHTML: typeIcon(kind) }))
+      } else quick = Object.assign(document.createElement('div'), { className: 'ql-bigicon', innerHTML: typeIcon(kind) })
+      holder.append(quick)
       const limit = MEDIA_LIMIT[kind]
       const size = Number(entry.size) || 0
       if (!limit || (size && size > limit) || isNativeGoogle(entry) && kind !== 'pdf') {
@@ -178,26 +183,24 @@
           progress.remove()
           qlPdfBytes = await blob.arrayBuffer()
           qlPage = 1
-          const token = ++qlPdfRenderToken
-          let canvas = null
-          try { canvas = await renderPdfPage(1) } catch (error) { console.warn(LOG, 'pdf.js could not render this PDF', error) }
-          if (abort.signal.aborted || token !== qlPdfRenderToken) return
-          if (!canvas) {
+          qlZoom = 1
+          // The placeholder goes before the page is measured: while both share the holder (a flex row)
+          // the canvas only gets part of the width, and a baseline captured then is too small — zooming
+          // from it barely grows the page and just re-anchors it to the top-left corner. (The fast first
+          // render in showPdfPage takes a few tens of ms, so the holder is blank only momentarily.)
+          if (quick) { quick.remove(); quick = null }
+          let shown = false
+          try { shown = await showPdfPage(1, entry.name) } catch (error) { console.warn(LOG, 'pdf.js could not render this PDF', error) }
+          if (abort.signal.aborted || qlHolder !== holder) return
+          if (!shown) {
             qlStage.append(qlMessage('Couldn’t preview this PDF.', entry))
             return
           }
-          canvas.setAttribute('aria-label', entry.name)
-          canvas.classList.add('is-loading')
-          holder.append(canvas)
-          qlMedia = canvas
-          captureMediaFit()
-          qlZoom = 1
           qlZoomBar.hidden = false
-          applyZoom()
-          requestAnimationFrame(() => { canvas.classList.remove('is-loading'); if (quick) quick.remove() })
           const pageCount = (qlPdfJsDoc && qlPdfJsDoc.numPages) || 1
           if (!abort.signal.aborted) {
             buildPageStrip(pageCount)
+            prefetchPdfNeighbours(1) // the page count wasn't known yet when showPdfPage(1) tried this
             qlCount.textContent = pageCount > 1
               ? (qlList.length > 1 ? `${qlIndex + 1} of ${qlList.length} · Page 1 of ${pageCount}` : `Page 1 of ${pageCount}`)
               : (qlList.length > 1 ? `${qlIndex + 1} of ${qlList.length}` : '')
@@ -224,7 +227,7 @@
         media.src = qlUrl
         if (kind === 'video') holder.append(buildVideoControls(media))
         else holder.append(media)
-        const reveal = () => { media.classList.remove('is-loading'); if (quick) quick.remove() }
+        const reveal = () => { media.classList.remove('is-loading'); if (quick) { quick.remove(); quick = null } }
         if (kind === 'image') { await new Promise((resolve) => { media.onload = resolve; media.onerror = resolve }); if (abort.signal.aborted) return; reveal() }
         else reveal()
         qlMedia = media

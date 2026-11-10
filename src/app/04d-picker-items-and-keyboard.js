@@ -160,7 +160,7 @@
 
     // ---- Keyboard in the picker ------------------------------------------------------------------------
     document.addEventListener('keydown', (event) => {
-      if (drawerMode !== 'picker' || modalResolve || previewOpen || !ctxMenu.hidden) return
+      if (drawerMode !== 'picker' || modalResolve || previewOpen || !ctxMenu.hidden || !infoModal.hidden || !shareModal.hidden) return
       const target = event.target
       if (target && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return
       const mod = event.metaKey || event.ctrlKey

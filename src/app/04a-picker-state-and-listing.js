@@ -137,6 +137,8 @@
       prev: svgLine('<path d="M15 5l-7 7 7 7"/>'),
       next: svgLine('<path d="M9 5l7 7-7 7"/>'),
       chevron: svgLine('<path d="M6 9l6 6 6-6"/>'),
+      locate: svgLine('<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="2.2"/><path d="M12 15.2v2.3"/>'),
+      info: svgLine('<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5"/><path d="M12 8.2h.01"/>'),
     }
     const MEDIA_LIMIT = { image: 30e6, video: 250e6, pdf: 80e6 }
 

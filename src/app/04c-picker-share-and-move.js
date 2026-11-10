@@ -52,6 +52,7 @@
     let shareDomain = null     // the 'domain' (organization-wide) permission, or null if there isn't one
     let shareBusy = false
     let shareHideTimer = 0
+    let shareRun = 0           // bumped on every open/close: a reply that arrives for an earlier dialog is ignored
 
     function initialsFor(text) {
       const letter = String(text || '?').trim()[0]
@@ -182,6 +183,7 @@
 
     async function openShareDialog(entry) {
       if (!entry || isDriveRoot(entry)) return
+      const run = ++shareRun
       shareEntry = entry
       sharePeople = []
       shareGeneral = null
@@ -201,6 +203,7 @@
         const response = await driveFetch(`${DRIVE_API}/files/${encodeURIComponent(entry.id)}/permissions?supportsAllDrives=true&fields=permissions(id,type,role,emailAddress,displayName,photoLink,domain,deleted)`)
         if (!response.ok) throw await driveError(response, 'load sharing settings for')
         const data = await response.json()
+        if (run !== shareRun) return // closed, or reopened for another file, while this was loading
         const permissions = data.permissions || []
         shareGeneral = permissions.find((p) => p.type === 'anyone') || null
         shareDomain = permissions.find((p) => p.type === 'domain') || null
@@ -216,15 +219,19 @@
           }))
         setShareMessage('', '')
       } catch (error) {
+        if (run !== shareRun) return
         setShareMessage('error', actionFailMessage(error, 'load sharing settings for'))
       } finally {
-        setShareBusy(false)
-        renderSharePeople()
-        renderShareGeneral()
+        if (run === shareRun) {
+          setShareBusy(false)
+          renderSharePeople()
+          renderShareGeneral()
+        }
       }
     }
 
     function closeShareDialog() {
+      shareRun += 1
       shareModal.classList.remove('is-open')
       shareHideTimer = setTimeout(() => { shareModal.hidden = true }, 200)
       void renderPicker({ silent: true, keep: true }) // the shared/starred badge on the item may have changed
@@ -238,6 +245,7 @@
       // Google's own dialog adds a new person as a Viewer and lets you change it from their row
       // afterward, rather than choosing the role up front next to the email field.
       const role = 'reader'
+      const run = shareRun
       setShareBusy(true)
       setShareMessage('', 'Sharing…')
       try {
@@ -248,14 +256,18 @@
         })
         if (!response.ok) throw await driveError(response, 'share')
         const made = await response.json()
+        if (run !== shareRun) return // the dialog was closed (or reopened for another file) meanwhile; the share itself went through
         sharePeople.push({ id: made.id, email: made.emailAddress || email, name: made.displayName, role: made.role || role, photo: made.photoLink || null })
         shareEmailInput.value = ''
         setShareMessage('', '')
       } catch (error) {
+        if (run !== shareRun) return
         setShareMessage('error', actionFailMessage(error, 'share'))
       } finally {
-        setShareBusy(false)
-        renderSharePeople()
+        if (run === shareRun) {
+          setShareBusy(false)
+          renderSharePeople()
+        }
       }
     }
 
@@ -383,6 +395,7 @@
     async function downloadEntries(files) {
       files = files.filter((entry) => entry.kind === 'file')
       if (!files.length) return
+      if (downloadRun) return // one at a time: a second run would take over the Cancel slot and the status line from the first
       downloadRun = { cancelled: false, controller: new AbortController() }
       showUploadCancel(true) // same cancel slot the upload status line uses — see the click handler above
       try {

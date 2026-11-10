@@ -353,6 +353,19 @@
     #export-button.is-error { animation: buttonShake 340ms ease; }
     .button-content { display: inline-flex; align-items: center; justify-content: center; gap: 9px; white-space: nowrap; }
     #export-button.is-busy .button-content { font-size: 12px; letter-spacing: .03em; }
+    /* Breathing room for the longer labels (EXPORTING, SELECT FRAMES, TRY AGAIN): the label used to run
+       right up to the pill's edge. The detailed phase text now lives in the status line below instead. */
+    #export-button { padding: 0 16px; }
+    #export-button .button-content { max-width: 100%; }
+    #export-button.is-busy .button-content { font-size: 11.5px; letter-spacing: .02em; }
+    /* Local export status line: phase + Cancel under the buttons, same look as the Drive status line */
+    .export-status { display: flex; align-items: center; gap: 8px; margin-top: 10px; min-height: 16px; font-size: 11px; color: var(--muted); }
+    .export-status[hidden] { display: none; }
+    .export-status .status-dot { display: none; }
+    .export-status.is-busy .status-dot { display: block; }
+    .export-status .status-text { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; transition: color 200ms ease; }
+    .export-status.is-busy .status-text { color: var(--black); font-weight: 600; }
+    .export-status .status-cancel { margin-left: 2px; }
     .button-download {
       display: block;
       width: 21px;
@@ -770,6 +783,19 @@
     .share-person .icon-button { flex: 0 0 auto; }
     .share-person .icon-button svg { width: 14px; height: 14px; }
     .share-divider { height: 1px; background: var(--line); }
+    /* File info dialog */
+    .finfo-card { width: min(340px, 100%); }
+    .finfo-head { display: flex; align-items: center; gap: 10px; margin: 0 0 14px; }
+    .finfo-head h2 { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+    .finfo-icon { flex: 0 0 28px; width: 28px; height: 28px; }
+    .finfo-icon svg { width: 28px; height: 28px; display: block; }
+    .finfo-rows { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 8px 12px; margin: 0 0 16px; font-size: 12px; line-height: 1.4; }
+    .finfo-rows dt { margin: 0; color: var(--muted); }
+    .finfo-rows dd { margin: 0; min-width: 0; color: var(--ink); overflow-wrap: anywhere; }
+    .finfo-rows dd.is-pending { color: var(--muted); }
+    .finfo-rows .finfo-path { color: var(--muted); }
+    .finfo-actions { flex-wrap: wrap; }
+    .finfo-actions #info-locate[hidden] { display: none; }
     .share-general-row { display: flex; align-items: center; gap: 10px; }
     .share-general-row + .share-general-row { margin-top: 8px; }
     .share-general-icon { flex: 0 0 28px; width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%; background: var(--surface); color: var(--muted); }
@@ -988,6 +1014,9 @@
     .ql-btn:disabled { opacity: .3; cursor: default; }
     .ql-btn:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
     .ql-btn svg { width: 17px; height: 17px; display: block; }
+    .ql-done { flex: 0 0 auto; height: 28px; margin-left: 4px; padding: 0 13px; border: 0; border-radius: 14px; color: #fff; background: rgba(255,255,255,.14); font: inherit; font-size: 12px; font-weight: 600; letter-spacing: .01em; cursor: pointer; transition: background-color 120ms ease; }
+    .ql-done:hover { background: rgba(255,255,255,.24); }
+    .ql-done:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
     .ql-body { flex: 1 1 auto; min-height: 0; display: flex; }
     .ql-stage { position: relative; flex: 1 1 auto; min-width: 0; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 12px 14px; }
     /* The file-to-file swipe arrow (see the wheel listener below) — same edge-flush shape and the same
@@ -1015,6 +1044,7 @@
        scrolling can't reach. */
     .ql-holder.is-zoomed { overflow: auto; cursor: grab; align-items: flex-start; justify-content: flex-start; }
     .ql-holder.is-zoomed:active { cursor: grabbing; }
+    .ql-holder.is-zoomed .ql-media { margin: auto; flex: 0 0 auto; }
     /* Overlaid prev/next arrows, inside the preview content itself (not just the top bar) — permanent
        children of #ql-stage so qlCleanup's per-file reset (which only clears the stage's *other*
        children) never wipes them out. Moved to the bottom corners (out of the way of the creative itself)

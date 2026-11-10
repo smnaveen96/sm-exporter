@@ -428,7 +428,7 @@
 
     function saveTokens() {
       if (tokens) {
-        const at = accounts.findIndex((entry) => entry === tokens || (tokens.account && entry.account === tokens.account))
+        const at = accounts.findIndex((entry) => entry === tokens || (tokens.account && entry.account === tokens.account) || (tokens.refreshToken && entry.refreshToken === tokens.refreshToken))
         if (at >= 0) accounts[at] = tokens; else accounts.push(tokens)
       }
       post({ type: 'storage-set', values: { [STORAGE_TOKENS_KEY]: tokens, [STORAGE_ACCOUNTS_KEY]: accounts } })

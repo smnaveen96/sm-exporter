@@ -22,6 +22,7 @@ type PlaceableImage =
 
 type UiMessage =
   | { type: 'export'; options: ExportOptions }
+  | { type: 'cancel-export' }
   | { type: 'resize'; height: number }
   | { type: 'storage-get'; keys: string[] }
   | { type: 'storage-set'; values: { [key: string]: unknown } }
@@ -42,6 +43,14 @@ const PANEL_HEIGHT = 566 // initial window height; the UI resizes it to fit its 
 const MIN_PANEL_HEIGHT = 200 // smallest height the UI may shrink the window to
 
 let selectionVersion = 0
+// Set by the UI's Cancel while an export is rendering; runExport checks it between frames (a frame already
+// being rendered by Figma can't be interrupted, so the response is "after the current one").
+let exportCancelRequested = false
+// Frames rendered at the same time. Figma's renderer still does the actual work, but overlapping the
+// requests hides the per-call round trip. Two is the sweet spot: the second frame in flight captures
+// most of that gain, while three kept the renderer so busy that zooming the canvas during a long export
+// felt sluggish on a laptop.
+const EXPORT_CONCURRENCY = 2
 
 // figma.currentPage.selection comes back in Figma's internal order (roughly layer stacking,
 // and it varies with how the selection was made). Designers expect canvas reading order,
@@ -136,6 +145,30 @@ async function sendSelection(): Promise<void> {
   }
 }
 
+// Every render a frame needs (1x PNG, extra scales, SVG, PDF) is requested together rather than one after
+// another; the results land in the same RasterSource shape the UI has always received.
+async function exportFrame(frame: FrameNode, index: number, total: number, options: ExportOptions, extraScales: Set<number>): Promise<RasterSource> {
+  const source: RasterSource = { baseName: numberedName(index, total), pngBytes: new Uint8Array(0) }
+  const jobs: Promise<void>[] = [
+    frame.exportAsync({ format: 'PNG', constraint: { type: 'SCALE', value: 1 } }).then((bytes) => { source.pngBytes = bytes }),
+  ]
+  if (extraScales.size > 0) {
+    const renders: { [scale: string]: Uint8Array } = {}
+    source.renders = renders
+    for (const scale of extraScales) {
+      jobs.push(frame.exportAsync({ format: 'PNG', constraint: { type: 'SCALE', value: scale } }).then((bytes) => { renders[String(scale)] = bytes }))
+    }
+  }
+  if (options.svg) {
+    jobs.push(frame.exportAsync({ format: 'SVG', svgOutlineText: true, svgIdAttribute: false, svgSimplifyStroke: true }).then((bytes) => { source.svg = bytes }))
+  }
+  if (options.pdfVector) {
+    jobs.push(frame.exportAsync({ format: 'PDF', colorProfile: 'SRGB' }).then((bytes) => { source.pdf = bytes }))
+  }
+  await Promise.all(jobs)
+  return source
+}
+
 async function runExport(options: ExportOptions): Promise<void> {
   const frames = applyCustomOrder(selectedFrames(), options.order)
   if (frames.length === 0) {
@@ -153,31 +186,21 @@ async function runExport(options: ExportOptions): Promise<void> {
     if (enabled && scale && scale !== 1) extraScales.add(clampScale(scale))
   }
 
-  const rasterSources: RasterSource[] = []
-  for (let index = 0; index < frames.length; index += 1) {
-    const frame = frames[index]
-    figma.ui.postMessage({ type: 'progress', current: index + 1, total: frames.length })
-    const source: RasterSource = {
-      baseName: numberedName(index, frames.length),
-      pngBytes: await frame.exportAsync({
-        format: 'PNG',
-        constraint: { type: 'SCALE', value: 1 },
-      }),
-    }
-    if (extraScales.size > 0) {
-      source.renders = {}
-      for (const scale of extraScales) {
-        source.renders[String(scale)] = await frame.exportAsync({ format: 'PNG', constraint: { type: 'SCALE', value: scale } })
-      }
-    }
-    if (options.svg) {
-      source.svg = await frame.exportAsync({ format: 'SVG', svgOutlineText: true, svgIdAttribute: false, svgSimplifyStroke: true })
-    }
-    if (options.pdfVector) {
-      source.pdf = await frame.exportAsync({ format: 'PDF', colorProfile: 'SRGB' })
-    }
-    rasterSources.push(source)
+  exportCancelRequested = false
+  const rasterSources: RasterSource[] = new Array(frames.length)
+  let done = 0
+  figma.ui.postMessage({ type: 'progress', current: 0, total: frames.length })
+  for (let start = 0; start < frames.length; start += EXPORT_CONCURRENCY) {
+    if (exportCancelRequested) { figma.ui.postMessage({ type: 'export-cancelled' }); return }
+    const batch = frames.slice(start, start + EXPORT_CONCURRENCY)
+    await Promise.all(batch.map(async (frame, offset) => {
+      const index = start + offset
+      rasterSources[index] = await exportFrame(frame, index, frames.length, options, extraScales)
+      done += 1
+      if (!exportCancelRequested) figma.ui.postMessage({ type: 'progress', current: done, total: frames.length })
+    }))
   }
+  if (exportCancelRequested) { figma.ui.postMessage({ type: 'export-cancelled' }); return }
 
   figma.ui.postMessage({
     type: 'export-ready',
@@ -270,6 +293,10 @@ figma.ui.onmessage = (message: UiMessage) => {
       const text = error instanceof Error ? error.message : String(error)
       figma.ui.postMessage({ type: 'error', message: text })
     })
+    return
+  }
+  if (message.type === 'cancel-export') {
+    exportCancelRequested = true
     return
   }
   if (message.type === 'resize') {

@@ -127,6 +127,59 @@
       buttonLabel.textContent = label
     }
 
+    // ---- Local export: the status line under the buttons, and Cancel ---------------------------------
+    // The button itself now only says EXPORTING / SAVING; which frame is rendering, which PDF is being
+    // compressed and so on is written here, where there is room for it, next to a Cancel that stops the
+    // main thread's rendering after the current frame and drops whatever the UI is converting.
+    const exportStatusEl = document.getElementById('export-status')
+    const exportStatusText = document.getElementById('export-status-text')
+    const exportCancelButton = document.getElementById('export-cancel')
+    let exportRun = null       // { cancelled } while a download export is in progress
+    let exportStatusTimer = 0
+    function setExportStatus(state, text) {
+      clearTimeout(exportStatusTimer)
+      exportStatusEl.hidden = !text
+      exportStatusEl.classList.toggle('is-busy', state === 'busy')
+      exportStatusText.textContent = text || ''
+      exportCancelButton.hidden = state !== 'busy'
+      syncHeight()
+    }
+    function flashExportStatus(text, ms) {
+      setExportStatus('done', text)
+      exportStatusTimer = setTimeout(() => setExportStatus('', ''), ms)
+    }
+    function exportCancelledError() {
+      const error = new Error('Export cancelled by user')
+      error.cancelled = true
+      return error
+    }
+    function throwIfExportCancelled() {
+      if (activeDestination === 'download' && exportRun && exportRun.cancelled) throw exportCancelledError()
+    }
+    // Every phase message goes through here: to the Drive status line during an upload, or to the local
+    // export line. Nothing is written once a cancel is under way, so "Cancelling…" stays put.
+    function exportPhase(text) {
+      if (activeDestination === 'drive') { if (!(uploadRun && uploadRun.cancelled)) setDriveStatus('busy', text); return }
+      if (exportRun && exportRun.cancelled) return
+      setExportStatus('busy', text)
+    }
+    function cancelLocalExport() {
+      if (!exportRun || exportRun.cancelled) return
+      exportRun.cancelled = true
+      post({ type: 'cancel-export' }) // the main thread finishes the frame it is on, then stops
+      stopPngWorker()               // PNG optimisation in flight is dropped immediately
+      setExportStatus('busy', 'Cancelling…')
+      exportCancelButton.hidden = true
+    }
+    function finishCancelledExport() {
+      exportRun = null
+      busy = false
+      setButtonState('', 'EXPORT')
+      updateButton()
+      flashExportStatus('Export cancelled.', 2400)
+    }
+    exportCancelButton.addEventListener('click', cancelLocalExport)
+
     function clearThumbnailUrls() {
       for (const url of thumbnailUrls) URL.revokeObjectURL(url)
       thumbnailUrls = []
@@ -567,7 +620,9 @@
     exportButton.addEventListener('click', () => {
       busy = true
       activeDestination = 'download'
-      setButtonState('busy', `EXPORTING 0/${selectedCount}`)
+      exportRun = { cancelled: false }
+      setButtonState('busy', 'EXPORTING')
+      setExportStatus('busy', `Rendering 0 of ${selectedCount}…`)
       updateButton()
       post({ type: 'export', options: exportOptions() })
     })
@@ -708,6 +763,11 @@
       return concatBytes([...localParts, centralDirectory, end])
     }
 
+    // "Summer-Sale.jpg" → "Summer-Sale": a typed file name or a frame name that already carries one of the
+    // export extensions, so every output of that frame shares the stem instead of stacking extensions.
+    function stripExportExtension(value) {
+      return String(value || '').replace(/\.(jpe?g|png|webp|svg|pdf|zip)$/i, '')
+    }
     function normalizedFilename(value, extension, fallback) {
       const escaped = extension.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
       const withoutExtension = String(value || '').trim().replace(new RegExp(`(?:\\.${escaped})+$`, 'i'), '')

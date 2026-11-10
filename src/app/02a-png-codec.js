@@ -229,14 +229,18 @@
         return i
       }
       // Undithered error (palette adequacy) — the quality gate
-      let sq = 0
+      let sq = 0, measured = 0
       for (let i = 0, o = 0; i < count; i += 1, o += 4) {
         if (rgba[o + 3] === 0) continue
         const j = nearestByte(rgba[o], rgba[o + 1], rgba[o + 2], rgba[o + 3])
         const dr = paletteBytes[j * 4] - rgba[o], dg = paletteBytes[j * 4 + 1] - rgba[o + 1], db = paletteBytes[j * 4 + 2] - rgba[o + 2], da = paletteBytes[j * 4 + 3] - rgba[o + 3]
         sq += dr * dr + dg * dg + db * db + da * da
+        measured += 1
       }
-      const mse = sq / (count * 4)
+      // Averaged over the pixels that were measured: fully transparent ones are skipped above, and
+      // counting them in the denominator made a mostly-transparent sticker or logo look 10–20 dB better
+      // than it was, so a visibly banded palette could pass as "indistinguishable".
+      const mse = sq / (Math.max(1, measured) * 4)
       const psnr = 10 * Math.log10(255 * 255 / Math.max(mse, 1e-9))
       // Reduced Floyd–Steinberg, serpentine. Error carried at 3/4 strength: enough to break banding, low grain.
       const indices = new Uint8Array(count)
@@ -364,85 +368,3 @@
       console.log(LOG, `PNG optimised: ${width}×${height} ${(bytes.length / 1024).toFixed(0)} KB → ${(out.length / 1024).toFixed(0)} KB as ${kind}${lossless ? ', lossless' : ''}, ${Math.round(performance.now() - started)} ms`)
       return out
     }
-
-    function renderAt(source, scale) {
-      if (!scale || scale === 1) return source.pngBytes
-      return (source.renders && source.renders[String(scale)]) || source.pngBytes
-    }
-
-    async function generateFiles(message) {
-      const options = message.options
-      const scales = options.scales || {}
-      const files = []
-      const pdfImages = []
-      const vectorPages = []
-      const vectorIndexes = [] // which source (frame) each vector page came from
-      // One frame: every image format of that frame is named after the File name field
-      // (Summer-Sale.jpg, Summer-Sale.png, …), or after the frame's name in Figma when it is
-      // empty, matching the PDF. Several frames stay numbered (01.jpg, 02.jpg, …).
-      const frameName = message.rasterSources.length === 1 && frameOrder.length === 1 ? (frameNames[frameOrder[0]] || '') : ''
-      const pdfName = options.typedName || frameName || options.fileName
-      const typedName = options.typedName || frameName || options.fileName || ''
-      const useTypedName = typedName && message.rasterSources.length === 1
-      const typedStem = typedName.replace(/\.(jpe?g|png|webp|svg|pdf|zip)$/i, '')
-      const imageName = (source, extension) => useTypedName ? normalizedFilename(typedStem, extension, source.baseName) : `${source.baseName}.${extension}`
-      for (const [sourceIndex, source] of message.rasterSources.entries()) {
-        // PDF — Image always uses the 1x render (unchanged quality path); JPEG follows its own scale.
-        if (options.pdfImage) pdfImages.push(await convertPng(source.pngBytes, 'image/jpeg', 0.93))
-        if (options.jpeg) {
-          const jpeg = (options.pdfImage && (!scales.jpeg || scales.jpeg === 1))
-            ? pdfImages[pdfImages.length - 1]
-            : await convertPng(renderAt(source, scales.jpeg), 'image/jpeg', 0.93)
-          files.push({ name: imageName(source, 'jpg'), mime: 'image/jpeg', bytes: jpeg.bytes })
-        }
-        if (options.png) files.push({ name: imageName(source, 'png'), mime: 'image/png', bytes: optimizePng(asBytes(renderAt(source, scales.png))) })
-        if (options.webp) {
-          const webp = await convertPng(renderAt(source, scales.webp), 'image/webp', 0.88)
-          files.push({ name: imageName(source, 'webp'), mime: 'image/webp', bytes: webp.bytes })
-        }
-        if (options.svg && source.svg) files.push({ name: imageName(source, 'svg'), mime: 'image/svg+xml', bytes: asBytes(source.svg) })
-        if (options.pdfVector && source.pdf) { vectorPages.push(asBytes(source.pdf)); vectorIndexes.push(sourceIndex) }
-      }
-      const bothPdfs = options.pdfImage && options.pdfVector && vectorPages.length > 0
-      if (options.pdfImage) {
-        files.push({
-          name: normalizedFilename(pdfName, 'pdf', 'Export'),
-          mime: 'application/pdf',
-          bytes: buildRasterPdf(pdfImages),
-        })
-      }
-      if (options.pdfVector && vectorPages.length > 0) {
-        // PDF — Individual with several frames: one PDF per frame, named after the frame.
-        // (One frame behaves like Merged: the typed file name wins, else the frame name.)
-        const individual = options.pdfMode === 'individual' && vectorPages.length > 1
-        const compress = options.compressPdf ? (options.compressLevel === 'smaller' ? 'smaller' : 'default') : false
-        if (activeDestination !== 'drive') setButtonState('busy', options.compressPdf ? 'COMPRESSING' : (individual ? 'CREATING PDFS' : 'MERGING PDF'))
-        if (activeDestination === 'drive') setDriveStatus('busy', options.compressPdf ? 'Compressing PDF...' : (individual ? 'Creating PDFs...' : 'Merging PDF...'))
-        if (individual) {
-          const order = Array.isArray(options.order) ? options.order : []
-          const framesKnown = order.length === message.rasterSources.length // only trust the names when every page lines up with a frame
-          const taken = new Set(files.map((file) => file.name.toLowerCase()))
-          for (let i = 0; i < vectorPages.length; i += 1) {
-            const sourceIndex = vectorIndexes[i]
-            const source = message.rasterSources[sourceIndex]
-            const stem = (framesKnown && frameNames[order[sourceIndex]]) || source.baseName || String(i + 1).padStart(2, '0')
-            let name = normalizedFilename(stem, 'pdf', source.baseName || 'Export')
-            // Same frame name twice: "Card", "Card 2", "Card 3"
-            for (let n = 2; taken.has(name.toLowerCase()); n += 1) name = normalizedFilename(`${stem} ${n}`, 'pdf', 'Export')
-            taken.add(name.toLowerCase())
-            files.push({ name, mime: 'application/pdf', bytes: await buildVectorPdf([vectorPages[i]], compress) })
-          }
-        } else {
-          const merged = await buildVectorPdf(vectorPages, compress)
-          const base = normalizedFilename(pdfName, 'pdf', 'Export').slice(0, -4)
-          files.push({
-            name: bothPdfs ? `${base} — Vector.pdf` : `${base}.pdf`,
-            mime: 'application/pdf',
-            bytes: merged,
-          })
-        }
-      }
-      files.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }))
-      return files
-    }
-

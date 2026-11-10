@@ -128,6 +128,7 @@
         const dict = object.dict
         if (dict.get(PDFName.of('Subtype')) !== PDFName.of('Image')) continue
         if (maskRefs.has(ref.toString())) continue // processed with its parent image below
+        throwIfExportCancelled() // compression is the longest single step of a vector export; stop between images
         const width = numberOf(dict.get(PDFName.of('Width')))
         const height = numberOf(dict.get(PDFName.of('Height')))
         const bpc = numberOf(dict.get(PDFName.of('BitsPerComponent')))
@@ -137,7 +138,7 @@
         const isJpeg = filterName === PDFName.of('DCTDecode')
         const isFlate = !filterName || filterName === PDFName.of('FlateDecode')
         const hasColorKeyMask = dict.has(PDFName.of('Mask'))
-        const hasDecodeArray = dict.has(PDFName.of('Decode'))
+        const hasDecodeArray = dict.has(PDFName.of('Decode')) || dict.has(PDFName.of('DecodeParms')) // predictors: pdf-lib's decoder can't undo them
         const describe = `${width}×${height} ${filterName ? filterName.decodeText() : 'raw'} ${channels ? channels + 'ch' : 'unsupported colour space'} ${(object.contents.length / 1024).toFixed(0)} KB`
         if (!width || !height || bpc !== 8 || !channels || !(isFlate || isJpeg) || hasColorKeyMask || hasDecodeArray) {
           console.log(LOG, `PDF image kept as is (unsupported): ${describe}`)
@@ -231,7 +232,7 @@
       const filter = md.get(PDFName.of('Filter'))
       const filterName = filter instanceof PDFArray ? (filter.size() === 1 ? filter.get(0) : null) : filter
       const isFlate = !filterName || filterName === PDFName.of('FlateDecode')
-      if (!width || !height || numberOf(md.get(PDFName.of('BitsPerComponent'))) !== 8 || md.get(PDFName.of('ColorSpace')) !== PDFName.of('DeviceGray') || !isFlate || md.has(PDFName.of('Matte')) || md.has(PDFName.of('Decode'))) {
+      if (!width || !height || numberOf(md.get(PDFName.of('BitsPerComponent'))) !== 8 || md.get(PDFName.of('ColorSpace')) !== PDFName.of('DeviceGray') || !isFlate || md.has(PDFName.of('Matte')) || md.has(PDFName.of('Decode')) || md.has(PDFName.of('DecodeParms'))) {
         console.log(LOG, `Soft mask kept as is (unsupported): ${width}×${height}`)
         return 'kept'
       }
@@ -328,21 +329,28 @@
 
     async function finishExport(message) {
       const files = await generateFiles(message)
+      throwIfExportCancelled()
+      setButtonState('busy', 'SAVING')
       if (files.length === 1) {
         // One file → download it directly, no ZIP (already named from the typed file name, if any).
         const file = files[0]
         const name = file.name
-        setButtonState('busy', 'SAVING')
+        exportPhase('Saving…')
         await downloadSingle(name, file.bytes, file.mime)
       } else {
-        setButtonState('busy', 'CREATING ZIP')
+        exportPhase(`Creating ZIP (${files.length} files)…`)
         const zip = buildZip(files)
+        throwIfExportCancelled()
         const zipFrame = message.rasterSources.length === 1 && frameOrder.length === 1 ? (frameNames[frameOrder[0]] || '') : ''
-        await downloadZip(normalizedFilename(message.options.typedName || zipFrame || message.options.fileName, 'zip', 'SM Export'), zip)
+        await downloadZip(normalizedFilename(stripExportExtension(message.options.typedName || zipFrame || message.options.fileName), 'zip', 'SM Export'), zip)
       }
+      exportRun = null
       busy = false
       setButtonState('success', 'EXPORTED')
+      flashExportStatus(files.length === 1 ? 'Exported 1 file.' : `Exported ${files.length} files.`, 2400)
       updateButton()
-      setTimeout(() => setButtonState('', 'EXPORT'), 900)
+      // Only settle back to the idle label if nothing new started meanwhile — a second export clicked
+      // within the 0.9 s used to have its spinner and "EXPORTING n/N" label wiped by this timer.
+      setTimeout(() => { if (!busy) setButtonState('', 'EXPORT') }, 900)
     }
 

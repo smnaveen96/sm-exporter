@@ -58,6 +58,21 @@
       </div>
     </div>
   </div>
+  <div id="info-modal" class="modal" hidden>
+    <div class="modal-card finfo-card" role="dialog" aria-modal="true" aria-labelledby="info-title">
+      <div class="finfo-head">
+        <span id="info-icon" class="finfo-icon" aria-hidden="true"></span>
+        <h2 id="info-title"></h2>
+      </div>
+      <dl id="info-rows" class="finfo-rows"></dl>
+      <div class="modal-actions finfo-actions">
+        <button id="info-locate" class="small-button has-icon" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="2.2"/><path d="M12 15.2v2.3"/></svg>Show location</button>
+        <span class="spacer"></span>
+        <button id="info-open" class="small-button" type="button">Open in Drive</button>
+        <button id="info-done" class="small-button is-primary" type="button">Done</button>
+      </div>
+    </div>
+  </div>
   <div id="ctx-menu" class="ctx-menu" role="menu" hidden></div>
   <div id="qlook" class="qlook" role="dialog" aria-modal="true" aria-label="Preview" hidden>
     <div class="ql-bar">
@@ -71,7 +86,9 @@
       </span>
       <button id="ql-download" class="ql-btn" type="button" aria-label="Download"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg></button>
       <button id="ql-open" class="ql-btn" type="button" aria-label="Open in Drive"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg></button>
-      <button id="ql-close" class="ql-btn" type="button" aria-label="Close preview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      <!-- A text pill, not an ×: Figma's own plugin-window × sits directly above this spot, and two
+           identical × buttons stacked there read as one duplicated control. -->
+      <button id="ql-close" class="ql-done" type="button" aria-label="Close preview" title="Close preview (Esc)">Done</button>
     </div>
     <div class="ql-body">
       <div id="ql-pages" class="ql-pages" hidden></div>
@@ -83,7 +100,7 @@
   </div>
   <div class="brand">
     <div class="brand-mark" aria-hidden="true">
-      <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><path fill="#000" fill-rule="evenodd" d="M45.75 0.16 L43.58 0.48 L42.86 0.48 L41.49 0.80 L40.45 0.88 L38.68 1.36 L37.56 1.52 L35.87 2.09 L35.55 2.09 L30.82 3.77 L26.89 5.62 L23.92 7.30 L19.90 10.03 L15.97 13.32 L12.52 16.85 L9.55 20.55 L7.38 23.76 L6.58 25.28 L6.02 26.08 L4.74 28.65 L2.81 33.31 L1.52 37.48 L1.20 39.25 L0.88 40.29 L0.80 41.33 L0.56 42.13 L0.48 43.42 L0.24 44.54 L0.16 46.71 L0.00 47.59 L0.00 52.33 L0.24 54.25 L0.24 55.46 L0.48 56.58 L0.56 57.78 L0.80 58.59 L0.88 59.63 L1.52 62.52 L1.85 63.32 L2.17 64.77 L3.13 67.34 L3.13 67.58 L3.45 68.14 L3.77 69.18 L4.74 71.35 L6.74 75.12 L9.63 79.53 L12.84 83.47 L16.45 87.08 L20.39 90.29 L24.08 92.78 L28.41 95.10 L32.99 97.03 L33.23 97.03 L35.71 97.91 L36.60 98.07 L37.08 98.31 L38.84 98.64 L39.81 98.96 L42.62 99.36 L43.10 99.52 L47.27 99.84 L47.35 99.92 L52.49 99.92 L52.57 99.84 L53.53 99.84 L56.74 99.52 L57.78 99.28 L58.75 99.20 L59.15 99.04 L60.11 98.96 L61.08 98.64 L62.76 98.31 L67.09 96.95 L71.67 95.02 L75.92 92.70 L79.61 90.21 L83.79 86.76 L86.76 83.79 L89.97 79.94 L92.62 76.00 L94.14 73.35 L95.18 71.27 L97.03 66.77 L98.31 62.68 L99.36 57.70 L99.44 56.42 L99.68 55.06 L99.68 53.85 L99.92 51.44 L99.84 47.11 L99.36 42.30 L98.31 37.32 L96.79 32.50 L96.47 31.94 L96.47 31.70 L95.83 30.34 L95.75 29.94 L95.51 29.61 L95.35 29.61 L94.30 31.54 L92.38 35.63 L91.41 37.40 L90.13 40.21 L88.84 42.62 L87.24 46.07 L85.96 48.48 L84.91 50.80 L83.07 54.33 L79.70 61.32 L79.29 61.72 L69.34 61.72 L69.18 61.56 L69.18 61.24 L69.50 60.75 L70.79 57.95 L74.64 50.32 L76.89 45.59 L77.85 43.82 L79.78 39.73 L80.74 37.96 L82.02 35.15 L83.63 32.10 L88.44 22.15 L89.57 19.98 L89.57 19.58 L87.08 16.53 L84.67 14.04 L82.18 11.80 L79.78 9.87 L75.44 6.98 L71.75 4.98 L69.42 3.93 L66.53 2.81 L66.05 2.73 L64.61 2.17 L62.60 1.69 L62.36 1.52 L61.56 1.44 L60.59 1.12 L60.19 1.12 L58.99 0.80 L58.43 0.80 L57.54 0.56 L56.34 0.48 L55.14 0.24 L52.81 0.16 L52.73 0.08 L49.76 0.00 L49.68 0.08Z M40.29 43.18 L40.53 43.18 L40.69 43.34 L41.65 45.43 L43.18 48.23 L44.22 50.48 L49.76 61.24 L49.68 61.64 L49.52 61.72 L35.55 61.64 L35.47 61.56 L30.98 61.56 L30.74 61.32 L35.47 52.33 L35.47 52.17 L37.00 49.44 L37.48 48.31 L39.89 43.90 L40.05 43.42Z M50.16 42.86 L68.78 42.86 L69.02 43.18 L68.06 44.94 L66.05 49.04 L59.63 61.40 L59.39 61.40 L59.23 61.24 L58.67 60.19 L58.51 59.71 L52.89 48.96 L52.49 47.99 L51.28 45.83 L50.88 44.86 L50.00 43.34 L50.00 43.02Z M30.82 43.10 L30.02 44.86 L28.89 46.87 L26.48 51.77 L22.15 60.03 L21.67 61.16 L21.27 61.56 L12.04 61.56 L11.88 61.40 L13.08 58.83 L19.74 45.99 L20.14 45.02 L21.03 43.34 L21.35 42.94 L21.51 42.86 L30.58 42.86Z"/></svg>
+      <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" rx="26" fill="#000"/><g fill="#fff" transform="translate(10 40.5) scale(0.1113)"><path d="M186.207 0H100.073L13.9199 170.211H101.101L186.207 0Z"/><path d="M273.389 0L360.58 170.211H187.255L273.389 0Z"/><path d="M364.734 0H537.022L450.878 170.211L364.734 0Z"/><path d="M718.65 0H625.241L541.163 170.211H633.544L718.65 0Z"/></g></svg>
     </div>
     <div class="brand-title">SM exporter</div>
     <div id="account-switch" class="account-switch">
@@ -172,6 +189,13 @@
         </button>
       </form>
     </div>
+  </div>
+  <!-- Local export progress: the phase ("Rendering 3 of 12…", "Compressing PDF…") and a Cancel, under the
+       buttons, the same way the Drive status line reports an upload. Hidden when nothing is exporting. -->
+  <div id="export-status" class="export-status" role="status" aria-live="polite" hidden>
+    <span class="status-dot" aria-hidden="true"></span>
+    <span id="export-status-text" class="status-text"></span>
+    <button id="export-cancel" class="status-cancel" type="button" hidden>Cancel</button>
   </div>
   </div></div>
   <div id="drive-area" class="drive-area is-open">
@@ -281,13 +305,15 @@
 
   <!-- pdf-lib 1.17.1 (MIT, https://pdf-lib.js.org) — merges and compresses the vector PDFs -->
   <script>__VENDOR_PDF_LIB_MIN_JS__</script>
-  <!-- pdf.js 3.11.174 (Apache-2.0, https://mozilla.github.io/pdf.js/) -- renders real page thumbnails for the PDF preview strip (pdf-lib above can read a PDF's structure but can't rasterize a page to pixels) -->
-  <script>__VENDOR_PDFJS_MIN_JS__</script>
-  <!-- pdf.js's worker build, kept inert (type="text/plain" so the browser never executes it here) until a Blob + Worker is built from its text at runtime -- pdf.js needs a real Worker, and Figma's sandboxed plugin iframe can't fetch a separate .js file for one, so the worker script has to ship inline like this instead. -->
+  <!-- pdf.js 4.10.38 (Apache-2.0, https://mozilla.github.io/pdf.js/) -- renders the PDF preview's pages and the page-strip thumbnails (pdf-lib above can read a PDF's structure but can't rasterize a page to pixels). pdf.js 4 ships only as an ES module, so it's inlined as type="module"; build.js appends a line that publishes its exports as window.pdfjsLib for the classic app script below, which only touches it lazily (when a PDF is previewed), long after this deferred module has run. -->
+  <script type="module">__VENDOR_PDFJS_MJS__</script>
+  <!-- pdf.js's worker build, kept inert (type="text/plain" so the browser never executes it here) until a Blob + Worker is built from its text at runtime -- pdf.js needs a real Worker, and Figma's sandboxed plugin iframe can't fetch a separate .js file for one, so the worker script has to ship inline like this instead. (pdf.js 4 starts it as a module worker; a Blob URL is fine for that since the worker imports nothing.) -->
   <script type="text/plain" id="pdfjs-worker-src">__VENDOR_PDFJS_WORKER_TXT__</script>
 
   <!-- fflate 0.8.2 (MIT, https://github.com/101arrowz/fflate) — deflate for lossless PNG optimisation -->
   <script>__VENDOR_FFLATE_MIN_JS__</script>
+  <!-- The PNG optimiser's worker script (fflate + the PNG codec, assembled by build.js), inert until a PNG export turns it into a Blob Worker -- see optimizePngAsync. -->
+  <script type="text/plain" id="png-worker-src">__PNG_WORKER_JS__</script>
   <script>__APP_MAIN_JS__</script>
 </body>
 </html>

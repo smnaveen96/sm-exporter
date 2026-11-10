@@ -1,6 +1,6 @@
 {
   "name": "sm-exporter",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "private": true,
   "description": "Figma plugin: exports selected frames as JPEG / PNG / WebP / SVG / PDF (image or vector, merged or one per frame, with optional compression) and downloads them individually or uploads them to a Google Drive folder.",
   "scripts": {

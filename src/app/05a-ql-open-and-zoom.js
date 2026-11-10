@@ -60,8 +60,12 @@
       if (qlAbort) { qlAbort.abort(); qlAbort = null }
       if (qlUrl) { URL.revokeObjectURL(qlUrl); qlUrl = '' }
       qlPdfBytes = null
-      qlPdfJsDoc = null
+      // destroy() also terminates the Web Worker pdf.js started for this document — without it every PDF
+      // opened (and every step away and back) left another live worker behind for the rest of the session.
+      if (qlPdfJsDoc) { void qlPdfJsDoc.destroy().catch(() => {}); qlPdfJsDoc = null }
       qlPdfRenderToken += 1 // invalidate any in-flight renderPdfPage() from the file being left
+      qlPageCache.clear()   // rendered pages of the file being left (see showPdfPage)
+      qlSharpPending.clear()
       if (qlPageObserver) { qlPageObserver.disconnect(); qlPageObserver = null }
       qlHolderObserver.disconnect()
       // The overlay prev/next file-nav arrows are permanent children of #ql-stage, not per-file content,
@@ -99,7 +103,9 @@
       const r = qlMedia.getBoundingClientRect()
       qlMediaFit = (r.width && r.height) ? { width: r.width, height: r.height } : null
     }
-    function applyZoom() {
+    // keepScroll: a sharp render replacing the fast one of the same page (see placePdfCanvas) keeps
+    // wherever the person had scrolled to instead of re-centering.
+    function applyZoom(keepScroll) {
       if (qlMedia && qlMediaFit) {
         // max-width/max-height: 100% (the normal "fit inside the frame" rule) caps the *used* width/
         // height no matter how it was set, inline style included — it has to be lifted here or the
@@ -112,7 +118,7 @@
       }
       if (qlHolder) {
         qlHolder.classList.toggle('is-zoomed', qlZoom !== 1)
-        if (qlZoom !== 1) {
+        if (qlZoom !== 1 && !keepScroll) {
           // Going into/further into zoom makes the holder scrollable, and a freshly-scrollable element
           // always starts scrolled to (0,0) — its very top-left corner — with nothing here to say
           // otherwise. That's the "it keeps jumping to the top-left" complaint: the zoom math itself was
@@ -135,6 +141,19 @@
       qlZoomIn.disabled = qlZoom >= ZOOM_STEPS[ZOOM_STEPS.length - 1]
     }
     function clampZoom(value) { return Math.min(ZOOM_STEPS[ZOOM_STEPS.length - 1], Math.max(ZOOM_STEPS[0], value)) }
+    // Every zoom change goes through here. Leaving 100% is the one moment the media is guaranteed to be
+    // showing at its true fitted size with no inline width/height of ours on it, so the baseline is
+    // re-measured right then rather than trusted from whenever the file first appeared — by now the
+    // placeholder is gone and the window's resize animation has settled, both of which could have left
+    // the earlier measurement too small (a too-small baseline × 1.25 is barely bigger than the frame, so
+    // the page just snapped to the top-left corner instead of visibly zooming).
+    function setZoom(next) {
+      next = clampZoom(next)
+      if (next === qlZoom) return
+      if (qlZoom === 1 && qlMedia) captureMediaFit()
+      qlZoom = next
+      applyZoom()
+    }
     function stepZoom(delta) {
       const at = ZOOM_STEPS.indexOf(qlZoom)
       let next
@@ -143,12 +162,11 @@
       // value in the requested direction instead of jumping straight to one end.
       else if (delta > 0) next = ZOOM_STEPS.find((s) => s > qlZoom) ?? ZOOM_STEPS[ZOOM_STEPS.length - 1]
       else next = [...ZOOM_STEPS].reverse().find((s) => s < qlZoom) ?? ZOOM_STEPS[0]
-      qlZoom = next
-      applyZoom()
+      setZoom(next)
     }
     qlZoomOut.addEventListener('click', () => stepZoom(-1))
     qlZoomIn.addEventListener('click', () => stepZoom(1))
-    qlZoomPct.addEventListener('click', () => { qlZoom = 1; applyZoom() })
+    qlZoomPct.addEventListener('click', () => setZoom(1))
     // Pinch/trackpad-gesture zooming: a trackpad pinch is reported to the browser as a wheel event with
     // ctrlKey set (this is the standard, cross-browser signal for it — Safari's own separate, non-standard
     // gesturestart/gesturechange events were tried here once too, but Figma's desktop shell is Chromium,
@@ -162,8 +180,7 @@
       if (!event.ctrlKey) return
       event.preventDefault()
       const factor = Math.exp(-event.deltaY * 0.012)
-      qlZoom = clampZoom(qlZoom * factor)
-      applyZoom()
+      setZoom(qlZoom * factor)
     }, { passive: false })
     // Double-click/double-tap to zoom: a quick fallback for the "zoom jumps to the top-left corner" bug
     // rather than a fix for it — the underlying centering logic above is untouched. Double-clicking toggles
@@ -171,8 +188,7 @@
     qlStage.addEventListener('dblclick', (event) => {
       if (qlZoomBar.hidden) return // only image and PDF previews offer zoom at all (not video/audio)
       event.preventDefault()
-      qlZoom = qlZoom === 1 ? clampZoom(2) : 1
-      applyZoom()
+      setZoom(qlZoom === 1 ? 2 : 1)
     })
     // A PDF now shows one page at a time (see renderPdfPage above) rather than the old native viewer's
     // single long scrollable document, so a plain scroll/trackpad gesture over it would otherwise do

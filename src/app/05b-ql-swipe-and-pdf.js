@@ -67,19 +67,33 @@
       window.pdfjsLib.GlobalWorkerOptions.workerSrc = qlPdfJsWorkerUrl
       return qlPdfJsWorkerUrl
     }
+    // One pdf.js document per file. The load is memoised (the page render and the strip thumbnails can
+    // all ask for it in the same tick, and each getDocument() would otherwise spin up its own worker),
+    // and a load that finishes after the preview has already moved on to another file is thrown away
+    // rather than adopted — otherwise file B's thumbnails and page flips could quietly draw file A's pages.
+    let qlPdfJsLoading = null
     async function ensurePdfJsDoc() {
       if (qlPdfJsDoc) return qlPdfJsDoc
+      if (qlPdfJsLoading) return qlPdfJsLoading
       if (!window.pdfjsLib || !qlPdfBytes) return null
       if (!ensurePdfJsWorker()) return null
-      try {
-        // pdf.js detaches/consumes the buffer it's given, so a page-count fallback using the same
-        // qlPdfBytes elsewhere still has its own untouched copy.
-        qlPdfJsDoc = await window.pdfjsLib.getDocument({ data: qlPdfBytes.slice(0) }).promise
-        return qlPdfJsDoc
-      } catch (error) {
-        console.warn(LOG, 'pdf.js could not open this PDF', error)
-        return null
-      }
+      const bytes = qlPdfBytes
+      qlPdfJsLoading = (async () => {
+        try {
+          // pdf.js detaches/consumes the buffer it's given, so a page-count fallback using the same
+          // qlPdfBytes elsewhere still has its own untouched copy.
+          const doc = await window.pdfjsLib.getDocument({ data: new Uint8Array(bytes.slice(0)) }).promise
+          if (qlPdfBytes !== bytes) { void doc.destroy().catch(() => {}); return null } // a different file is on show now
+          qlPdfJsDoc = doc
+          return doc
+        } catch (error) {
+          if (qlPdfBytes === bytes) console.warn(LOG, 'pdf.js could not open this PDF', error)
+          return null
+        } finally {
+          qlPdfJsLoading = null
+        }
+      })()
+      return qlPdfJsLoading
     }
     // ---- Rendering a PDF page for the main preview itself: a <canvas>, not an <iframe> showing the
     // browser's own built-in PDF viewer. The native viewer draws its own toolbar/chrome over the page
@@ -99,15 +113,29 @@
     // Capping the eager render to a fixed pixel budget keeps every page within that ceiling everywhere,
     // while staying sharp enough that zooming afterward is still a plain CSS resize of the same bitmap.
     const PDF_RENDER_MAX_AREA = 9000000 // ~9 megapixels: well clear of the ~16.7M ceiling, still crisp
-    async function renderPdfPage(n) {
+    // Two render qualities. 'fast' is the page at exactly the size it is about to be shown at (the
+    // holder's fit box × devicePixelRatio — well under a megapixel in this window), which pdf.js turns
+    // around in a few tens of milliseconds, so flipping pages feels instant. 'sharp' is the bitmap that
+    // zooming actually needs (fit × the highest zoom step × devicePixelRatio, capped at
+    // PDF_RENDER_MAX_AREA). Sharp used to be the only render, at a flat 9 Mpx no matter how small the
+    // page is shown, and it was done from scratch on every page flip — a second or more of pdf.js work
+    // each time, which is what made paging through a deck feel slow. It now happens in the background
+    // once the fast render is already on screen, is cached per page (a small LRU), and the neighbouring
+    // pages are rendered ahead of time, so paging back and forth never re-renders anything.
+    function pdfRenderScales(base) {
+      const dpr = window.devicePixelRatio || 1
+      const w = qlHolder ? qlHolder.clientWidth : 0, h = qlHolder ? qlHolder.clientHeight : 0
+      const fit = (w && h) ? Math.min(w / base.width, h / base.height) : 1
+      const cap = Math.sqrt(PDF_RENDER_MAX_AREA / (base.width * base.height))
+      const fast = Math.min(cap, Math.max(0.1, fit * dpr))
+      return { fast, sharp: Math.min(cap, Math.max(fast, fit * dpr * ZOOM_STEPS[ZOOM_STEPS.length - 1])) }
+    }
+    async function renderPdfPage(n, quality) {
       const doc = await ensurePdfJsDoc()
       if (!doc) throw new Error('pdf.js unavailable')
       const page = await doc.getPage(n)
       const base = page.getViewport({ scale: 1 }) // the page's "natural" size, same role naturalWidth/Height play for an <img>
-      const wantScale = ZOOM_STEPS[ZOOM_STEPS.length - 1] * (window.devicePixelRatio || 1)
-      const maxScale = Math.sqrt(PDF_RENDER_MAX_AREA / (base.width * base.height))
-      const renderScale = Math.min(wantScale, maxScale)
-      const viewport = page.getViewport({ scale: renderScale })
+      const viewport = page.getViewport({ scale: pdfRenderScales(base)[quality === 'sharp' ? 'sharp' : 'fast'] })
       const canvas = document.createElement('canvas')
       canvas.className = 'ql-media'
       canvas.width = Math.ceil(viewport.width)
@@ -116,6 +144,80 @@
       canvas.naturalHeight = base.height
       await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise
       return canvas
+    }
+    const qlPageCache = new Map() // page number → sharp canvas, insertion order = recency; cleared per file in qlCleanup
+    const QL_PAGE_CACHE_MAX = 4   // a sharp canvas can be tens of MB of pixels; a handful covers paging back and forth
+    function cacheSharpPage(n, canvas) {
+      qlPageCache.delete(n)
+      qlPageCache.set(n, canvas)
+      while (qlPageCache.size > QL_PAGE_CACHE_MAX) qlPageCache.delete(qlPageCache.keys().next().value)
+    }
+    // Sharp renders (the current page's and the prefetches) run strictly one after another, so a prefetch
+    // never competes with the page the person is actually looking at; each re-checks that it's still
+    // wanted (same file, still the current page or next to it) right before it starts.
+    let qlSharpQueue = Promise.resolve()
+    const qlSharpPending = new Set()
+    function queueSharpRender(n, onDone) {
+      if (qlPageCache.has(n) || qlSharpPending.has(n)) return
+      qlSharpPending.add(n)
+      const doc = qlPdfJsDoc
+      qlSharpQueue = qlSharpQueue.then(async () => {
+        try {
+          if (qlPdfJsDoc !== doc || !qlHolder || qlPageCache.has(n) || Math.abs(n - qlPage) > 1) return
+          const canvas = await renderPdfPage(n, 'sharp')
+          if (qlPdfJsDoc !== doc) return
+          cacheSharpPage(n, canvas)
+          if (onDone) onDone(canvas)
+        } catch (error) {
+          console.warn(LOG, `Couldn't render page ${n}`, error)
+        } finally {
+          qlSharpPending.delete(n)
+        }
+      })
+    }
+    function prefetchPdfNeighbours(n) {
+      for (const m of [n + 1, n - 1]) if (m >= 1 && m <= qlPageCount) queueSharpRender(m)
+    }
+    // Puts a rendered page in the holder in place of whatever page is there, carrying the zoom level over
+    // and, when a sharp render replaces the fast one of the same page, the scroll position too.
+    function placePdfCanvas(canvas, label) {
+      const old = qlMedia
+      // A cached canvas may still carry the inline size (and the fade-in class) from the last time it
+      // was shown — cleared first, so the 100% baseline below is measured from the real fitted size.
+      canvas.removeAttribute('style')
+      canvas.classList.remove('is-loading')
+      canvas.setAttribute('aria-label', label || (old && old.getAttribute && old.getAttribute('aria-label')) || '')
+      const scroll = old ? [qlHolder.scrollLeft, qlHolder.scrollTop] : null
+      if (!old) { canvas.classList.add('is-loading'); requestAnimationFrame(() => canvas.classList.remove('is-loading')) }
+      // Stepping away and straight back to a page can ask for the very canvas already on screen (its
+      // sharp render, served from the cache) — nothing to swap then, and "remove the old one" must not
+      // run, since the old one *is* this canvas.
+      if (old !== canvas) {
+        qlHolder.insertBefore(canvas, old || null)
+        if (old) old.remove()
+      }
+      qlMedia = canvas
+      if (qlZoom === 1) captureMediaFit() // measured now, while the canvas is unstyled (so at its 100% size)
+      applyZoom(Boolean(scroll))
+      if (scroll && qlZoom !== 1) { qlHolder.scrollLeft = scroll[0]; qlHolder.scrollTop = scroll[1] }
+    }
+    // Shows page n: straight from the cache when its sharp render is there, otherwise a fast render right
+    // away with the sharp one swapped in underneath once it's done. Resolves false when nothing could be shown.
+    async function showPdfPage(n, label) {
+      if (!qlHolder) return false
+      const token = ++qlPdfRenderToken
+      const holder = qlHolder
+      let canvas = qlPageCache.get(n)
+      if (canvas) cacheSharpPage(n, canvas) // bump its recency
+      else {
+        try { canvas = await renderPdfPage(n, 'fast') } catch (error) { console.warn(LOG, `Couldn't render page ${n}`, error); return false }
+        // The preview may have moved on to a different page/file by the time this resolves.
+        if (token !== qlPdfRenderToken || qlHolder !== holder) return false
+      }
+      placePdfCanvas(canvas, label)
+      if (!qlPageCache.has(n)) queueSharpRender(n, (sharp) => { if (token === qlPdfRenderToken && qlHolder === holder && qlPage === n) placePdfCanvas(sharp) })
+      prefetchPdfNeighbours(n)
+      return true
     }
     async function renderPageThumb(chip, n) {
       if (chip.dataset.rendering || chip.dataset.rendered) return
@@ -144,21 +246,6 @@
         delete chip.dataset.rendering
       }
     }
-    async function goToPage(n) {
-      if (!qlHolder) return
-      const token = ++qlPdfRenderToken
-      let canvas
-      try { canvas = await renderPdfPage(n) } catch (error) { console.warn(LOG, `Couldn't render page ${n}`, error); return }
-      // The preview may have moved on to a different page/file by the time this resolves.
-      if (token !== qlPdfRenderToken || !qlHolder) return
-      const old = qlMedia
-      if (old && old.getAttribute) canvas.setAttribute('aria-label', old.getAttribute('aria-label') || '')
-      qlHolder.insertBefore(canvas, old || null)
-      if (old) old.remove()
-      qlMedia = canvas
-      captureMediaFit() // measured now, while the canvas is still unstyled (so still at its 100% size)
-      applyZoom() // re-applies whatever zoom level was already set, to the newly rendered page
-    }
     // Shared by a page-strip click and the page prev/next arrows, so both keep the strip, the count
     // label and the arrows' disabled state in sync the same way.
     function setPage(n) {
@@ -166,7 +253,7 @@
       qlPage = n
       for (const chip of qlPages.children) chip.classList.toggle('is-current', Number(chip.dataset.page) === n)
       qlPages.children[n - 1] && qlPages.children[n - 1].scrollIntoView({ block: 'nearest' })
-      void goToPage(n)
+      void showPdfPage(n)
       qlCount.textContent = qlList.length > 1 ? `${qlIndex + 1} of ${qlList.length} · Page ${n} of ${qlPageCount}` : `Page ${n} of ${qlPageCount}`
     }
     function buildPageStrip(count) {
