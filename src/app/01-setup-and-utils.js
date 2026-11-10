@@ -1,13 +1,4 @@
-    // =====================================================================================
-    //  TEAM SETUP — fill these in once, then share the plugin folder with the team.
-    //  Values come from Google Cloud → Google Auth Platform → Clients → "Figma plugin"
-    //  (Desktop app). With them filled in, teammates never see the OAuth settings drawer;
-    //  they only sign in with their own Google account once. Leave both empty to make every
-    //  user enter the client themselves in the ⚙ drawer.
-    // =====================================================================================
-    const DEFAULT_GOOGLE_CLIENT_ID = ''
-    const DEFAULT_GOOGLE_CLIENT_SECRET = ''
-    const DEFAULT_GOOGLE_REDIRECT_URI = 'http://127.0.0.1:53682/'
+    const OAUTH_WORKER_URL = 'https://sm-exporter-oauth.smnaveen96.workers.dev'
 
     const LOG = '[SM exporter]'
     // A plain build marker, printed once on load — Figma (and some browsers) can hang onto a cached copy
