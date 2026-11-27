@@ -7058,15 +7058,52 @@ class SwipeAxis {
       pendingCanvasDrag = null
       if (!payload) return
       if (drag && drag.handled) return // dropped on a folder in the picker: that was a move, not a canvas drop
-      window.parent.postMessage({
-        pluginDrop: {
-          clientX: event.clientX,
-          clientY: event.clientY,
-          items: [{ type: 'text/plain', data: payload }],
-        },
-      }, '*')
-      console.log(LOG, 'Relayed drag to Figma via postMessage pluginDrop', { clientX: event.clientX, clientY: event.clientY })
+      const x = event.clientX, y = event.clientY
+      const edge = edgeDistance(x, y)
+      console.log(LOG, 'Drag ended', { clientX: x, clientY: y, edgeDistance: edge, buttons: event.buttons })
+      if (edge > EDGE_ZONE) relayCanvasDrop(payload, x, y) // released out on the canvas
+      else if (edge >= -EDGE_ZONE) awaitCanvasRelease(payload) // ended right at the plugin's edge: see below
+      // else: let go inside the plugin, which is never a canvas drop (Figma's docs skip these too)
     })
+    // How far (x, y) is outside the plugin window: negative inside, 0 on the edge.
+    const EDGE_ZONE = 12
+    function edgeDistance(x, y) {
+      const w = window.innerWidth, h = window.innerHeight
+      const outside = Math.max(-x, x - w, -y, y - h)
+      return outside > 0 ? outside : -Math.min(x, w - x, y, h - y)
+    }
+    function relayCanvasDrop(payload, x, y) {
+      window.parent.postMessage({ pluginDrop: { clientX: x, clientY: y, items: [{ type: 'text/plain', data: payload }] } }, '*')
+      console.log(LOG, 'Relayed drag to Figma via postMessage pluginDrop', { clientX: x, clientY: y })
+    }
+    // In Figma's app the native drag can end the moment the pointer crosses out of the plugin, with the
+    // button still held. Relaying then dropped the image at the plugin's edge before it was let go. A drag
+    // that ends right at the edge therefore waits for the real release (the plugin keeps receiving the held
+    // mouse's events), and places it there if that is out on the canvas. If the button turns out to be up
+    // already (it was let go just at the edge, inside the plugin), nothing is placed.
+    let canvasReleaseCleanup = null
+    function awaitCanvasRelease(payload) {
+      if (canvasReleaseCleanup) canvasReleaseCleanup()
+      const finish = (event) => {
+        cleanup()
+        const edge = edgeDistance(event.clientX, event.clientY)
+        console.log(LOG, 'Pointer released after the drag', { clientX: event.clientX, clientY: event.clientY, edgeDistance: edge })
+        if (edge > 0) relayCanvasDrop(payload, event.clientX, event.clientY)
+      }
+      const move = (event) => { if (event.buttons === 0) { cleanup(); console.log(LOG, 'Drag let go at the plugin edge: nothing placed') } }
+      const cleanup = () => {
+        canvasReleaseCleanup = null
+        clearTimeout(timer)
+        window.removeEventListener('mouseup', finish, true)
+        window.removeEventListener('pointerup', finish, true)
+        window.removeEventListener('mousemove', move, true)
+      }
+      const timer = setTimeout(cleanup, 30000)
+      window.addEventListener('mouseup', finish, true)
+      window.addEventListener('pointerup', finish, true)
+      window.addEventListener('mousemove', move, true)
+      canvasReleaseCleanup = cleanup
+    }
 
     // ---- Keyboard in the picker ------------------------------------------------------------------------
     document.addEventListener('keydown', (event) => {
