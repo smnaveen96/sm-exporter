@@ -6971,6 +6971,37 @@ class SwipeAxis {
       setTimeout(() => label.remove(), 0)
       return label
     }
+    // One item drags a clean copy of its tile. Handing the browser the live tile made it snapshot the tile
+    // mid-drag: faded by .is-dragging, and with the selection ring (a box-shadow outside the tile's box)
+    // sliced off at the edges. The copy has no ring, no fade and no entry animation, sits in a stand-in
+    // list so the grid/list tile styles still apply, and gets a solid backdrop when the tile has none
+    // (list rows are transparent).
+    function solidBackground(el) {
+      for (let node = el.parentElement; node && node !== document.documentElement; node = node.parentElement) {
+        const color = getComputedStyle(node).backgroundColor
+        if (/^rgb\(/.test(color) || /^rgba\([^)]*,\s*1\)$/.test(color)) return color // fully opaque only
+      }
+      return getComputedStyle(document.body).backgroundColor || '#fff'
+    }
+    function dragGhost(tileEl) {
+      const rect = tileEl.getBoundingClientRect()
+      const wrap = document.createElement('div')
+      wrap.className = pickerList.className.replace(/\bis-(moving|swiping)\b/g, '')
+      wrap.setAttribute('aria-hidden', 'true')
+      wrap.style.cssText = `position: fixed; top: -1000px; left: 0; width: ${Math.ceil(rect.width)}px; display: block; min-height: 0; max-height: none; overflow: visible; padding: 0; margin: 0; pointer-events: none;`
+      const ghost = tileEl.cloneNode(true)
+      ghost.classList.remove('is-picked', 'is-selected', 'is-dragging', 'is-drop-target', 'is-flash', 'is-busy', 'is-moving')
+      ghost.removeAttribute('id')
+      ghost.style.cssText += `; width: ${Math.ceil(rect.width)}px; height: ${Math.ceil(rect.height)}px; margin: 0; box-shadow: none; outline: none; opacity: 1; transform: none; animation: none; transition: none;`
+      wrap.append(ghost)
+      document.body.append(wrap)
+      if (/rgba\([^)]*,\s*0\)$|transparent/.test(getComputedStyle(ghost).backgroundColor)) {
+        ghost.style.background = solidBackground(tileEl)
+        ghost.style.borderRadius = ghost.style.borderRadius || '8px'
+      }
+      setTimeout(() => wrap.remove(), 0) // the browser has taken its snapshot by then
+      return ghost
+    }
     pickerList.addEventListener('dragstart', (event) => {
       const entry = entryFromEvent(event)
       if (!entry || pickerMove || isDriveRoot(entry)) { event.preventDefault(); return }
@@ -6985,7 +7016,13 @@ class SwipeAxis {
       const tileEl = event.target.closest('[data-id]')
       try {
         if (dragged.length > 1) event.dataTransfer.setDragImage(dragLabel(dragged.length), 14, 14)
-        else if (tileEl) event.dataTransfer.setDragImage(tileEl, 16, 16)
+        else if (tileEl) {
+          // Held at the point it was grabbed, so the copy doesn't jump under the pointer.
+          const rect = tileEl.getBoundingClientRect()
+          const x = Math.max(0, Math.min(rect.width, event.clientX - rect.left))
+          const y = Math.max(0, Math.min(rect.height, event.clientY - rect.top))
+          event.dataTransfer.setDragImage(dragGhost(tileEl), Math.round(x), Math.round(y))
+        }
       } catch (error) { /* non-essential */ }
       const images = dragged.filter((item) => item.kind === 'file' && fileKind(item) === 'image')
       if (!images.length) { event.dataTransfer.setData('text/plain', dragged.map((item) => item.name).join('\n')); return }
