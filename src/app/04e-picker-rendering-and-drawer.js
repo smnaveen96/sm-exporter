@@ -3,6 +3,7 @@
       const opts = options || {}
       const run = ++pickerRun
       const query = pickerSearch.value.trim()
+      if (!query) pickerSearch.classList.remove('is-working') // the search was cleared some other way
       const container = pickerContainer()
       const focusId = pickerFocusId
       pickerFocusId = ''
@@ -255,9 +256,15 @@
       }))
       openMenu(items, pickerSortButton.getBoundingClientRect())
     })
+    // While a search is waiting to run or running, the search box's glow circles its edge (.is-working).
+    let searchGlowRun = 0
     pickerSearch.addEventListener('input', () => {
       clearTimeout(pickerSearchTimer)
-      pickerSearchTimer = setTimeout(() => { void renderPicker() }, 300)
+      pickerSearch.classList.toggle('is-working', Boolean(pickerSearch.value.trim()))
+      pickerSearchTimer = setTimeout(() => {
+        const mine = ++searchGlowRun
+        renderPicker().finally(() => { if (mine === searchGlowRun) pickerSearch.classList.remove('is-working') })
+      }, 300)
     })
     pickerSearch.addEventListener('paste', () => {
       setTimeout(() => {

@@ -1,20 +1,29 @@
-    // ---- Resizing the window from its corner ----------------------------------------------------------
-    // The window opens at its usual size, which is also the smallest it goes. Dragging the grip in the
-    // bottom-right corner makes it wider (the frame strip and the folder grid use the room) and, while the
-    // Drive folders list is open, taller: the extra height goes to the list. Double-clicking the grip goes
-    // back to the usual size. The size is remembered for next time (code.js keeps it).
+    // ---- Resizing the window from its corner, while Drive folders is open --------------------------------
+    // Resizing belongs to browsing Drive: the grip in the bottom-right corner is there only while the
+    // Drive folders list is open. Dragging it makes the window wider and taller; the extra height goes to the
+    // folder list. Closing the list takes the window back to its usual size, and opening it again grows the
+    // window to the size chosen, along with the drawer's own animation (animateResize in 03a). The usual size
+    // is the smallest it goes; double-clicking the grip goes back to it. The size is remembered for next time
+    // (code.js keeps it).
     const PANEL_MIN_WIDTH = 386 // PANEL_WIDTH in code.ts
     const PANEL_MAX_WIDTH = 1200
     const PANEL_MAX_HEIGHT = 1000
     const LIST_MIN_HEIGHT = 115 // .picker-list's own min-height
     let listHeight = 0 // the folder list's chosen height; 0 = its usual height
+    let chosenWidth = PANEL_MIN_WIDTH // the window's width while Drive folders is open
     let gripDrag = null, gripFrame = 0
+    let framesFolded = false // the thumbnail strip folded away under "N frames selected"
+    const FOLD_PULL = 40 // px dragged up past the window's usual height that folds the thumbnails away
 
     const resizeGrip = document.createElement('div')
     resizeGrip.className = 'resize-grip'
     resizeGrip.setAttribute('aria-hidden', 'true')
     resizeGrip.title = 'Drag to resize · double-click for the usual size'
     document.body.append(resizeGrip)
+
+    function folderListOpen() { return document.body.classList.contains('is-picking') }
+    // Read by panelWidth() in 03a for every resize of the window.
+    function currentPanelWidth() { return folderListOpen() ? chosenWidth : PANEL_MIN_WIDTH }
 
     // The list never gets shorter than it would be anyway: the size only sets a floor and lifts the ceiling
     // (see body.has-list-size in the styles).
@@ -27,61 +36,158 @@
     function folderListShowing() {
       return drawerMode === 'picker' && !document.body.classList.contains('is-moving') && !previewOpen && pickerList.getClientRects().length > 0
     }
-    function postPanelSize(width, save) {
-      post({ type: 'resize', width, height: contentHeight(), save: save ? { width, listHeight } : undefined })
+    function postPanelSize(save) {
+      post({ type: 'resize', width: currentPanelWidth(), height: contentHeight(), save: save ? savedSize() : undefined })
+    }
+
+    // ---- Folding the thumbnail strip ----------------------------------------------------------------------
+    // The chevron after "N frames selected" folds the strip away and back. Dragging the window shorter than
+    // its usual height (the grip, upwards) folds it too, so the Drive folders list keeps its room, and dragging
+    // it tall enough again brings it back. A fold chosen with the chevron stays until the chevron opens it.
+    const previewFold = document.getElementById('preview-fold')
+    const previewToggle = document.getElementById('preview-toggle')
+    let foldedByDrag = false // folded by the grip (so the grip may unfold it), not by the chevron
+    // how: 'instant' (no animation), 'drag' (the strip animates; the grip sizes the window), or nothing (the
+    // strip animates and the window follows it).
+    function setFramesFolded(folded, how) {
+      if (framesFolded === folded) return
+      framesFolded = folded
+      previewToggle.setAttribute('aria-expanded', String(!folded))
+      previewToggle.setAttribute('aria-label', folded ? 'Show frames' : 'Hide frames')
+      if (how === 'instant') {
+        document.body.classList.add('no-anim')
+        previewFold.classList.toggle('is-folded', folded)
+        void document.body.offsetHeight
+        document.body.classList.remove('no-anim')
+        syncHeight()
+        return
+      }
+      if (how === 'drag') { previewFold.classList.toggle('is-folded', folded); return }
+      // Measure where it ends without painting it, then play the fold with the window following along.
+      const from = contentHeight()
+      document.body.classList.add('no-anim')
+      previewFold.classList.toggle('is-folded', folded)
+      const to = contentHeight()
+      previewFold.classList.toggle('is-folded', !folded)
+      void document.body.offsetHeight
+      document.body.classList.remove('no-anim')
+      previewFold.classList.toggle('is-folded', folded)
+      animateResize(from, to, true)
+    }
+    function savedSize() { return { width: chosenWidth, listHeight, framesFolded, foldedByDrag } }
+    previewToggle.addEventListener('click', () => {
+      foldedByDrag = false
+      setFramesFolded(!framesFolded)
+      post({ type: 'resize', width: currentPanelWidth(), height: contentHeight(), save: savedSize() })
+    })
+
+    // ---- Dragging the grip ---------------------------------------------------------------------------------
+    // The window's bottom edge follows the pointer, and the folder list takes up whatever height that leaves.
+    // Pulled more than FOLD_PULL above the usual height, the thumbnails fold away and the list takes their
+    // room (the window itself doesn't jump); dragged back to the usual height, they unfold and the list gives
+    // the room back. While the strip animates, the list is re-fitted every frame so the window stays put.
+    let foldPlaying = 0 // until when the strip's fold animation runs
+    let bounds = null // { width, open, usual }: measured at the width the window is now
+    function measureBounds() {
+      const had = listHeight
+      document.body.classList.add('no-anim')
+      applyListHeight(0)
+      const usual = pickerList.getBoundingClientRect().height
+      previewFold.classList.remove('is-folded')
+      const open = contentHeight() // the window's usual height: thumbnails showing, list at its usual height
+      previewFold.classList.toggle('is-folded', framesFolded)
+      applyListHeight(had)
+      void document.body.offsetHeight
+      document.body.classList.remove('no-anim')
+      return { width: window.innerWidth, open, usual }
+    }
+    function foldByDrag(folded) {
+      foldedByDrag = folded
+      setFramesFolded(folded, 'drag')
+      foldPlaying = performance.now() + 560
+    }
+    function gripStep() {
+      gripFrame = 0
+      const drag = gripDrag
+      if (!drag) return
+      if (drag.sizing) {
+        // Measuring snaps a running fold to its end, so it waits until the strip has settled.
+        if (!bounds || (bounds.width !== window.innerWidth && performance.now() > foldPlaying)) bounds = measureBounds()
+        if (!framesFolded && drag.target < bounds.open - FOLD_PULL) foldByDrag(true)
+        else if (framesFolded && foldedByDrag && drag.target >= bounds.open) foldByDrag(false)
+        const rest = contentHeight() - pickerList.getBoundingClientRect().height
+        const list = drag.target - rest
+        applyListHeight(list > bounds.usual + 1 ? list : 0)
+      }
+      if (!resizeLocked) postPanelSize(false)
+      if (performance.now() < foldPlaying) gripFrame = requestAnimationFrame(gripStep)
+      else if (drag.released) finishGripDrag()
     }
 
     resizeGrip.addEventListener('pointerdown', (event) => {
-      if (event.button !== 0) return
+      if (event.button !== 0 || !folderListOpen() || gripDrag) return
       event.preventDefault()
       resizeGrip.setPointerCapture(event.pointerId) // the window's top-left corner stays put as it grows, so page coordinates track the pointer
-      const showing = folderListShowing()
-      let usual = 0
-      if (showing) { const had = listHeight; applyListHeight(0); usual = pickerList.getBoundingClientRect().height; applyListHeight(had) }
+      const height = contentHeight()
+      bounds = null
       gripDrag = {
         x: event.clientX, y: event.clientY,
-        width: window.innerWidth,
-        list: showing ? pickerList.getBoundingClientRect().height : null,
-        usual, // the list's height with no size chosen: dragged back to it (or less) clears the size
-        room: PANEL_MAX_HEIGHT - contentHeight(), // the window can't go past PANEL_MAX_HEIGHT
-        nextWidth: window.innerWidth,
+        width: window.innerWidth, height,
+        target: height, // the window height the pointer asks for
+        sizing: folderListShowing(), // the height goes to the folder list, so only while it's showing
+        released: false,
       }
       document.body.classList.add('is-resizing')
     })
     resizeGrip.addEventListener('pointermove', (event) => {
-      if (!gripDrag || !resizeGrip.hasPointerCapture(event.pointerId)) return
-      gripDrag.nextWidth = Math.max(PANEL_MIN_WIDTH, Math.min(PANEL_MAX_WIDTH, Math.round(gripDrag.width + event.clientX - gripDrag.x)))
-      if (gripDrag.list !== null) {
-        const height = gripDrag.list + Math.min(event.clientY - gripDrag.y, gripDrag.room)
-        applyListHeight(height > gripDrag.usual + 1 ? height : 0)
-      }
-      if (gripFrame) return
-      gripFrame = requestAnimationFrame(() => { gripFrame = 0; if (gripDrag) postPanelSize(gripDrag.nextWidth, false) })
+      if (!gripDrag || gripDrag.released) return
+      // The button came up somewhere this page never heard about (outside the plugin window): the drag is over.
+      if (event.buttons === 0) { endGripDrag(event); return }
+      if (!resizeGrip.hasPointerCapture(event.pointerId)) return
+      chosenWidth = Math.max(PANEL_MIN_WIDTH, Math.min(PANEL_MAX_WIDTH, Math.round(gripDrag.width + event.clientX - gripDrag.x)))
+      gripDrag.target = Math.min(PANEL_MAX_HEIGHT, gripDrag.height + event.clientY - gripDrag.y)
+      if (!gripFrame) gripFrame = requestAnimationFrame(gripStep)
     })
-    function endGripDrag(event) {
-      if (!gripDrag) return
-      const width = gripDrag.nextWidth
+    function finishGripDrag() {
       gripDrag = null
       cancelAnimationFrame(gripFrame)
       gripFrame = 0
-      if (resizeGrip.hasPointerCapture(event.pointerId)) resizeGrip.releasePointerCapture(event.pointerId)
       document.body.classList.remove('is-resizing')
-      postPanelSize(width, true)
+      postPanelSize(true)
+    }
+    function endGripDrag(event) {
+      if (!gripDrag || gripDrag.released) return
+      gripDrag.released = true
+      if (event && resizeGrip.hasPointerCapture(event.pointerId)) resizeGrip.releasePointerCapture(event.pointerId)
+      // A fold still playing finishes first (the list keeps fitting the window), then the size is saved.
+      if (!gripFrame) gripFrame = requestAnimationFrame(gripStep)
     }
     resizeGrip.addEventListener('pointerup', endGripDrag)
     resizeGrip.addEventListener('pointercancel', endGripDrag)
+    // Figma can take the pointer away mid-drag (the window resizing under it, a click outside the plugin).
+    // Without these the resize cursor stayed on the whole window after the drag had really ended.
+    resizeGrip.addEventListener('lostpointercapture', endGripDrag)
+    window.addEventListener('blur', () => endGripDrag(null))
+    document.addEventListener('pointerdown', (event) => { if (gripDrag && event.target !== resizeGrip) endGripDrag(null) }, true)
     resizeGrip.addEventListener('dblclick', () => {
+      if (!folderListOpen()) return
+      chosenWidth = PANEL_MIN_WIDTH
       applyListHeight(0)
-      postPanelSize(PANEL_MIN_WIDTH, true)
+      foldedByDrag = false
+      setFramesFolded(false) // the usual size shows the thumbnails too
+      postPanelSize(true)
     })
 
-    // The size chosen last time, from code.js's storage.
+    // The size chosen last time, from code.js's storage. It shows the next time Drive folders opens (or now,
+    // if it already is).
     window.addEventListener('message', (event) => {
       const message = event.data && event.data.pluginMessage
       if (!message || message.type !== 'panel-size' || !message.size) return
       const size = message.size
+      chosenWidth = Math.max(PANEL_MIN_WIDTH, Math.min(PANEL_MAX_WIDTH, Math.round(Number(size.width) || PANEL_MIN_WIDTH)))
       applyListHeight(Number(size.listHeight) || 0)
-      const width = Math.max(PANEL_MIN_WIDTH, Math.min(PANEL_MAX_WIDTH, Number(size.width) || PANEL_MIN_WIDTH))
-      if (width !== PANEL_MIN_WIDTH || listHeight) postPanelSize(width, false)
+      foldedByDrag = !!size.foldedByDrag
+      if (size.framesFolded) setFramesFolded(true, 'instant')
+      if (folderListOpen()) postPanelSize(false)
     })
     post({ type: 'panel-size-get' })

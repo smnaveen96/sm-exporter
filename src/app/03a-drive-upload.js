@@ -159,7 +159,7 @@
     const modalText = document.getElementById('modal-text')
     const modalOk = document.getElementById('modal-ok')
     const modalCancel = document.getElementById('modal-cancel')
-    const TRANSITION_MS = 320 // keep in step with --dur in the CSS
+    const TRANSITION_MS = 460 // keep in step with --dur in the CSS
     const TRASH_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16"/><path d="M9 7V4.5h6V7"/><path d="M6.5 7l.8 12a1.5 1.5 0 0 0 1.5 1.4h6.4a1.5 1.5 0 0 0 1.5-1.4l.8-12"/><path d="M10 11v6M14 11v6"/></svg>'
     const CHECK_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>'
 
@@ -201,42 +201,76 @@
     // the last few pixels of the preview, visible as the media's rounded bottom corners getting cut off
     // while the top ones showed fine. 640 gives that edge some breathing room.
     function contentHeight() { return Math.max(Math.ceil(driveArea.getBoundingClientRect().bottom + 15), typeof previewOpen !== 'undefined' && previewOpen ? 640 : 0) }
+    // The window's width: the size chosen with the corner grip while Drive folders is open, the usual
+    // width otherwise (see 07-window-resize.js).
+    function panelWidth() { return typeof currentPanelWidth === 'function' ? currentPanelWidth() : undefined }
     function syncHeight() {
       if (resizeLocked) return
       cancelAnimationFrame(resizeFrame)
       resizeFrame = requestAnimationFrame(() => {
         if (resizeLocked) return
-        post({ type: 'resize', height: contentHeight() })
+        post({ type: 'resize', height: contentHeight(), width: panelWidth() })
       })
     }
     let settleResolve = null
-    // Matches the CSS --ease curve (an expo-out: fast off the mark, long soft landing) so the window's own
-    // resize tracks the drawer's visual height instead of racing ahead of or lagging behind it. Kept
-    // monotonic (no overshoot) — unlike the little spring-pop used for menus and modals — because
-    // overshooting the window's real size would clip the drawer content it's supposed to be following.
-    function springEase(t) { return t >= 1 ? 1 : 1 - Math.pow(2, -10 * t) }
-    function animateResize(from, to) {
+    // The content's height if the window were `width` wide (the layout is measured at that width, unpainted).
+    function heightAtWidth(width) {
+      if (!width || width === window.innerWidth) return contentHeight()
+      document.body.style.width = `${width}px`
+      const height = contentHeight()
+      document.body.style.width = ''
+      return height
+    }
+    // The same curve as the CSS --ease-sheet (cubic-bezier(.32,.72,0,1): a quick, soft start and a long,
+    // settling finish, like a sheet on a spring with no bounce), so the window's own resize moves in step
+    // with the drawer. Kept monotonic: overshooting the window's real size would clip the content it follows.
+    // The bounce lives on the drawer's card instead (see .drive-drawer .drawer-card in the CSS).
+    function cubicBezier(x1, y1, x2, y2) {
+      const bez = (a, b, t) => 3 * a * t * (1 - t) * (1 - t) + 3 * b * t * t * (1 - t) + t * t * t
+      const slope = (a, b, t) => 3 * a * (1 - t) * (1 - t) + 6 * (b - a) * t * (1 - t) + 3 * (1 - b) * t * t
+      return (x) => {
+        if (x <= 0) return 0
+        if (x >= 1) return 1
+        let t = x
+        for (let i = 0; i < 8; i++) { const d = slope(x1, x2, t); if (Math.abs(d) < 1e-6) break; t -= (bez(x1, x2, t) - x) / d }
+        let lo = 0, hi = 1 // Newton can wander on flat ends: finish with bisection
+        for (let i = 0; i < 20 && Math.abs(bez(x1, x2, t) - x) > 1e-5; i++) { if (bez(x1, x2, t) < x) lo = t; else hi = t; t = (lo + hi) / 2 }
+        return bez(y1, y2, t)
+      }
+    }
+    const springEase = cubicBezier(.32, .72, 0, 1)
+    // follow: the content is animating itself (the drawer, the export options, the thumbnail strip), so the
+    // window tracks its real height every frame, never smaller than it — nothing is clipped, and a width that
+    // changes on the way (Drive folders' chosen size) can't throw the end off. Without it (Quick Look), the
+    // height is eased from `from` to `to`.
+    function animateResize(from, to, follow) {
       resizeLocked = true
       drawerSettled = new Promise((resolve) => { settleResolve = resolve })
       cancelAnimationFrame(resizeFrame)
       clearTimeout(resizeHoldTimer)
-      if (from === to) {
+      // The width moves along with the height: opening Drive folders grows the window to the size chosen
+      // for it, closing it goes back to the usual width.
+      const widthTo = panelWidth()
+      const widthFrom = widthTo === undefined ? undefined : window.innerWidth
+      if (!follow && from === to && widthFrom === widthTo) {
         resizeLocked = false
         if (settleResolve) { settleResolve(); settleResolve = null }
-        post({ type: 'resize', height: to })
+        post({ type: 'resize', height: to, width: widthTo })
         return
       }
       const start = performance.now()
       const step = (now) => {
         const t = Math.min(1, (now - start) / TRANSITION_MS)
         const eased = t >= 1 ? 1 : springEase(t)
-        post({ type: 'resize', height: Math.round(from + (to - from) * eased) })
+        const width = widthTo === undefined ? undefined : Math.round(widthFrom + (widthTo - widthFrom) * eased)
+        const easedHeight = Math.round(from + (to - from) * eased)
+        post({ type: 'resize', height: follow ? Math.max(contentHeight(), easedHeight) : easedHeight, width })
         if (t < 1) {
           resizeFrame = requestAnimationFrame(step)
         } else {
           resizeLocked = false
           if (settleResolve) { settleResolve(); settleResolve = null }
-          post({ type: 'resize', height: contentHeight() })
+          post({ type: 'resize', height: contentHeight(), width: widthTo })
         }
       }
       resizeFrame = requestAnimationFrame(step)
@@ -325,12 +359,12 @@
         const from = contentHeight()
         document.body.classList.add('no-anim')
         setPickingState(picking)
-        const to = contentHeight()
+        const to = heightAtWidth(panelWidth())
         setPickingState(wasPicking)
         void document.body.offsetHeight
         document.body.classList.remove('no-anim')
         setPickingState(picking)
-        animateResize(from, to)
+        animateResize(from, to, true)
       }
       if (mode === 'settings' || mode === 'auth') openAccountMenu(mode)
       else if (wasInMenu) closeAccountMenu()

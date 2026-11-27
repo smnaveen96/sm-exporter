@@ -103,6 +103,7 @@
       <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" rx="26" fill="#000"/><g fill="#fff" transform="translate(10 40.5) scale(0.1113)"><path d="M186.207 0H100.073L13.9199 170.211H101.101L186.207 0Z"/><path d="M273.389 0L360.58 170.211H187.255L273.389 0Z"/><path d="M364.734 0H537.022L450.878 170.211L364.734 0Z"/><path d="M718.65 0H625.241L541.163 170.211H633.544L718.65 0Z"/></g></svg>
     </div>
     <div class="brand-title">SM exporter</div>
+    <button id="theme-toggle" class="theme-toggle" type="button" role="switch" aria-checked="false" aria-label="Dark mode" title="Switch to dark mode"><svg class="tt-mark is-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg><svg class="tt-mark is-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/></svg><span class="tt-knob" aria-hidden="true"><svg class="is-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg><svg class="is-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/></svg></span></button>
     <div id="account-switch" class="account-switch">
       <button id="account-chip" class="account-chip" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Connect Google Drive" title="Connect Google Drive"></button>
       <div id="account-menu" class="account-menu" hidden>
@@ -111,12 +112,17 @@
       </div>
     </div>
   </div>
-  <p id="selection-count">Select frames to export</p>
+  <div class="selection-head">
+    <p id="selection-count">Select frames to export</p>
+    <button id="preview-toggle" class="preview-toggle" type="button" aria-expanded="true" aria-controls="preview-fold" aria-label="Hide frames"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+  </div>
+  <div id="preview-fold" class="preview-fold"><div class="preview-fold-inner">
   <div class="preview-wrap">
     <div id="preview"><div class="preview-empty">No frames selected</div></div>
     <button id="preview-arrow-left" class="preview-arrow is-left" type="button" aria-label="Scroll thumbnails left" tabindex="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg></button>
     <button id="preview-arrow-right" class="preview-arrow is-right" type="button" aria-label="Scroll thumbnails right" tabindex="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg></button>
   </div>
+  </div></div>
 
   <p id="picker-summary" class="picker-summary"></p>
   <div id="export-panel" class="collapse"><div class="collapse-inner">
@@ -168,12 +174,9 @@
     <button id="export-button" type="button" disabled>
       <span class="button-content">
         <span class="button-spinner"></span><span class="button-check"></span><span id="button-label">EXPORT</span>
-        <svg class="button-download" viewBox="0 0 34 24" fill="none" aria-hidden="true">
-          <g class="download-arrow">
-            <path d="M17 1.2V14" stroke="white" stroke-width="3.1" stroke-linecap="round"/>
-            <path d="M10.4 7.2 17 14.4l6.6-7.2" stroke="white" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round"/>
-          </g>
-          <path class="download-tray" d="M1.2 15.2v6.6h31.2v-6.6" stroke="white" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round"/>
+        <svg class="button-download" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <g class="download-arrow"><path d="M10 2.6v9.4"/><path d="M6.1 8.4 10 12.3l3.9-3.9"/></g>
+          <path class="download-tray" d="M3.2 13v1.8a2.4 2.4 0 0 0 2.4 2.4h8.8a2.4 2.4 0 0 0 2.4-2.4V13"/>
         </svg>
       </span>
     </button>
@@ -181,10 +184,7 @@
       <form id="drive-form" class="upload-form" novalidate>
         <input id="drive-url" type="text" placeholder="Paste Drive folder link" spellcheck="false" autocomplete="off">
         <button id="drive-submit" type="submit" aria-label="Upload to Google Drive">
-          <svg viewBox="0 0 512 512" aria-hidden="true">
-            <path d="M486.415 221.268a128.434 128.434 0 0 0 -53.015-40.946 133.368 133.368 0 0 0 -27.388-77.541c-19.762-25.731-48.994-43.836-82.312-50.981-81.28-17.425-168.763 32.165-195.012 110.546l-2.84 8.482a126.526 126.526 0 0 0 .678 253.05h73.227a16 16 0 0 0 0-32h-73.227a94.526 94.526 0 0 1 0-189.052h10.838a16 16 0 0 0 15.172-10.92l6.5-19.4c21.239-63.425 92.1-103.538 157.961-89.416 52.792 11.318 87.445 55.5 84.268 107.445a16 16 0 0 0 11.335 16.294c39.682 11.99 67.4 49.215 67.4 90.523a94.633 94.633 0 0 1 -94.526 94.526h-73.227a16 16 0 0 0 0 32h73.227a126.67 126.67 0 0 0 126.526-126.526 125.165 125.165 0 0 0 -25.585-76.084z" fill="currentColor"/>
-            <g class="upload-arrow"><path d="M303.508 324.693a15.962 15.962 0 0 1 -12.3-5.758l-19.208-23.05v151.807a16 16 0 0 1 -32 0v-151.807l-19.208 23.05a16 16 0 1 1 -24.583-20.485l47.5-57a16 16 0 0 1 24.584 0l47.5 57a16 16 0 0 1 -12.283 26.243z" fill="currentColor"/></g>
-          </svg>
+          <svg class="drive-logo" viewBox="10 9 172 172" fill="none" aria-hidden="true"><mask id="gdrive-mask" width="168" height="154" x="12" y="18" maskUnits="userSpaceOnUse" style="mask-type:alpha"><path fill="#b43333" d="M63.09 37c14.626-25.333 51.193-25.334 65.819 0l45.033 78c14.626 25.334-3.657 57.001-32.91 57.001H50.967c-29.253 0-47.536-31.667-32.91-57.001z"/></mask><g mask="url(#gdrive-mask)"><path fill="url(#gdrive-b)" d="M206.905 172.02h-91.888l-19.015-32.934 45.944-79.578z"/><path fill="url(#gdrive-c)" d="M-14.919 172.006 50.04 59.494v.002L31.032 92.422h38.02L115 172.004l-129.918.001z"/><path fill="url(#gdrive-d)" d="M96.007-20.085 141.954 59.5l-19.011 32.928H31.048z"/></g><defs><linearGradient id="gdrive-b" x1="193.6" x2="103.09" y1="165.6" y2="111.21" gradientUnits="userSpaceOnUse"><stop offset=".09" stop-color="#ffe921"/><stop offset="1" stop-color="#fec700"/></linearGradient><linearGradient id="gdrive-c" x1="114.4" x2="15.53" y1="181.61" y2="121.8" gradientUnits="userSpaceOnUse"><stop offset=".15" stop-color="#a9a8ff"/><stop offset=".33" stop-color="#6d97ff"/><stop offset=".48" stop-color="#3186ff"/></linearGradient><linearGradient id="gdrive-d" x1="128.88" x2="28.7" y1="37.88" y2="84.64" gradientUnits="userSpaceOnUse"><stop offset=".55" stop-color="#0ebc5f"/><stop offset=".85" stop-color="#78c9ff"/></linearGradient></defs></svg>
           <span class="submit-spinner"></span><span class="submit-check"></span>
         </button>
       </form>

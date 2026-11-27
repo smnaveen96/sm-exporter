@@ -1,18 +1,99 @@
-
+    /* Two themes, both soft: a faintly warm off-white with near-black ink, and a soft charcoal with
+       off-white ink. Nothing is pure white or pure black. --black is "the strong colour" (primary buttons,
+       rings, selection); in the dark theme it turns light, and --on-black is what sits on it. */
     :root {
       color-scheme: light;
-      --ink: #151515;
-      --ink-soft: #3a3a3a;
-      --muted: #6f6f72;
-      --panel: #ffffff;
-      --surface: #efefef;
-      --surface-2: #f6f6f6;
-      --line: #e2e2e4;
-      --border: #d3d3d6;
-      --border-strong: #8d8d92;
-      --black: #111111;
+      --ink: #1b1b1a;
+      --ink-soft: #3b3a38;
+      --muted: #6f6e6a;
+      --brand-ink: #66655f;
+      --panel: #fbfaf7;
+      --card: #fefdfa;
+      --surface: #efeee9;
+      --surface-2: #f5f4f0;
+      --line: #e5e3dd;
+      --border: #d5d3cc;
+      --border-strong: #8e8c86;
+      --black: #1c1c1b;
+      --black-hover: #2f2e2c;
+      --on-black: #fbfaf7;
+      --on-accent: #fffaf4;
+      --key: #fefdfa;
+      --pill-hover: #e6e4de;
+      --disabled-fill: #cbc9c3;
+      --disabled-ink: #fbfaf7;
+      --switch-off: #c7c5bf;
+      --knob: #fefdfa;
+      --knob-on: #fefdfa;
+      --tint-soft: rgba(28,28,27,.04);
+      --tint: rgba(28,28,27,.06);
+      --tint-strong: rgba(28,28,27,.08);
+      --snack-bg: #222221;
+      --accent: #e8680f;
+      --accent-top: #f58a3b;
+      --accent-bottom: #de5e0a;
+      --accent-text: #c2560b;
+      --accent-text-deep: #9e4407;
+      --accent-soft: rgba(232,104,15,.14);
+      --accent-line: rgba(232,104,15,.24);
+      --sheen: rgba(255,255,255,.75);
+      --surface-grad: linear-gradient(180deg, #f5f4f0, #ebe9e4);
+      --card-grad: linear-gradient(180deg, #fffefb, #f6f4f0);
+      --key-grad: linear-gradient(180deg, #fffefb, #f1efea);
+      --key-edge: rgba(28,28,27,.09);
+      --panel-bg: radial-gradient(130% 70% at 0% 0%, rgba(232,104,15,.05), transparent 55%), linear-gradient(180deg, #fcfbf8, #f6f4f0);
+      --placeholder: #8c8a85;
+      --placeholder-strong: #66655f;
+      --scroll-thumb: #c1bfb9;
       --ok: #15855a;
       --bad: #c93232;
+    }
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+      --ink: #ecebe6;
+      --ink-soft: #cdccc6;
+      --muted: #9d9c97;
+      --brand-ink: #b4b3ad;
+      --panel: #1c1c1e;
+      --card: #252528;
+      --surface: #2b2b2e;
+      --surface-2: #232326;
+      --line: #313134;
+      --border: #3c3c40;
+      --border-strong: #75757b;
+      --black: #ecebe6;
+      --black-hover: #d9d8d2;
+      --on-black: #1c1c1e;
+      --on-accent: #fffaf4;
+      --key: #ecebe6;
+      --pill-hover: #36363a;
+      --disabled-fill: #333336;
+      --disabled-ink: #6b6b70;
+      --switch-off: #48484d;
+      --knob: #ecebe6;
+      --knob-on: #1c1c1e;
+      --tint-soft: rgba(236,235,230,.05);
+      --tint: rgba(236,235,230,.08);
+      --tint-strong: rgba(236,235,230,.11);
+      --snack-bg: #3a3a3e;
+      --accent: #f4842f;
+      --accent-top: #ff9c4e;
+      --accent-bottom: #e96a13;
+      --accent-text: #ffa15f;
+      --accent-text-deep: #ffbd8c;
+      --accent-soft: rgba(255,140,60,.16);
+      --accent-line: rgba(255,140,60,.22);
+      --sheen: rgba(255,255,255,.06);
+      --surface-grad: linear-gradient(180deg, #2f2f33, #28282b);
+      --card-grad: linear-gradient(180deg, #2c2c30, #252528);
+      --key-grad: linear-gradient(180deg, #3d3d42, #2d2d31);
+      --key-edge: rgba(255,255,255,.08);
+      --panel-bg: radial-gradient(130% 70% at 0% 0%, rgba(255,140,60,.075), transparent 55%), radial-gradient(90% 60% at 100% 100%, rgba(140,170,255,.035), transparent 60%), linear-gradient(180deg, #1f1f22, #19191b);
+      --placeholder: #7d7d82;
+      --placeholder-strong: #95959a;
+      --scroll-thumb: #4a4a4f;
+      --ok: #45c08a;
+      --bad: #ec6a6a;
     }
     * { box-sizing: border-box; }
     html, body { width: 100%; height: 100%; }
@@ -47,13 +128,29 @@
     }
     .brand-mark { flex: 0 0 44px; width: 44px; height: 44px; }
     .brand-mark svg { display: block; width: 44px; height: 44px; }
-    .brand-title { color: #66666a; font-size: 25px; font-weight: 500; letter-spacing: -.035em; line-height: 1; }
+    .brand-title { color: var(--brand-ink); font-size: 25px; font-weight: 500; letter-spacing: -.035em; line-height: 1; }
     #selection-count {
       margin: 0 5px 11px;
       color: var(--ink);
       font-size: 14px;
       font-weight: 500;
     }
+    /* "2 frames selected ⌄": the chevron folds the thumbnail strip away (and back), to give the Drive folders
+       list more room. The strip also folds when the window is dragged shorter (see 07-window-resize.js). */
+    .selection-head { display: flex; align-items: center; gap: 4px; margin: 0 5px 11px; transition: margin-bottom var(--dur) var(--ease-sheet); }
+    .selection-head #selection-count { margin: 0; }
+    .preview-toggle { flex: 0 0 auto; display: grid; place-items: center; width: 22px; height: 22px; padding: 0; border: 0; border-radius: 50%; color: var(--muted); background: transparent; cursor: pointer; transition: color 120ms ease, background-color 120ms ease; }
+    .preview-toggle[hidden] { display: none; }
+    .preview-toggle:hover { color: var(--black); background: var(--tint); }
+    .preview-toggle:focus { outline: none; }
+    .preview-toggle:focus-visible { box-shadow: 0 0 0 2px var(--black); }
+    .preview-toggle svg { width: 15px; height: 15px; display: block; transform: rotate(180deg); transition: transform 420ms var(--spring); }
+    .preview-toggle[aria-expanded="false"] svg { transform: none; }
+    .preview-fold { display: grid; grid-template-rows: 1fr; transition: grid-template-rows var(--dur) var(--ease-sheet); }
+    /* Room on every side for a lifted thumbnail and its shadow, cancelled by the negative margins. */
+    .preview-fold-inner { min-height: 0; min-width: 0; overflow: hidden; padding: 12px 8px 0; margin: -12px -8px 0; transform-origin: 50% 0; transition: opacity 280ms ease 60ms, transform 520ms var(--spring-soft); }
+    .preview-fold.is-folded { grid-template-rows: 0fr; }
+    .preview-fold.is-folded .preview-fold-inner { opacity: 0; visibility: hidden; transform: translateY(-8px) scale(.97); transition: opacity 160ms ease, transform var(--dur) var(--ease-sheet), visibility 0s linear var(--dur); }
     .preview-wrap {
       position: relative;
       display: flow-root; /* keeps the strip's negative margins inside the wrap instead of pulling the whole wrap up */
@@ -82,12 +179,12 @@
       border: 1px solid var(--border);
       border-radius: 8px;
       background: var(--surface-2);
-      cursor: grab; user-select: none; touch-action: none;
+      cursor: default; user-select: none; touch-action: none; /* the grabbing hand shows only once a drag has really started (.is-dragging) */
       transition: border-color 140ms ease, transform 140ms ease;
     }
     .thumb:hover { border-color: var(--black); }
     /* A frame whose preview is still being rendered: soft shimmer instead of an empty card. */
-    .thumb.is-loading { background: linear-gradient(110deg, var(--surface) 30%, #fafafa 50%, var(--surface) 70%) 0 0 / 250% 100%; animation: thumb-loading 1.3s linear infinite; }
+    .thumb.is-loading { background: linear-gradient(110deg, var(--surface) 30%, var(--card) 50%, var(--surface) 70%) 0 0 / 250% 100%; animation: thumb-loading 1.3s linear infinite; }
     .thumb.is-loading img { visibility: hidden; }
     @keyframes thumb-loading { from { background-position: 100% 0; } to { background-position: -100% 0; } }
     @media (prefers-reduced-motion: reduce) { .thumb.is-loading { animation: none; } }
@@ -96,7 +193,7 @@
       position: absolute; left: 5px; bottom: 5px;
       padding: 1px 6px;
       border-radius: 6px;
-      color: #fff; background: var(--black);
+      color: var(--on-black); background: var(--black);
       font-size: 10px; font-weight: 500; letter-spacing: .02em; line-height: 1.4;
       pointer-events: none;
     }
@@ -114,7 +211,7 @@
       position: absolute; top: 5px; right: 5px;
       min-width: 18px; padding: 1px 5px;
       border-radius: 9px;
-      color: #fff; background: var(--black);
+      color: var(--on-black); background: var(--black);
       font-size: 10px; font-weight: 600; line-height: 1.4; text-align: center;
       pointer-events: none;
     }
@@ -151,13 +248,13 @@
       width: 28px; height: 28px; padding: 5px; box-sizing: border-box;
       border-radius: 50%;
       color: var(--black);
-      background: #fff;
+      background: var(--card);
       box-shadow: 0 0 0 1px rgba(0,0,0,.16), 0 2px 8px rgba(0,0,0,.18);
       position: relative; transition: transform 140ms ease, color 140ms ease, background-color 140ms ease;
     }
-    .preview-arrow:hover svg { color: #fff; background: var(--black); }
-    .preview-arrow.is-right { right: -8px; justify-content: flex-end; padding-right: 10px; background: linear-gradient(to right, rgba(255,255,255,0), #fff 60%); }
-    .preview-arrow.is-left { left: -8px; justify-content: flex-start; padding-left: 10px; background: linear-gradient(to left, rgba(255,255,255,0), #fff 60%); }
+    .preview-arrow:hover svg { color: var(--on-black); background: var(--black); }
+    .preview-arrow.is-right { right: -8px; justify-content: flex-end; padding-right: 10px; background: linear-gradient(to right, transparent, var(--panel) 60%); }
+    .preview-arrow.is-left { left: -8px; justify-content: flex-start; padding-left: 10px; background: linear-gradient(to left, transparent, var(--panel) 60%); }
     .preview-arrow.is-right:hover svg { transform: translateX(2px); }
     .preview-arrow.is-left:hover svg { transform: translateX(-2px); }
     .preview-arrow:focus-visible { outline: none; }
@@ -182,8 +279,8 @@
       user-select: none;
       transition: background-color 120ms ease;
     }
-    .option:hover { background: rgba(0,0,0,.04); }
-    .option:active { background: rgba(0,0,0,.07); }
+    .option:hover { background: var(--tint-soft); }
+    .option:active { background: var(--tint-strong); }
     .option input { position: absolute; opacity: 0; pointer-events: none; }
     .check {
       display: grid;
@@ -191,21 +288,21 @@
       width: 22px; height: 22px;
       border: 1.5px solid var(--border-strong);
       border-radius: 5px;
-      background: #fff;
+      background: var(--card);
       transition: background-color 120ms ease, border-color 120ms ease, transform 120ms ease;
     }
     .check::after {
       content: '';
       width: 10px; height: 5px;
-      border-left: 2px solid #fff;
-      border-bottom: 2px solid #fff;
+      border-left: 2px solid var(--on-black);
+      border-bottom: 2px solid var(--on-black);
       transform: translateY(-1px) rotate(-45deg) scale(.65);
       opacity: 0;
       transition: opacity 100ms ease, transform 130ms ease;
     }
     .option input:checked + .check { border-color: var(--black); background: var(--black); }
     .option input:checked + .check::after { opacity: 1; transform: translateY(-1px) rotate(-45deg) scale(1); }
-    .option input:focus-visible + .check { box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--black); }
+    .option input:focus-visible + .check { box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px var(--black); }
     .option-row { display: flex; align-items: center; gap: 6px; min-height: 43px; position: relative; }
     .info-icon { position: relative; display: inline-grid; place-items: center; width: 22px; height: 22px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--muted); cursor: default; margin-left: -9px; }
     .info-icon:hover, .info-icon:focus-visible { color: var(--black); outline: none; }
@@ -267,7 +364,7 @@
       cursor: pointer;
       transition: border-color 120ms ease, background-color 120ms ease;
     }
-    .scale-pill:hover { border-color: var(--border-strong); background: #e8e8e8; }
+    .scale-pill:hover { border-color: var(--border-strong); background: var(--pill-hover); }
     .scale-pill:focus-within { border-color: var(--black); box-shadow: 0 0 0 1px var(--black); }
     .scale-pill .scale-value { min-width: 18px; pointer-events: none; }
     .scale-pill::after {
@@ -283,7 +380,7 @@
       opacity: 0; cursor: pointer;
       font: inherit;
     }
-    .scale-pill option { color: var(--ink); background: #fff; }
+    .scale-pill option { color: var(--ink); background: var(--card); }
     /* A plain, visible pill-styled select — unlike .scale-pill, which overlays an invisible <select> on a
        separately-synced label span (wrong fit here: these aren't export-scale pills, and wiring up that
        sync for each one isn't worth it for a handful of dialog dropdowns). */
@@ -292,7 +389,7 @@
        matter how much padding-right was added. appearance:none removes that native glyph entirely and a
        background-image chevron (positioned exactly where we want, independent of the UA) replaces it. */
     .select-pill { height: 28px; padding: 0 26px 0 10px; border: 1px solid var(--border); border-radius: 10px; color: var(--ink-soft); background-color: var(--surface); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%233a3a3a' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 7px center; background-size: 11px 11px; -webkit-appearance: none; -moz-appearance: none; appearance: none; font: inherit; cursor: pointer; transition: border-color 120ms ease, background-color 120ms ease; }
-    .select-pill:hover { border-color: var(--border-strong); background-color: #e8e8e8; }
+    .select-pill:hover { border-color: var(--border-strong); background-color: var(--pill-hover); }
     .select-pill:focus-visible { outline: 2px solid var(--black); outline-offset: 1px; }
     .compress-level { margin-left: 2px; animation: pill-in 160ms ease; }
     .compress-level[hidden] { display: none; }
@@ -301,11 +398,11 @@
     .switch.is-disabled { opacity: .42; cursor: default; }
     .switch input { position: absolute; opacity: 0; pointer-events: none; }
     .switch-label { color: var(--ink-soft); font-size: 13px; }
-    .switch-track { position: relative; width: 38px; height: 21px; border-radius: 11px; background: #c4c4c8; transition: background-color 160ms ease; }
-    .switch-knob { position: absolute; top: 2px; left: 2px; width: 17px; height: 17px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.25); transition: transform 180ms cubic-bezier(.2,.8,.2,1); }
+    .switch-track { position: relative; width: 38px; height: 21px; border-radius: 11px; background: var(--switch-off); transition: background-color 160ms ease; }
+    .switch-knob { position: absolute; top: 2px; left: 2px; width: 17px; height: 17px; border-radius: 50%; background: var(--knob); box-shadow: 0 1px 2px rgba(0,0,0,.25); transition: transform 180ms cubic-bezier(.2,.8,.2,1); }
     .switch input:checked ~ .switch-track { background: var(--black); }
     .switch input:checked ~ .switch-track .switch-knob { transform: translateX(17px); }
-    .switch input:focus-visible ~ .switch-track { box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--black); }
+    .switch input:focus-visible ~ .switch-track { box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px var(--black); }
     .filename-input {
       height: 40px;
       min-width: 0;
@@ -318,8 +415,8 @@
       outline: none;
       transition: border-color 120ms ease, box-shadow 120ms ease, background-color 120ms ease;
     }
-    .filename-input:focus { border-color: var(--black); box-shadow: 0 0 0 1px var(--black); background: #fff; }
-    .filename-input::placeholder { color: #66666c; } /* darker, so it reads clearly as the file-name box and not the Drive link box */
+    .filename-input:focus { border-color: var(--black); box-shadow: 0 0 0 1px var(--black); background: var(--card); }
+    .filename-input::placeholder { color: var(--placeholder-strong); } /* darker, so it reads clearly as the file-name box and not the Drive link box */
     .file-name-field { display: grid; gap: 8px; margin: 0 0 24px; padding: 0; }
     /* The placeholder already says "Enter your filename", so the visible label is dropped; it stays for screen readers. */
     .file-name-field label { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
@@ -331,7 +428,7 @@
       width: 100%; height: 40px;
       overflow: hidden;
       border: 0; border-radius: 22px;
-      color: #fff; background: var(--black);
+      color: var(--on-black); background: var(--black);
       font: inherit; font-size: 14px; font-weight: 500; letter-spacing: .05em;
       cursor: pointer;
       transition: transform 160ms ease, box-shadow 200ms ease, background-color 200ms ease;
@@ -343,12 +440,12 @@
       background: linear-gradient(110deg, transparent 25%, rgba(255,255,255,.28) 48%, transparent 72%);
       transform: translateX(-130%);
     }
-    #export-button:hover:not(:disabled) { background: #2a2a2a; transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0,0,0,.18); }
+    #export-button:hover:not(:disabled) { background: var(--black-hover); transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0,0,0,.18); }
     #export-button:active:not(:disabled) { transform: translateY(1px) scale(.992); box-shadow: none; }
     #export-button:focus-visible { outline: 2px solid var(--black); outline-offset: 2px; }
-    #export-button:disabled:not(.is-busy) { background: #c9c9cc; color: #fff; cursor: default; pointer-events: none; }
+    #export-button:disabled:not(.is-busy) { background: var(--disabled-fill); color: var(--disabled-ink); cursor: default; pointer-events: none; }
     #export-button.is-busy { cursor: wait; }
-    #export-button.is-busy::before { animation: buttonSweep 1.15s linear infinite; }
+    #export-button.is-busy::before { animation: buttonSweep 1.7s cubic-bezier(.45,0,.25,1) infinite; }
     #export-button.is-success { background: var(--ok); }
     #export-button.is-error { animation: buttonShake 340ms ease; }
     .button-content { display: inline-flex; align-items: center; justify-content: center; gap: 9px; white-space: nowrap; }
@@ -373,8 +470,8 @@
       overflow: visible;
       transition: transform 180ms ease;
     }
-    .button-download .download-arrow { transform-origin: 17px 12px; }
-    .button-download .download-tray { transform-origin: 17px 20px; }
+    .button-download .download-arrow { transform-origin: 10px 7px; }
+    .button-download .download-tray { transform-origin: 10px 15px; }
     #export-button:hover:not(:disabled) .button-download { transform: scale(1.08); }
     #export-button:hover:not(:disabled) .button-download .download-arrow { animation: arrowHover 820ms cubic-bezier(.25,.75,.3,1) infinite; }
     #export-button:active:not(:disabled) .button-download .download-arrow,
@@ -383,13 +480,13 @@
     .button-spinner {
       display: none;
       width: 13px; height: 13px;
-      border: 1.7px solid rgba(255,255,255,.38);
-      border-top-color: #fff;
+      border: 1.7px solid color-mix(in srgb, var(--on-black) 38%, transparent);
+      border-top-color: var(--on-black);
       border-radius: 50%;
       animation: spin .72s linear infinite;
     }
     #export-button.is-busy .button-spinner { display: none; }
-    .button-check { display: none; width: 12px; height: 7px; border-left: 2px solid #fff; border-bottom: 2px solid #fff; transform: translateY(-1px) rotate(-45deg); }
+    .button-check { display: none; width: 12px; height: 7px; border-left: 2px solid var(--on-black); border-bottom: 2px solid var(--on-black); transform: translateY(-1px) rotate(-45deg); }
     #export-button.is-success .button-check { display: block; animation: checkIn 260ms cubic-bezier(.2,.9,.25,1.4); }
     #export-button.is-success .button-download { display: none; }
     #export-button.is-success .button-spinner { display: none; }
@@ -404,7 +501,7 @@
       background: var(--surface);
       transition: border-color 200ms ease, box-shadow 200ms ease, background-color 200ms ease;
     }
-    .upload-pill.is-focused { border-color: var(--black); box-shadow: 0 0 0 1px var(--black); background: #fff; }
+    .upload-pill.is-focused { border-color: var(--black); box-shadow: 0 0 0 1px var(--black); background: var(--card); }
     .upload-form {
       position: absolute; inset: 0;
       display: flex; align-items: stretch;
@@ -417,36 +514,43 @@
       color: var(--ink); background: transparent;
       font: inherit; font-size: 12.5px;
     }
-    #drive-url::placeholder { color: #8c8c91; }
+    #drive-url::placeholder { color: var(--placeholder); }
+    /* A white key set into the right end of the pill, so the full-colour Drive mark sits on white the way
+       it's drawn (its open middle shows the white through). */
     #drive-submit {
-      flex: 0 0 52px;
+      flex: 0 0 44px;
       display: grid; place-items: center;
-      border: 0; padding: 0;
-      color: #fff; background: var(--black);
+      margin: 4px; border: 0; padding: 0;
+      border-radius: 16px;
+      color: var(--ink); background: var(--key);
+      box-shadow: 0 0 0 1px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.08);
       cursor: pointer;
-      transition: background-color 160ms ease;
+      transition: box-shadow 200ms ease, background-color 160ms ease, transform 260ms var(--spring), opacity 160ms ease;
     }
-    #drive-submit:hover:not(:disabled) { background: #2a2a2a; }
-    #drive-submit:active:not(:disabled) { background: #000; }
-    #drive-submit:disabled { cursor: default; background: #c9c9cc; pointer-events: none; } /* lets the pill underneath see the hover, so the tooltip can explain why it's off */
+    #drive-submit:hover:not(:disabled) { box-shadow: 0 0 0 1px rgba(0,0,0,.1), 0 3px 10px rgba(0,0,0,.12); }
+    #drive-submit:active:not(:disabled) { transform: scale(.94); transition-duration: 120ms; }
+    #drive-submit:focus { outline: none; }
+    #drive-submit:focus-visible { box-shadow: 0 0 0 2px var(--black); }
+    #drive-submit:disabled { cursor: default; background: transparent; box-shadow: none; pointer-events: none; } /* lets the pill underneath see the hover, so the tooltip can explain why it's off */
     .tooltip {
       position: fixed; z-index: 50; left: 0; top: 0;
       padding: 6px 10px; border-radius: 8px;
-      background: var(--black); color: #fff; box-shadow: 0 8px 22px rgba(0,0,0,.18);
+      background: var(--black); color: var(--on-black); box-shadow: 0 8px 22px rgba(0,0,0,.18);
       font-size: 11px; line-height: 1.3; white-space: nowrap;
       pointer-events: none;
       visibility: hidden; opacity: 0; transform: translateY(2px);
       transition: opacity 120ms ease, transform 120ms ease, visibility 0s linear 120ms;
     }
     .tooltip.is-visible { visibility: visible; opacity: 1; transform: none; transition-delay: 0s; }
-    #drive-submit svg { width: 28px; height: 28px; display: block; overflow: visible; }
-    #drive-submit .upload-arrow { transform-origin: 256px 256px; }
-    #drive-submit:hover:not(:disabled) .upload-arrow { animation: arrowLift 1.3s cubic-bezier(.45,.05,.35,1) infinite; }
-    #drive-submit .submit-spinner { display: none; width: 15px; height: 15px; border: 2px solid rgba(255,255,255,.35); border-top-color: #fff; border-radius: 50%; animation: spin .72s linear infinite; }
-    #drive-submit .submit-check { display: none; width: 12px; height: 7px; border-left: 2.2px solid #fff; border-bottom: 2.2px solid #fff; transform: translateY(-2px) rotate(-45deg); }
+    /* The Google Drive mark: lifts a little on hover, and goes grey with the button when it can't be used. */
+    #drive-submit svg { width: 19px; height: 19px; display: block; overflow: visible; transition: transform 360ms var(--spring), filter 160ms ease, opacity 160ms ease; }
+    #drive-submit:hover:not(:disabled) svg { transform: translateY(-1px) scale(1.08); }
+    #drive-submit:disabled svg { filter: grayscale(1); opacity: .4; }
+    #drive-submit .submit-spinner { display: none; width: 15px; height: 15px; border: 2px solid rgba(0,0,0,.12); border-top-color: var(--black); border-radius: 50%; animation: spin .72s linear infinite; }
+    #drive-submit .submit-check { display: none; width: 12px; height: 7px; border-left: 2.2px solid var(--on-accent); border-bottom: 2.2px solid var(--on-accent); transform: translateY(-2px) rotate(-45deg); }
     .upload-pill.is-busy #drive-submit svg { display: none; }
     .upload-pill.is-busy #drive-submit .submit-spinner { display: block; }
-    .upload-pill.is-success #drive-submit { background: var(--link-accent); }
+    .upload-pill.is-success #drive-submit { background: linear-gradient(180deg, var(--accent-top), var(--accent-bottom)); box-shadow: none; }
     .upload-pill.is-success #drive-submit svg { display: none; }
     .upload-pill.is-success #drive-submit .submit-check { display: block; animation: checkIn 260ms cubic-bezier(.2,.9,.25,1.4); }
     .upload-pill.is-error { animation: buttonShake 340ms ease; border-color: var(--bad); }
@@ -460,7 +564,7 @@
     }
     .drive-status .status-text { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; transition: color 200ms ease, opacity 350ms ease; }
     .drive-status .status-spacer { flex: 1 1 auto; }
-    :root { --link-accent: #1d72e8; --link-accent-deep: #0b57c4; } /* soft system blue, not browser-hyperlink blue */
+    :root { --link-accent: var(--accent-text); --link-accent-deep: var(--accent-text-deep); } /* links and results take the accent */
     .status-result { flex: 0 1 auto; min-width: 0; display: inline-flex; align-items: center; gap: 5px; color: var(--link-accent); text-decoration: none; cursor: pointer; transition: color 120ms ease; }
     .status-result[hidden] { display: none; }
     .status-result-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-decoration: underline; text-underline-offset: 2px; text-decoration-thickness: 1px; }
@@ -489,16 +593,16 @@
       cursor: pointer;
       transition: color 120ms ease, background-color 120ms ease, transform 200ms ease;
     }
-    .icon-button:hover { color: var(--black); background: rgba(0,0,0,.06); }
+    .icon-button:hover { color: var(--black); background: var(--tint); }
     .icon-button:focus { outline: none; }
-    .icon-button:focus-visible { box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--black); }
+    .icon-button:focus-visible { box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px var(--black); }
     .icon-button svg { width: 15px; height: 15px; display: block; transition: transform 240ms ease; }
     .icon-button.is-active { color: var(--black); }
     .icon-button.is-active svg { transform: rotate(60deg); }
     .drive-drawer {
       display: grid;
       grid-template-rows: 0fr;
-      transition: grid-template-rows var(--dur) var(--ease);
+      transition: grid-template-rows var(--dur) var(--ease-sheet);
     }
     .drive-drawer.is-open { grid-template-rows: 1fr; }
     /* Drawer grows to fit its content (the plugin window resizes via syncHeight), so no inner scrollbar is needed. */
@@ -518,7 +622,7 @@
     #drawer-auth > p:first-child { font-size: 11px; line-height: 1.4; }
     .drawer-card a { color: var(--black); font-weight: 500; text-decoration: underline; text-underline-offset: 2px; }
     .drawer-card a:hover { text-decoration-thickness: 2px; }
-    .drawer-card .filename-input { height: 36px; padding: 0 12px; font-size: 12px; border-radius: 12px; background: #fff; }
+    .drawer-card .filename-input { height: 36px; padding: 0 12px; font-size: 12px; border-radius: 12px; background: var(--card); }
     .drawer-card label { color: var(--ink); font-size: 12px; font-weight: 500; }
     .drawer-field { display: grid; gap: 5px; min-width: 0; }
     .drawer-field input { width: 100%; min-width: 0; }
@@ -538,9 +642,9 @@
     .account-card .small-button { flex: 0 0 auto; }
     .connect-block { display: grid; gap: 8px; }
     .connect-block[hidden] { display: none; }
-    .google-button { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; height: 40px; padding: 0 16px; border: 1px solid var(--border); border-radius: 999px; color: var(--ink); background: #fff; font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; transition: background-color 120ms ease, opacity 120ms ease; }
+    .google-button { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; height: 40px; padding: 0 16px; border: 1px solid var(--border); border-radius: 999px; color: var(--ink); background: var(--card); font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; transition: background-color 120ms ease, opacity 120ms ease; }
     .google-button .g-logo { width: 18px; height: 18px; }
-    .google-button:hover:not(:disabled) { background: #f6f6f6; }
+    .google-button:hover:not(:disabled) { background: var(--surface-2); }
     .google-button:disabled { opacity: .5; cursor: default; }
     .google-button:focus-visible { outline: 2px solid var(--link-accent); outline-offset: 2px; }
     .drawer-card .filename-input.is-invalid, .drawer-card .filename-input.is-invalid:focus { border-color: var(--bad); box-shadow: 0 0 0 1px var(--bad); }
@@ -552,7 +656,7 @@
       padding: 0 16px;
       border: 1px solid var(--border);
       border-radius: 16px;
-      color: var(--ink); background: #fff;
+      color: var(--ink); background: var(--card);
       font: inherit; font-size: 12px; font-weight: 500;
       cursor: pointer;
       transition: background-color 120ms ease, border-color 120ms ease, opacity 120ms ease;
@@ -560,19 +664,19 @@
     .small-button:hover:not(:disabled) { background: var(--surface); border-color: var(--border-strong); }
     .small-button:disabled { opacity: .45; cursor: default; }
     .small-button:focus-visible { outline: 2px solid var(--black); outline-offset: 2px; }
-    .small-button.is-primary { border: 0; color: #fff; background: var(--black); }
-    .small-button.is-primary:hover:not(:disabled) { background: #2a2a2a; }
+    .small-button.is-primary { border: 0; color: var(--on-black); background: var(--black); }
+    .small-button.is-primary:hover:not(:disabled) { background: var(--black-hover); }
     .small-button.is-danger { color: var(--bad); border-color: rgba(201,50,50,.35); }
     .small-button.is-danger:hover:not(:disabled) { background: rgba(201,50,50,.07); }
     /* Account switcher (header) and folder picker */
     #drive-url { text-overflow: ellipsis; }
     .account-switch { position: relative; margin-left: auto; flex: 0 0 auto; }
-    .account-chip { display: grid; place-items: center; width: 34px; height: 34px; padding: 0; border: 1px solid var(--border); border-radius: 50%; color: var(--ink); background: #fff; font: inherit; font-size: 13px; font-weight: 600; text-transform: uppercase; cursor: pointer; transition: border-color 120ms ease, background-color 120ms ease; }
+    .account-chip { display: grid; place-items: center; width: 34px; height: 34px; padding: 0; border: 1px solid var(--border); border-radius: 50%; color: var(--ink); background: var(--card); font: inherit; font-size: 13px; font-weight: 600; text-transform: uppercase; cursor: pointer; transition: border-color 120ms ease, background-color 120ms ease; }
     .account-chip:hover, .account-chip[aria-expanded="true"] { border-color: var(--black); }
-    .account-chip.is-connected { color: #fff; background: var(--black); border-color: var(--black); }
+    .account-chip.is-connected { color: var(--on-black); background: var(--black); border-color: var(--black); }
     .account-chip:focus-visible { outline: 2px solid var(--black); outline-offset: 2px; }
     .account-chip .g-logo { width: 18px; height: 18px; }
-    .account-menu { position: absolute; z-index: 40; top: calc(100% + 8px); right: 0; width: min(330px, calc(100vw - 30px)); padding: 6px; border: 1px solid var(--border); border-radius: 16px; background: #fff; box-shadow: 0 10px 28px rgba(0,0,0,.14); }
+    .account-menu { position: absolute; z-index: 40; top: calc(100% + 8px); right: 0; width: min(330px, calc(100vw - 30px)); padding: 6px; border: 1px solid var(--border); border-radius: 16px; background: var(--card); box-shadow: 0 10px 28px rgba(0,0,0,.14); }
     .account-menu[hidden] { display: none; }
     .account-row { display: flex; align-items: center; min-width: 0; border-radius: 10px; }
     .account-row:hover { background: var(--surface-2); }
@@ -582,7 +686,7 @@
     .account-add:hover { background: var(--surface-2); }
     .account-pick:focus-visible, .account-add:focus-visible, .account-remove:focus-visible { outline: 2px solid var(--black); outline-offset: -2px; }
     .account-pick .dot { flex: 0 0 24px; width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%; background: var(--surface); font-size: 11px; font-weight: 600; text-transform: uppercase; }
-    .account-row.is-active .dot { color: #fff; background: var(--black); }
+    .account-row.is-active .dot { color: var(--on-black); background: var(--black); }
     .account-pick .mail { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .account-add .g-logo { width: 18px; height: 18px; margin: 0 3px; }
     .account-remove { flex: 0 0 24px; height: 24px; margin-right: 6px; padding: 0; border: 0; border-radius: 50%; color: var(--muted); background: transparent; font-size: 15px; line-height: 1; cursor: pointer; visibility: hidden; }
@@ -620,7 +724,7 @@
     .picker-view-btn svg { width: 15px; height: 15px; display: block; }
     .picker-view-btn:hover { color: var(--black); }
     .picker-view-btn:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--black); }
-    .picker-view-btn.is-on { color: var(--black); background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.16); }
+    .picker-view-btn.is-on { color: var(--black); background: var(--card); box-shadow: 0 1px 3px rgba(0,0,0,.16); }
     /* The selection bar and the tabs row share one fixed-height slot instead of the selection bar being
        inserted as an extra row above the tabs — stacking the two used to push the folder list down by a
        whole row the instant something got selected, so a fast second click (select, then immediately
@@ -664,7 +768,7 @@
     .picker-list.is-swiping::before, .picker-list.is-swiping::after { transition: none; }
     .picker-list::before { left: 0; border-radius: 0 30px 30px 0; opacity: var(--swipe-back, 0); transform: translateX(calc((var(--swipe-back, 0) - 1) * 18px)); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 18l-6-6 6-6'/%3E%3C/svg%3E"); }
     .picker-list::after { right: 0; border-radius: 30px 0 0 30px; opacity: var(--swipe-fwd, 0); transform: translateX(calc((1 - var(--swipe-fwd, 0)) * 18px)); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 18l6-6-6-6'/%3E%3C/svg%3E"); }
-    .picker-item { display: flex; align-items: center; gap: 8px; min-width: 0; height: 32px; padding: 0 6px 0 10px; border: 1px solid var(--border); border-radius: 11px; color: var(--ink); background: #fff; font-size: 12.5px; cursor: pointer; user-select: none; transition: border-color 120ms ease; }
+    .picker-item { display: flex; align-items: center; gap: 8px; min-width: 0; height: 32px; padding: 0 6px 0 10px; border: 1px solid var(--border); border-radius: 11px; color: var(--ink); background: var(--card); font-size: 12.5px; cursor: pointer; user-select: none; transition: border-color 120ms ease; }
     .picker-list:not(.is-grid) .picker-item { height: 30px; }
     .picker-item:hover { border-color: var(--border-strong); }
     /* Just the ring, not border-color too — stacking a black border directly against a same-color
@@ -675,7 +779,7 @@
     .picker-item > span { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .picker-star { flex: 0 0 22px; height: 22px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; color: var(--muted); background: transparent; cursor: pointer; visibility: hidden; }
     .picker-item:hover .picker-star, .picker-item.is-selected .picker-star, .picker-star.is-on, .picker-star:focus-visible { visibility: visible; }
-    .picker-star:hover { color: var(--black); background: rgba(0,0,0,.06); }
+    .picker-star:hover { color: var(--black); background: var(--tint); }
     .picker-star svg { width: 15px; height: 15px; fill: none; }
     .picker-star.is-on { color: var(--black); }
     .picker-star.is-on svg { fill: currentColor; }
@@ -696,17 +800,23 @@
        the final height and snapping back, which reads as a glitch rather than a spring.
        --spring: the same duration with a soft overshoot, for small pop-ins (menus, the modal card, list
        items) that don't drive the window size — this is what gives those moments the springy, Apple-like
-       settle the rest of the UI can't safely have. */
-    :root { --ease: cubic-bezier(.16,1,.3,1); --spring: cubic-bezier(.34,1.56,.64,1); --dur: 320ms; }
+       settle the rest of the UI can't safely have.
+       --ease-sheet: the drawer, the export options and the thumbnail strip — a quick, soft start and a long,
+       settling finish with no bounce, so the window (which follows it, see animateResize) never jumps; the
+       bounce comes from the drawer's card springing into place on top of it (--spring-soft). */
+    :root { --ease: cubic-bezier(.16,1,.3,1); --spring: cubic-bezier(.34,1.56,.64,1); --dur: 460ms; --ease-sheet: cubic-bezier(.32,.72,0,1); --spring-soft: cubic-bezier(.3,1.35,.55,1); }
     /* The export options fold away with the same curve as the drawer opening, so the two move as one. */
-    .collapse { display: grid; grid-template-rows: 1fr; transition: grid-template-rows var(--dur) var(--ease); }
-    .collapse-inner { min-height: 0; min-width: 0; overflow: hidden; padding: 4px; margin: -4px; transition: opacity 220ms ease; }
+    .collapse { display: grid; grid-template-rows: 1fr; transition: grid-template-rows var(--dur) var(--ease-sheet); }
+    .collapse-inner { min-height: 0; min-width: 0; overflow: hidden; padding: 4px 12px 16px; margin: -4px -12px -16px; /* room for the buttons' hover shadows, which the clipping used to cut */ transform-origin: 50% 0; transition: opacity 280ms ease 60ms, transform 520ms var(--spring-soft); }
     body.is-picking .collapse { grid-template-rows: 0fr; }
-    body.is-picking .collapse-inner { opacity: 0; visibility: hidden; transition: opacity 140ms ease, visibility 0s linear var(--dur); }
-    .drawer-inner { opacity: 0; transition: opacity 160ms ease; }
-    .drive-drawer.is-open .drawer-inner { opacity: 1; transition: opacity 240ms ease 90ms; }
+    body.is-picking .collapse-inner { opacity: 0; visibility: hidden; transform: translateY(-6px) scale(.985); transition: opacity 160ms ease, transform var(--dur) var(--ease-sheet), visibility 0s linear var(--dur); }
+    /* The Drive folders card springs into place as the drawer opens, and eases away as it closes. */
+    .drive-drawer .drawer-card { transform-origin: 50% 0; transition: transform 600ms var(--spring-soft); }
+    .drive-drawer:not(.is-open) .drawer-card { transform: translateY(-12px) scale(.975); transition: transform var(--dur) var(--ease-sheet); }
+    .drawer-inner { opacity: 0; transition: opacity 200ms ease; }
+    .drive-drawer.is-open .drawer-inner { opacity: 1; transition: opacity 300ms ease 80ms; }
     /* Used for one synchronous moment to measure the final layout, so the window can be resized once, up front. */
-    body.no-anim .collapse, body.no-anim .collapse-inner, body.no-anim .drive-drawer, body.no-anim .drawer-inner { transition: none !important; }
+    body.no-anim .collapse, body.no-anim .collapse-inner, body.no-anim .drive-drawer, body.no-anim .drawer-inner, body.no-anim .preview-fold, body.no-anim .preview-fold-inner { transition: none !important; }
     .account-menu:not([hidden]) { animation: menuIn 220ms var(--spring); transform-origin: top right; }
     @keyframes menuIn { from { opacity: 0; transform: translateY(-4px) scale(.98); } }
     @keyframes itemIn { from { opacity: 0; transform: translateY(5px); } }
@@ -714,10 +824,10 @@
        selection ring — widened and darkened at peak, paired with a background tint so a freshly-uploaded
        tile reads as "lit up" rather than just outlined, and held a bit longer before it lets go. */
     @keyframes itemFlash {
-      0% { box-shadow: 0 0 0 0 rgba(29,114,232,0); background-color: rgba(29,114,232,.18); }
-      10% { box-shadow: 0 0 0 3px rgba(29,114,232,.6); background-color: rgba(29,114,232,.18); }
-      60% { box-shadow: 0 0 0 3px rgba(29,114,232,.55); background-color: rgba(29,114,232,.13); }
-      100% { box-shadow: 0 0 0 0 rgba(29,114,232,0); background-color: rgba(29,114,232,0); }
+      0% { box-shadow: 0 0 0 0 transparent; background-color: color-mix(in srgb, var(--accent) 18%, transparent); }
+      10% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 60%, transparent); background-color: color-mix(in srgb, var(--accent) 18%, transparent); }
+      60% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 55%, transparent); background-color: color-mix(in srgb, var(--accent) 13%, transparent); }
+      100% { box-shadow: 0 0 0 0 transparent; background-color: transparent; }
     }
     @keyframes folderNudge { 0%, 100% { transform: none; } 25% { transform: translateY(-4px) scale(1.15); } 50% { transform: none; } 70% { transform: translateY(-2px) scale(1.08); } }
 
@@ -737,12 +847,12 @@
     .modal { position: fixed; inset: 0; z-index: 80; display: flex; align-items: center; align-items: safe center; justify-content: center; padding: 20px; overflow-y: auto; background: rgba(17,17,17,0); transition: background-color 180ms ease; }
     .modal[hidden] { display: none; }
     .modal.is-open { background: rgba(17,17,17,.34); }
-    .modal-card { flex: 0 0 auto; width: min(320px, 100%); max-height: calc(100vh - 40px); padding: 18px 18px 14px; border-radius: 18px; background: #fff; box-shadow: 0 18px 48px rgba(0,0,0,.26); opacity: 0; transform: translateY(8px) scale(.97); transition: opacity 180ms ease, transform 280ms var(--spring); }
+    .modal-card { flex: 0 0 auto; width: min(320px, 100%); max-height: calc(100vh - 40px); padding: 18px 18px 14px; border-radius: 18px; background: var(--card); box-shadow: 0 18px 48px rgba(0,0,0,.26); opacity: 0; transform: translateY(8px) scale(.97); transition: opacity 180ms ease, transform 280ms var(--spring); }
     .modal.is-open .modal-card { opacity: 1; transform: none; }
     .modal-card h2 { margin: 0 0 6px; font-size: 14px; font-weight: 600; line-height: 1.35; }
     .modal-card p { margin: 0 0 16px; color: var(--ink-soft); font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
     .modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
-    .small-button.is-danger-solid { border: 0; color: #fff; background: var(--bad); }
+    .small-button.is-danger-solid { border: 0; color: var(--on-accent); background: var(--bad); }
     .small-button.is-danger-solid:hover:not(:disabled) { background: #a92727; }
     .small-button.has-icon { display: inline-flex; align-items: center; gap: 6px; padding: 0 13px 0 10px; }
     .small-button.has-icon svg { width: 14px; height: 14px; display: block; }
@@ -768,7 +878,7 @@
     .share-people:empty { display: none; }
     /* A soft fade at the bottom hints there's more to scroll — only shown while the list actually has
        more content below the fold (see updateShareFade), not permanently. */
-    .share-people-wrap::after { content: ''; position: absolute; left: 0; right: 6px; bottom: 0; height: 22px; border-radius: 0 0 8px 8px; background: linear-gradient(to bottom, rgba(255,255,255,0), #fff); opacity: 0; pointer-events: none; transition: opacity 140ms ease; }
+    .share-people-wrap::after { content: ''; position: absolute; left: 0; right: 6px; bottom: 0; height: 22px; border-radius: 0 0 8px 8px; background: linear-gradient(to bottom, transparent, var(--card)); opacity: 0; pointer-events: none; transition: opacity 140ms ease; }
     .share-people-wrap.has-fade::after { opacity: 1; }
     .share-person { display: flex; align-items: center; gap: 6px; padding: 6px 2px; min-width: 0; }
     .share-person .dot { flex: 0 0 26px; width: 26px; height: 26px; display: grid; place-items: center; border-radius: 50%; overflow: hidden; background: var(--surface); font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--ink); }
@@ -859,11 +969,11 @@
 
     /* ---- Drive toggle under the link box ---------------------------------------------------------- */
     .drive-status { min-height: 28px; }
-    .drive-toggle { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 8px 0 9px; border: 1px solid var(--border); border-radius: 13px; color: var(--ink); background: #fff; font: inherit; font-size: 12px; font-weight: 500; cursor: pointer; transition: background-color 120ms ease, border-color 120ms ease; }
+    .drive-toggle { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 8px 0 9px; border: 1px solid var(--border); border-radius: 13px; color: var(--ink); background: var(--card); font: inherit; font-size: 12px; font-weight: 500; cursor: pointer; transition: background-color 120ms ease, border-color 120ms ease; }
     .drive-toggle:hover { background: var(--surface); border-color: var(--border-strong); }
     .drive-toggle:focus-visible { outline: 2px solid var(--black); outline-offset: 2px; }
     .drive-toggle > svg { width: 15px; height: 15px; display: block; }
-    .drive-toggle .toggle-chevron { width: 14px; height: 14px; color: var(--muted); transition: transform 280ms var(--ease); }
+    .drive-toggle .toggle-chevron { width: 14px; height: 14px; color: var(--muted); transition: transform 420ms var(--spring); }
     .drive-toggle[aria-expanded="true"] .toggle-chevron { transform: rotate(180deg); }
     .drive-toggle.is-nudge > svg:first-child { animation: folderNudge 560ms var(--ease); }
     .drive-toggle.is-nudge { border-color: var(--black); }
@@ -885,24 +995,24 @@
     .crumbs.is-at-start { -webkit-mask-image: none; mask-image: none; }
     .crumbs::-webkit-scrollbar { display: none; }
     .crumb { flex: 0 0 auto; min-width: 0; max-width: 150px; padding: 3px 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border: 0; border-radius: 8px; color: var(--muted); background: transparent; font: inherit; font-size: 12.5px; cursor: pointer; transition: background-color 120ms ease, color 120ms ease; }
-    .crumb:hover { color: var(--ink); background: rgba(0,0,0,.06); }
+    .crumb:hover { color: var(--ink); background: var(--tint); }
     /* The current folder: no longer squeezed with the rest of the trail — it's the one thing here the
        user most needs to read, so it gets its own pill instead of competing for space. */
     .crumb.is-current { flex: 0 0 auto; max-width: 220px; padding: 3px 10px; color: var(--ink); font-weight: 600; background: var(--surface-2); border-radius: 999px; cursor: default; }
     .crumb.is-current:hover { background: var(--surface-2); }
     .crumb-sep { flex: 0 0 auto; color: var(--muted); font-size: 12px; }
     .crumb-more { flex: 0 0 auto; display: grid; place-items: center; width: 22px; height: 22px; padding: 0; border: 0; border-radius: 50%; color: var(--muted); background: transparent; cursor: pointer; }
-    .crumb-more:hover { color: var(--black); background: rgba(0,0,0,.06); }
+    .crumb-more:hover { color: var(--black); background: var(--tint); }
     .crumb-more svg { width: 14px; height: 14px; display: block; }
     .picker-head .icon-button[hidden] { display: none; }
 
     /* ---- Selection bar ------------------------------------------------------------------------------ */
     /* A shade under full-pill (999px) — it reads as its own rounded rectangle, with a curve that matches
        the drawer's own corner radius instead of ballooning out into a stadium shape of its own. */
-    .picker-selbar { display: flex; align-items: center; gap: 2px; min-width: 0; padding: 2px 5px 2px 4px; border-radius: 14px; color: #fff; background: var(--black); }
+    .picker-selbar { display: flex; align-items: center; gap: 2px; min-width: 0; padding: 2px 5px 2px 4px; border-radius: 14px; color: var(--ink); background: var(--key-grad); box-shadow: inset 0 1px 0 var(--sheen), 0 0 0 1px var(--key-edge), 0 1px 3px rgba(0,0,0,.1); }
     .picker-top[hidden] { display: none; }
-    .picker-selbar .icon-button { color: #fff; width: 26px; height: 26px; }
-    .picker-selbar .icon-button:hover:not(:disabled) { color: #fff; background: rgba(255,255,255,.16); }
+    .picker-selbar .icon-button { color: var(--ink); width: 26px; height: 26px; }
+    .picker-selbar .icon-button:hover:not(:disabled) { color: var(--ink); background: var(--tint-strong); }
     .picker-selbar .icon-button:disabled { opacity: .35; cursor: default; }
     .picker-selbar .icon-button svg { width: 15px; height: 15px; }
     .sel-count { flex: 1 1 auto; min-width: 0; padding: 0 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12.5px; font-weight: 500; }
@@ -911,26 +1021,26 @@
     .picker-list { scrollbar-width: auto; }
     .picker-list::-webkit-scrollbar { width: 14px; }
     .picker-list::-webkit-scrollbar-track { background: transparent; }
-    .picker-list::-webkit-scrollbar-thumb { background: #bcbcc2; border: 4px solid transparent; border-radius: 8px; background-clip: content-box; }
-    .picker-list::-webkit-scrollbar-thumb:hover { background: #8d8d92; background-clip: content-box; }
+    .picker-list::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border: 4px solid transparent; border-radius: 8px; background-clip: content-box; }
+    .picker-list::-webkit-scrollbar-thumb:hover { background: var(--border-strong); background-clip: content-box; }
     .picker-item, .picker-file { user-select: none; -webkit-user-select: none; }
     /* A 1px black hairline read as barely-there next to the hover border it sits beside — bumped to a
        2px accent-blue ring plus a faint matching tint, the same move Google Drive's own picker makes, so
        what's selected is obvious at a glance without the tile turning into a solid block of color. */
-    .picker-item.is-picked, .picker-file.is-picked { border-color: var(--link-accent); box-shadow: 0 0 0 2px var(--link-accent); background: rgba(29,114,232,.07); }
+    .picker-item.is-picked, .picker-file.is-picked { border-color: var(--pick-ring); box-shadow: 0 0 0 1px var(--pick-ring); background: color-mix(in srgb, var(--accent) 7%, transparent); }
     .picker-item .fi { position: relative; flex: 0 0 16px; width: 16px; height: 16px; display: block; color: var(--muted); }
     .picker-item .fi > svg { width: 18px; height: 18px; display: block; }
-    .picker-item .fi-star { position: absolute; right: -5px; bottom: -4px; width: 11px; height: 11px; display: grid; place-items: center; border-radius: 50%; color: var(--black); background: #fff; }
+    .picker-item .fi-star { position: absolute; right: -5px; bottom: -4px; width: 11px; height: 11px; display: grid; place-items: center; border-radius: 50%; color: var(--black); background: var(--card); }
     .picker-item .fi-star svg { width: 9px; height: 9px; fill: currentColor; stroke: none; }
     .picker-item .fi { overflow: visible; }
     .fi-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .more-btn { flex: 0 0 24px; width: 24px; height: 24px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; color: var(--muted); background: transparent; cursor: pointer; transition: color 120ms ease, background-color 120ms ease; }
-    .more-btn:hover, .more-btn[aria-expanded="true"] { color: var(--black); background: rgba(0,0,0,.08); }
+    .more-btn:hover, .more-btn[aria-expanded="true"] { color: var(--black); background: var(--tint-strong); }
     .more-btn:focus-visible { outline: 2px solid var(--black); outline-offset: -2px; }
     .more-btn svg { width: 16px; height: 16px; display: block; }
     .more-btn.is-confirm { color: var(--black); }
     .picker-item { position: relative; transition: border-color 140ms ease, background-color 140ms ease, box-shadow 140ms ease, opacity 180ms ease, transform 140ms ease; }
-    .picker-item.is-new { border-color: var(--black); box-shadow: 0 0 0 1px var(--black); padding-right: 4px; cursor: default; background: #fff; }
+    .picker-item.is-new { border-color: var(--black); box-shadow: 0 0 0 1px var(--black); padding-right: 4px; cursor: default; background: var(--card); }
     .new-folder-input { flex: 1 1 auto; min-width: 0; height: 100%; padding: 0; border: 0; outline: none; color: var(--ink); background: transparent; font: inherit; font-size: 12.5px; }
     .picker-item.is-busy, .picker-file.is-busy { opacity: .5; pointer-events: none; }
     /* Same highlight for a freshly-created folder and for files that just landed from an upload (see
@@ -962,50 +1072,53 @@
     .picker-file[draggable="true"], .picker-item[draggable="true"] { -webkit-user-drag: element; }
     /* Drag to move: the items being dragged fade, and the folder or breadcrumb they'd land in lights up. */
     .picker-item.is-dragging, .picker-file.is-dragging { opacity: .45; }
-    .picker-item.is-drop-target { border-color: var(--link-accent); box-shadow: 0 0 0 2px var(--link-accent); background: rgba(29,114,232,.14); }
-    .crumb.is-drop-target { color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--link-accent); background: rgba(29,114,232,.12); }
-    .picker-list.is-drop-target { box-shadow: inset 0 0 0 2px var(--link-accent); background: rgba(29,114,232,.06); }
+    .picker-item.is-drop-target { border-color: var(--pick-ring); box-shadow: 0 0 0 1px var(--pick-ring); background: color-mix(in srgb, var(--accent) 14%, transparent); }
+    .crumb.is-drop-target { color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--pick-ring); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+    .picker-list.is-drop-target { box-shadow: inset 0 0 0 2px var(--pick-ring); background: color-mix(in srgb, var(--accent) 6%, transparent); }
     /* A folder held under a drag blinks just before it springs open. */
     .picker-list .picker-item.is-spring, .crumb.is-spring { animation: springBlink 110ms ease-in-out 2; }
     @keyframes springBlink { 50% { opacity: .35; } }
-    /* The window's resize grip, bottom-right. The folder list takes a height chosen with it as a floor, never shorter than usual. */
-    .resize-grip { position: fixed; right: 0; bottom: 0; z-index: 90; width: 14px; height: 14px; cursor: nwse-resize; touch-action: none; opacity: .6; transition: opacity 120ms ease;
-      background: linear-gradient(135deg, transparent 0 52%, rgba(128,128,134,.9) 52% 58%, transparent 58% 68%, rgba(128,128,134,.9) 68% 74%, transparent 74% 84%, rgba(128,128,134,.9) 84% 90%, transparent 90%); }
-    .resize-grip:hover, body.is-resizing .resize-grip { opacity: 1; }
+    /* The window's resize grip, bottom-right, only while Drive folders is open (not under the Move dialog, and under
+       Quick Look). The folder list takes a height chosen with it as a floor, never shorter than usual. */
+    /* Three diagonal ridges in the corner, the way a window's resize corner is drawn; darker on hover. */
+    .resize-grip { display: none; position: fixed; right: 1px; bottom: 1px; z-index: 55; width: 18px; height: 18px; cursor: nwse-resize; touch-action: none; --grip: var(--border-strong);
+      background: linear-gradient(135deg, transparent 0 50%, var(--grip) 50% 57%, transparent 57% 67%, var(--grip) 67% 74%, transparent 74% 84%, var(--grip) 84% 91%, transparent 91%); }
+    body.is-picking:not(.is-moving) .resize-grip { display: block; }
+    .resize-grip:hover, body.is-resizing .resize-grip { --grip: var(--ink); }
     body.is-resizing, body.is-resizing * { cursor: nwse-resize !important; user-select: none; }
     body.has-list-size:not(.is-moving) #picker-list { min-height: var(--list-h); max-height: max(240px, var(--list-h)); }
     /* Undo bar: a zero-height anchor between the list and the buttons (its negative margin cancels the card's
        grid gap), so the bar overlays the bottom of the list without moving anything or resizing the window. */
     .snack-anchor { position: relative; z-index: 6; height: 0; margin-top: -7px; }
     #drawer-picker.is-floating .snack-anchor { margin-top: -8px; }
-    .picker-snack { position: absolute; left: 2px; right: 2px; bottom: 6px; display: flex; align-items: center; gap: 2px; min-height: 38px; padding: 4px 4px 4px 14px; border-radius: 10px; color: #f2f2f2; background: #1f1f1f; box-shadow: 0 6px 20px rgba(0,0,0,.28); overflow: hidden; font-size: 12px; line-height: 1.3; opacity: 0; transform: translateY(6px); transition: opacity 160ms ease, transform 200ms var(--ease); }
+    .picker-snack { position: absolute; left: 2px; right: 2px; bottom: 6px; display: flex; align-items: center; gap: 2px; min-height: 38px; padding: 4px 4px 4px 14px; border-radius: 10px; color: #f2f1ed; background: var(--snack-bg); box-shadow: 0 6px 20px rgba(0,0,0,.28); overflow: hidden; font-size: 12px; line-height: 1.3; opacity: 0; transform: translateY(6px); transition: opacity 160ms ease, transform 200ms var(--ease); }
     .picker-snack[hidden] { display: none; }
     .picker-snack.is-open { opacity: 1; transform: none; }
     .snack-text { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .snack-action { flex: 0 0 auto; height: 30px; padding: 0 8px; border: 0; border-radius: 6px; color: #a8c7fa; background: transparent; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+    .snack-action { flex: 0 0 auto; height: 30px; padding: 0 8px; border: 0; border-radius: 6px; color: #ffb27a; background: transparent; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
     .snack-action[hidden] { display: none; }
-    .snack-action:hover { background: rgba(168,199,250,.14); }
-    .snack-action:focus-visible, .snack-close:focus-visible { outline: 2px solid #a8c7fa; outline-offset: -2px; }
+    .snack-action:hover { background: rgba(255,178,122,.14); }
+    .snack-action:focus-visible, .snack-close:focus-visible { outline: 2px solid #ffb27a; outline-offset: -2px; }
     .snack-close { flex: 0 0 auto; width: 28px; height: 28px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; color: #c4c7c5; background: transparent; cursor: pointer; }
     .snack-close:hover { background: rgba(255,255,255,.1); }
     .snack-close svg { width: 14px; height: 14px; display: block; }
-    .snack-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: #8ab4f8; box-shadow: 0 0 6px rgba(138,180,248,.55); transform-origin: left center; pointer-events: none; }
-    .drag-label { position: fixed; top: -200px; left: 0; padding: 6px 11px; border-radius: 8px; color: #fff; background: #111; font-size: 12px; font-weight: 600; white-space: nowrap; pointer-events: none; }
+    .snack-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: #ff9d4f; box-shadow: 0 0 6px rgba(255,157,79,.55); transform-origin: left center; pointer-events: none; }
+    .drag-label { position: fixed; top: -200px; left: 0; padding: 6px 11px; border-radius: 8px; color: var(--on-black); background: var(--black); font-size: 12px; font-weight: 600; white-space: nowrap; pointer-events: none; }
     .pf-thumb img { -webkit-user-drag: none; }
     .pf-head { display: flex; align-items: center; gap: 8px; min-width: 0; }
     .pf-ico { flex: 0 0 18px; width: 18px; height: 18px; display: block; }
     .pf-ico svg { width: 18px; height: 18px; display: block; }
     .pf-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
     .pf-date { display: none; flex: 0 0 auto; color: var(--muted); font-size: 11px; }
-    .pf-thumb { position: relative; overflow: hidden; display: grid; place-items: center; background: #ececef; }
+    .pf-thumb { position: relative; overflow: hidden; display: grid; place-items: center; background: var(--surface); }
     .pf-big { width: 30px; height: 30px; display: block; opacity: .9; }
     .pf-big svg { width: 30px; height: 30px; display: block; }
     .pf-thumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 260ms ease; }
     .pf-thumb img.is-loaded { opacity: 1; }
-    .pf-play { position: absolute; left: 50%; top: 50%; width: 30px; height: 30px; margin: -15px 0 0 -15px; display: grid; place-items: center; border-radius: 50%; color: #fff; background: rgba(17,17,17,.62); pointer-events: none; }
+    .pf-play { position: absolute; left: 50%; top: 50%; width: 30px; height: 30px; margin: -15px 0 0 -15px; display: grid; place-items: center; border-radius: 50%; color: #f5f4f0; background: rgba(17,17,17,.62); pointer-events: none; }
     .pf-play svg { width: 18px; height: 18px; display: block; }
     /* grid: a card like Drive's — type icon and name on top, the preview below */
-    .picker-list.is-grid .picker-file { border: 1px solid var(--border); background: #fff; padding: 5px 5px 6px 10px; }
+    .picker-list.is-grid .picker-file { border: 1px solid var(--border); background: var(--card); padding: 5px 5px 6px 10px; }
     .picker-list.is-grid .picker-file:hover { border-color: var(--border-strong); }
     .picker-list.is-grid .pf-head { height: 26px; padding-right: 0; }
     .picker-list.is-grid .pf-thumb { margin: 4px 5px 0 0; height: 64px; border-radius: 8px; }
@@ -1014,10 +1127,10 @@
     .picker-list:not(.is-grid) .picker-file:hover { background: var(--surface); }
     .picker-list:not(.is-grid) .pf-thumb { display: none; }
     .picker-list:not(.is-grid) .pf-date { display: block; }
-    .picker-list:not(.is-grid) .picker-file.is-picked { background: rgba(29,114,232,.07); }
+    .picker-list:not(.is-grid) .picker-file.is-picked { background: color-mix(in srgb, var(--accent) 7%, transparent); }
 
     /* ---- Context menu --------------------------------------------------------------------------------- */
-    .ctx-menu { position: fixed; z-index: 70; min-width: 188px; max-width: calc(100vw - 16px); padding: 5px; border: 1px solid var(--border); border-radius: 14px; background: #fff; box-shadow: 0 12px 32px rgba(0,0,0,.18); animation: menuIn 180ms var(--spring); transform-origin: top right; }
+    .ctx-menu { position: fixed; z-index: 70; min-width: 188px; max-width: calc(100vw - 16px); padding: 5px; border: 1px solid var(--border); border-radius: 14px; background: var(--card); box-shadow: 0 12px 32px rgba(0,0,0,.18); animation: menuIn 180ms var(--spring); transform-origin: top right; }
     .ctx-menu[hidden] { display: none; }
     .ctx-item { display: flex; align-items: center; gap: 10px; width: 100%; height: 32px; padding: 0 10px; border: 0; border-radius: 9px; color: var(--ink); background: transparent; font: inherit; font-size: 12.5px; text-align: left; cursor: pointer; }
     .ctx-item:hover:not(:disabled), .ctx-item:focus-visible { background: var(--surface); outline: none; }
@@ -1028,7 +1141,7 @@
     .ctx-sep { height: 1px; margin: 4px 6px; background: var(--line); }
 
     /* ---- Preview (Space / double-click) ----------------------------------------------------------------- */
-    .qlook { position: fixed; inset: 0; z-index: 60; display: flex; flex-direction: column; color: #fff; background: #101012; opacity: 0; transition: opacity 180ms ease; }
+    .qlook { position: fixed; inset: 0; z-index: 60; display: flex; flex-direction: column; color: #f5f4f0; background: #101012; opacity: 0; transition: opacity 180ms ease; }
     .qlook[hidden] { display: none; }
     .qlook.is-open { opacity: 1; }
     /* overflow-x: auto is a safety net, not the primary fix — ql-name and ql-count both shrink first (see
@@ -1040,14 +1153,14 @@
     .ql-icon svg { width: 20px; height: 20px; display: block; }
     .ql-name { flex: 1 1 auto; min-width: 0; margin-left: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 500; }
     .ql-count { flex: 0 1 auto; min-width: 0; margin-right: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: rgba(255,255,255,.55); font-size: 11px; }
-    .ql-btn { flex: 0 0 auto; width: 30px; height: 30px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; color: #fff; background: transparent; cursor: pointer; transition: background-color 120ms ease; }
+    .ql-btn { flex: 0 0 auto; width: 30px; height: 30px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; color: #f5f4f0; background: transparent; cursor: pointer; transition: background-color 120ms ease; }
     .ql-btn:hover:not(:disabled) { background: rgba(255,255,255,.14); }
     .ql-btn:disabled { opacity: .3; cursor: default; }
-    .ql-btn:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
+    .ql-btn:focus-visible { outline: 2px solid #f5f4f0; outline-offset: 1px; }
     .ql-btn svg { width: 17px; height: 17px; display: block; }
-    .ql-done { flex: 0 0 auto; height: 28px; margin-left: 4px; padding: 0 13px; border: 0; border-radius: 14px; color: #fff; background: rgba(255,255,255,.14); font: inherit; font-size: 12px; font-weight: 600; letter-spacing: .01em; cursor: pointer; transition: background-color 120ms ease; }
+    .ql-done { flex: 0 0 auto; height: 28px; margin-left: 4px; padding: 0 13px; border: 0; border-radius: 14px; color: #f5f4f0; background: rgba(255,255,255,.14); font: inherit; font-size: 12px; font-weight: 600; letter-spacing: .01em; cursor: pointer; transition: background-color 120ms ease; }
     .ql-done:hover { background: rgba(255,255,255,.24); }
-    .ql-done:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
+    .ql-done:focus-visible { outline: 2px solid #f5f4f0; outline-offset: 1px; }
     .ql-body { flex: 1 1 auto; min-height: 0; display: flex; }
     .ql-stage { position: relative; flex: 1 1 auto; min-width: 0; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 12px 14px; }
     /* The file-to-file swipe arrow (see the wheel listener below) — same edge-flush shape and the same
@@ -1085,7 +1198,7 @@
        spans the full width right along the bottom edge — the same corners these arrows sit in — so with
        a lower z-index the bar was winning every hover and click there and the arrows never received
        either, even though they were visibly still in the DOM and still "there" to look at. */
-    .ql-nav { position: absolute; bottom: 14px; z-index: 4; width: 38px; height: 38px; display: grid; place-items: center; border: 1.5px solid rgba(255,255,255,.22); border-radius: 50%; color: #fff; background: rgba(20,20,22,.6); box-shadow: 0 2px 12px rgba(0,0,0,.3); cursor: pointer; opacity: 0; pointer-events: none; transition: background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease, transform 160ms var(--ease), opacity 140ms ease; }
+    .ql-nav { position: absolute; bottom: 14px; z-index: 4; width: 38px; height: 38px; display: grid; place-items: center; border: 1.5px solid rgba(255,255,255,.22); border-radius: 50%; color: #f5f4f0; background: rgba(20,20,22,.6); box-shadow: 0 2px 12px rgba(0,0,0,.3); cursor: pointer; opacity: 0; pointer-events: none; transition: background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease, transform 160ms var(--ease), opacity 140ms ease; }
     .ql-stage:hover .ql-nav:not(:disabled), .ql-nav:focus-visible { opacity: 1; pointer-events: auto; }
     .ql-nav:hover:not(:disabled), .ql-nav:focus-visible { background: rgba(255,255,255,.32); border-color: rgba(255,255,255,.6); box-shadow: 0 0 0 1px rgba(255,255,255,.15), 0 4px 16px rgba(255,255,255,.2), 0 2px 12px rgba(0,0,0,.3); transform: scale(1.08); }
     .ql-nav:active:not(:disabled) { transform: scale(.96); }
@@ -1125,10 +1238,10 @@
        explicit top:50%/translateY(-50%) below. Declaring both explicitly, the same way, is what actually
        guarantees the line and the dot sit on the same axis. */
     .ql-range-track { position: absolute; left: 0; right: 0; top: 50%; height: 4px; transform: translateY(-50%); border-radius: 2px; background: rgba(255,255,255,.3); pointer-events: none; }
-    .ql-range-thumb { position: absolute; top: 50%; left: 0; width: 11px; height: 11px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.35); pointer-events: none; transform: translate(-50%, -50%); }
+    .ql-range-thumb { position: absolute; top: 50%; left: 0; width: 11px; height: 11px; border-radius: 50%; background: #f5f4f0; box-shadow: 0 1px 3px rgba(0,0,0,.35); pointer-events: none; transform: translate(-50%, -50%); }
     .ql-vrow { display: flex; align-items: center; justify-content: center; }
     .ql-vpill { display: flex; align-items: center; gap: 2px; padding: 3px 8px 3px 6px; border-radius: 999px; background: rgba(255,255,255,.14); }
-    .ql-vbtn { flex: 0 0 auto; width: 28px; height: 28px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; color: #fff; background: transparent; cursor: pointer; transition: background-color 120ms ease; }
+    .ql-vbtn { flex: 0 0 auto; width: 28px; height: 28px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; color: #f5f4f0; background: transparent; cursor: pointer; transition: background-color 120ms ease; }
     .ql-vbtn:hover { background: rgba(255,255,255,.16); }
     .ql-vbtn svg { width: 16px; height: 16px; display: block; }
     .ql-vtime { flex: 0 0 auto; margin: 0 2px 0 4px; color: rgba(255,255,255,.9); font-size: 11px; white-space: nowrap; }
@@ -1174,23 +1287,199 @@
       font: inherit; font-size: 10.5px; cursor: pointer; padding: 0;
       transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease, box-shadow 120ms ease;
     }
-    .ql-page-chip:hover { background: rgba(255,255,255,.16); color: #fff; }
-    .ql-page-chip.is-current { color: #101012; background: #fff; border-color: #fff; font-weight: 600; box-shadow: 0 2px 10px rgba(0,0,0,.35); }
+    .ql-page-chip:hover { background: rgba(255,255,255,.16); color: #f5f4f0; }
+    .ql-page-chip.is-current { color: #101012; background: #f5f4f0; border-color: #f5f4f0; font-weight: 600; box-shadow: 0 2px 10px rgba(0,0,0,.35); }
     /* The real page thumbnail (pdf.js), rendered lazily once its chip scrolls into view; a small page
        number stays overlaid at the bottom so you can still tell pages apart before/while it loads. */
     .ql-page-thumb { display: block; background: #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.08); }
-    .ql-page-num { position: absolute; left: 0; right: 0; bottom: 0; padding: 2px 0; background: linear-gradient(to top, rgba(0,0,0,.6), rgba(0,0,0,0)); color: #fff; font-size: 9.5px; text-align: center; }
-    .ql-page-chip.is-current .ql-page-num { color: #fff; }
+    .ql-page-num { position: absolute; left: 0; right: 0; bottom: 0; padding: 2px 0; background: linear-gradient(to top, rgba(0,0,0,.6), rgba(0,0,0,0)); color: #f5f4f0; font-size: 9.5px; text-align: center; }
+    .ql-page-chip.is-current .ql-page-num { color: #f5f4f0; }
     .modal-input { display: block; width: 100%; margin: 0 0 14px; height: 38px; font-size: 13px; }
     .modal-input[hidden] { display: none; }
-    @keyframes arrowLift { 0% { transform: translateY(0); opacity: 1; } 42% { transform: translateY(-150px); opacity: 0; } 50% { transform: translateY(130px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
     @keyframes statusPulse { 0%, 100% { opacity: .3; transform: scale(.85); } 50% { opacity: 1; transform: scale(1); } }
     @keyframes spin { to { transform: rotate(360deg); } }
-    @keyframes buttonSweep { to { transform: translateX(130%); } }
+    @keyframes buttonSweep { 0% { transform: translateX(-130%); } 72%, 100% { transform: translateX(130%); } }
     @keyframes arrowHover { 0%, 100% { transform: translateY(-1px); } 48% { transform: translateY(2.8px); } 68% { transform: translateY(1.6px); } }
     @keyframes arrowDrop { 0% { opacity: 0; transform: translateY(-5px); } 28% { opacity: 1; } 66% { opacity: 1; transform: translateY(3px); } 100% { opacity: 0; transform: translateY(4.5px); } }
     @keyframes trayPulse { 0%, 100% { opacity: .62; transform: scaleX(.94); } 58% { opacity: 1; transform: scaleX(1.06); } }
-    @keyframes checkIn { from { opacity: 0; transform: translateY(-1px) rotate(-45deg) scale(.3); } to { opacity: 1; transform: translateY(-1px) rotate(-45deg) scale(1); } }
+    @keyframes checkIn { from { opacity: 0; transform: scale(.3); } to { opacity: 1; transform: none; } }
     @keyframes buttonShake { 25% { transform: translateX(-4px); } 50% { transform: translateX(4px); } 75% { transform: translateX(-2px); } }
     @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; } }
   
+
+    /* ---- Themes: the bits tokens don't reach ---------------------------------------------------------- */
+    .switch input:checked ~ .switch-track .switch-knob { background: var(--knob-on); }
+    .brand-mark rect { fill: var(--black); transition: fill 200ms ease; }
+    .brand-mark g { fill: var(--on-black); transition: fill 200ms ease; }
+    .theme-toggle + .account-switch { margin-left: 8px; }
+    /* Switching themes cross-fades the colours (not layout, not the existing motion). */
+    :root.theme-fading, :root.theme-fading * { transition: background-color 240ms ease, border-color 240ms ease, color 240ms ease, fill 240ms ease, box-shadow 240ms ease !important; }
+    :root.theme-fading .theme-toggle, :root.theme-fading .theme-toggle * { transition: transform 560ms var(--spring-soft), opacity 220ms ease, background 280ms ease, box-shadow 280ms ease !important; }
+
+    /* ---- Finish: one warm accent, a little depth, soft light edges ------------------------------------
+       Kept quiet on purpose: faint gradients that read as material (a sheen along the top edge, a touch
+       darker at the bottom), the accent only where something is "on" or primary, and a warm edge that
+       lights up under a field while you type in it. */
+    body { background: var(--panel-bg); background-color: var(--panel); }
+    .brand { border-bottom: 0; background: linear-gradient(90deg, transparent, var(--line) 14%, var(--line) 86%, transparent) left bottom / 100% 1px no-repeat; }
+    .filename-input, .upload-pill, .scale-pill { background-image: var(--surface-grad); box-shadow: inset 0 1px 0 var(--sheen); }
+    .small-button:not(.is-primary):not(.is-danger-solid), .drive-toggle, .account-chip:not(.is-connected) { background-image: var(--card-grad); box-shadow: inset 0 1px 0 var(--sheen); }
+    .small-button:not(.is-primary):not(.is-danger-solid):hover:not(:disabled) { background-image: none; }
+    /* The field you're typing in: a warm glow along its bottom edge, brightest in the middle. */
+    .filename-input:focus, .upload-pill.is-focused {
+      border-color: transparent;
+      background: linear-gradient(var(--card), var(--card)) padding-box,
+                  radial-gradient(65% 160% at 50% 100%, var(--glow-color), transparent 72%) border-box,
+                  linear-gradient(var(--border), var(--border)) border-box;
+      box-shadow: 0 7px 16px -12px var(--glow-color), inset 0 1px 0 var(--sheen);
+    }
+    .scale-pill:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+    /* On / primary: the accent, as a slightly domed fill. */
+    .option input:checked + .check { border-color: transparent; background: linear-gradient(180deg, var(--accent-top), var(--accent-bottom)); box-shadow: inset 0 1px 0 rgba(255,255,255,.3), 0 1px 2px rgba(120,45,0,.18); }
+    .check::after { border-left-color: var(--on-accent); border-bottom-color: var(--on-accent); }
+    .switch input:checked ~ .switch-track { background: linear-gradient(180deg, var(--accent-top), var(--accent-bottom)); }
+    .switch input:checked ~ .switch-track .switch-knob { background: var(--on-accent); }
+    #export-button, .small-button.is-primary {
+      color: var(--on-accent);
+      background: linear-gradient(180deg, var(--button-top), var(--button-bottom));
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.28), inset 0 -1px 0 rgba(90,30,0,.12), 0 1px 2px rgba(90,30,0,.16);
+      text-shadow: 0 1px 1px rgba(110,40,0,.22);
+    }
+    /* Hover never changes a button's colours: it only rises, with the glow under it. */
+    #export-button:hover:not(:disabled), .small-button.is-primary:hover:not(:disabled) {
+      background: linear-gradient(180deg, var(--button-top), var(--button-bottom));
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.32), inset 0 -1px 0 rgba(90,30,0,.12), var(--lift-shadow);
+    }
+    #export-button:disabled:not(.is-busy) { box-shadow: none; text-shadow: none; }
+    .small-button.is-primary:disabled { opacity: .5; }
+    /* The Drive key: a small domed key, light in the light theme and graphite in the dark one. */
+    #drive-submit { background: var(--key-grad); box-shadow: inset 0 1px 0 var(--sheen), 0 0 0 1px var(--key-edge), 0 1px 2px rgba(0,0,0,.12); }
+    #drive-submit:hover:not(:disabled) { box-shadow: inset 0 1px 0 var(--sheen), 0 0 0 1px var(--key-edge), 0 4px 12px rgba(0,0,0,.16); }
+    /* The Drive folders card: a faint warm outline and glow at the top, like a lit edge. */
+    .drive-drawer .drawer-card { border-color: var(--accent-line); background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 5%, var(--surface-2)), var(--surface-2) 90px); box-shadow: inset 0 1px 0 var(--sheen); }
+    .status-dot { background: var(--accent); }
+    /* The logo: a near-black tile in both themes; in the dark one it gets a thin light outline. */
+    :root[data-theme="dark"] .brand-mark rect { fill: #121214; }
+    :root[data-theme="dark"] .brand-mark g { fill: #f3f2ee; }
+    .brand-mark svg { border-radius: 11.4px; transition: box-shadow 200ms ease; }
+    :root[data-theme="dark"] .brand-mark svg { box-shadow: 0 0 0 1.25px rgba(243,242,238,.85); }
+
+    /* ---- The theme switch: a sun knob on the left in the light theme, a moon knob on the right in the dark one */
+    .theme-toggle { position: relative; flex: 0 0 auto; width: 58px; height: 30px; margin-left: auto; padding: 0; border: 1px solid rgba(28,28,27,.07); border-radius: 15px; background: linear-gradient(180deg, #e6e4de, #f3f1ec); box-shadow: inset 0 1px 3px rgba(28,28,27,.14), 0 1px 0 rgba(255,255,255,.8); cursor: pointer; transition: background 280ms ease, box-shadow 280ms ease, border-color 280ms ease; }
+    .theme-toggle:focus { outline: none; }
+    .theme-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .theme-toggle svg { display: block; width: 15px; height: 15px; }
+    .tt-mark { position: absolute; top: 50%; margin-top: -7.5px; color: var(--muted); opacity: .75; transition: opacity 220ms ease; }
+    .tt-mark.is-sun { left: 7px; opacity: 0; }
+    .tt-mark.is-moon { right: 7px; }
+    .tt-knob { position: absolute; top: 2px; left: 2px; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; color: #fffdf6; background: linear-gradient(180deg, #f8c64d, #e09a0d); box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 0 1px 3px rgba(90,55,0,.3); transition: transform 560ms var(--spring-soft), background 280ms ease, box-shadow 280ms ease; }
+    .tt-knob svg { grid-area: 1 / 1; width: 14px; height: 14px; transition: opacity 220ms ease, transform 560ms var(--spring-soft); }
+    .tt-knob .is-moon { opacity: 0; transform: rotate(-70deg) scale(.5); }
+    .theme-toggle:hover .tt-knob { box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 0 2px 6px rgba(90,55,0,.35); }
+    .theme-toggle:active .tt-knob { width: 28px; border-radius: 12px; }
+    :root[data-theme="dark"] .theme-toggle { border-color: rgba(255,255,255,.06); background: linear-gradient(180deg, #141416, #1f1f22); box-shadow: inset 0 1px 3px rgba(0,0,0,.55), 0 1px 0 rgba(255,255,255,.05); }
+    :root[data-theme="dark"] .tt-mark.is-sun { opacity: .75; }
+    :root[data-theme="dark"] .tt-mark.is-moon { opacity: 0; }
+    :root[data-theme="dark"] .tt-knob { transform: translateX(28px); color: #f3f2ee; background: linear-gradient(180deg, #7a7a80, #46464b); box-shadow: inset 0 1px 0 rgba(255,255,255,.28), 0 1px 3px rgba(0,0,0,.5); }
+    :root[data-theme="dark"] .theme-toggle:active .tt-knob { transform: translateX(24px); }
+    :root[data-theme="dark"] .tt-knob .is-sun { opacity: 0; transform: rotate(70deg) scale(.5); }
+    :root[data-theme="dark"] .tt-knob .is-moon { opacity: 1; transform: none; }
+
+    /* The light theme stays flat: depth (domes, inset tracks, glows on the controls) suits the dark theme but
+       reads dated on a light one. So in light, the checkboxes, the Compress switch and the theme switch are
+       plain fills with a hairline. */
+    /* Checkboxes: the same glassy surface as the Drive link field (its border, its soft top-to-bottom fill,
+       the light along its top edge), ticked or not. Ticking only adds the orange tick. */
+    :root { --check-tick: var(--accent); }
+    .check, .option input:checked + .check, :root:not([data-theme="dark"]) .option input:checked + .check { border: 1px solid var(--border); background: var(--surface-grad); box-shadow: inset 0 1px 0 var(--sheen); }
+    .check::after { border-left: 2.2px solid var(--check-tick); border-bottom: 2.2px solid var(--check-tick); }
+    :root:not([data-theme="dark"]) .switch input:checked ~ .switch-track { background: var(--accent); }
+    :root:not([data-theme="dark"]) .theme-toggle { border-color: var(--border); background: var(--surface); box-shadow: none; }
+    :root:not([data-theme="dark"]) .tt-knob { color: var(--accent); background: var(--card); box-shadow: 0 0 0 .5px rgba(28,28,27,.12), 0 1px 3px rgba(28,28,27,.16); }
+    :root:not([data-theme="dark"]) .theme-toggle:hover .tt-knob { box-shadow: 0 0 0 .5px rgba(28,28,27,.14), 0 2px 5px rgba(28,28,27,.2); }
+    /* A ticked box gets a very faint orange edge. */
+    .option input:checked + .check, :root:not([data-theme="dark"]) .option input:checked + .check { border-color: color-mix(in srgb, var(--accent) 38%, var(--border)); }
+    /* The light theme switch's knob: the same white glass as the Drive key, with its usual hairline edge. */
+    :root:not([data-theme="dark"]) .tt-knob { background: var(--key-grad); box-shadow: inset 0 1px 0 var(--sheen), 0 0 0 .5px rgba(28,28,27,.12), 0 1px 3px rgba(28,28,27,.16); }
+    :root:not([data-theme="dark"]) .theme-toggle:hover .tt-knob { box-shadow: inset 0 1px 0 var(--sheen), 0 0 0 .5px rgba(28,28,27,.14), 0 2px 5px rgba(28,28,27,.2); }
+
+    /* Ticks and small chevrons drawn as icons with round ends and a round corner (they were two border
+       lines turned 45°, which always came out sharp), to match the rest of the plugin's rounded icons. */
+    :root { --tick-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 10' fill='none' stroke='%23000' stroke-width='2.1' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1.7 5.3l2.9 2.8 5.7-6.3'/%3E%3C/svg%3E"); --chevron-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6' fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1.3 1.2L5 4.8l3.7-3.6'/%3E%3C/svg%3E"); }
+    .check::after { width: 12px; height: 10px; border: 0; background: var(--check-tick); -webkit-mask: var(--tick-icon) center / contain no-repeat; mask: var(--tick-icon) center / contain no-repeat; transform: scale(.6); }
+    .option input:checked + .check::after { transform: none; }
+    .button-check { width: 13px; height: 11px; border: 0; background: currentColor; -webkit-mask: var(--tick-icon) center / contain no-repeat; mask: var(--tick-icon) center / contain no-repeat; transform: none; }
+    #drive-submit .submit-check { width: 13px; height: 11px; border: 0; background: var(--on-accent); -webkit-mask: var(--tick-icon) center / contain no-repeat; mask: var(--tick-icon) center / contain no-repeat; transform: none; }
+    .scale-pill::after { width: 9px; height: 6px; margin-top: -3px; border: 0; background: var(--ink); -webkit-mask: var(--chevron-icon) center / contain no-repeat; mask: var(--chevron-icon) center / contain no-repeat; transform: none; }
+    :root[data-theme="dark"] .select-pill { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23cdccc6' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); }
+
+    /* Primary buttons: the accent, a shade deeper in the dark theme so the light label stands out. */
+    :root { --button-top: var(--accent-top); --button-bottom: var(--accent-bottom); }
+    :root[data-theme="dark"] { --button-top: #e2732b; --button-bottom: #c0520c; }
+    :root[data-theme="dark"] #export-button, :root[data-theme="dark"] .small-button.is-primary { text-shadow: 0 1px 1px rgba(70,25,0,.35); }
+    .button-download { width: 17px; height: 17px; }
+
+    /* Working: while a search runs or an upload is going, a soft light travels round the field's edge at an
+       even speed (09-edge-glow.js moves --gx/--gy along the rounded outline, so it takes the corners as
+       smoothly as the straights). It fades in when the work starts. */
+    @property --gx { syntax: '<length>'; inherits: false; initial-value: 0px; }
+    @property --gy { syntax: '<length>'; inherits: false; initial-value: 0px; }
+    @property --glow-a { syntax: '<number>'; inherits: false; initial-value: 0; }
+    .filename-input.is-working, .upload-pill.is-busy {
+      border-color: transparent;
+      background: linear-gradient(var(--card), var(--card)) padding-box,
+                  radial-gradient(70px 44px at var(--gx) var(--gy), color-mix(in srgb, var(--glow-color) calc(var(--glow-a) * 100%), transparent), transparent 72%) border-box,
+                  linear-gradient(var(--border), var(--border)) border-box;
+      box-shadow: inset 0 1px 0 var(--sheen);
+      --glow-a: 1;
+      transition: --glow-a 420ms ease;
+    }
+
+    /* The ring round a picked folder or file (and a drop target): the bright orange in light, a quieter
+       one in dark. */
+    :root { --pick-ring: var(--accent); }
+    :root[data-theme="dark"] { --pick-ring: #b8642c; }
+    /* The lift under a primary button on hover: a soft warm glow, short, reaching no more than about 6px below the
+       button, so it never runs into the status line underneath ("Rendering 1 of 3…") or gets clipped. */
+    :root { --lift-shadow: 0 1px 2px color-mix(in srgb, var(--accent) 22%, transparent), 0 3px 11px -3px color-mix(in srgb, var(--accent) 55%, transparent); }
+    :root[data-theme="dark"] { --lift-shadow: 0 1px 2px rgba(0,0,0,.3), 0 3px 12px -3px color-mix(in srgb, var(--accent) 50%, transparent); }
+    /* The Drive key on hover: a very faint orange ring around it. */
+    #drive-submit:hover:not(:disabled) { box-shadow: inset 0 1px 0 var(--sheen), 0 0 0 1px color-mix(in srgb, var(--accent) 35%, var(--key-edge)), 0 4px 12px rgba(0,0,0,.16); }
+    /* The glow along a field's edge: a brighter, lighter orange in the light theme (the accent itself read
+       brownish on the cream), the accent in the dark one. */
+    :root { --glow-color: #ff9a4a; }
+    :root[data-theme="dark"] { --glow-color: var(--accent); }
+
+    /* One working look for every primary button: Export, Upload here and Move here all show the same soft
+       sheen gliding across while they work (an eased pass, then a short rest), and keep their colour
+       instead of greying out. */
+    .small-button.is-primary { position: relative; overflow: hidden; }
+    .small-button.is-primary::before { content: ''; position: absolute; inset: 0; background: linear-gradient(110deg, transparent 25%, rgba(255,255,255,.28) 48%, transparent 72%); transform: translateX(-130%); pointer-events: none; }
+    .small-button.is-primary.is-busy::before { animation: buttonSweep 1.7s cubic-bezier(.45,0,.25,1) infinite; }
+    .small-button.is-primary.is-busy, .small-button.is-primary.is-busy:disabled { opacity: 1; cursor: wait; }
+    /* Upload here / Move here rise a little on hover and press in when clicked, the same as Export. */
+    .small-button.is-primary { transition: transform 160ms ease, box-shadow 200ms ease, background-color 120ms ease, opacity 120ms ease; }
+    .small-button.is-primary:hover:not(:disabled) { transform: translateY(-1px); }
+    .small-button.is-primary:active:not(:disabled) { transform: translateY(1px) scale(.985); box-shadow: none; }
+    /* The Drive key in the dark theme: a deeper graphite than the other glass pieces. */
+    :root[data-theme="dark"] .upload-pill:not(.is-success) #drive-submit:not(:disabled) { background: linear-gradient(180deg, #2f2f33, #222225); }
+    /* Uploaded: the key keeps its own glass (white in light, graphite in dark) and the tick is the orange. */
+    .upload-pill.is-success #drive-submit { background: var(--key-grad); box-shadow: inset 0 1px 0 var(--sheen), 0 0 0 1px var(--key-edge), 0 1px 2px rgba(0,0,0,.12); }
+    :root[data-theme="dark"] .upload-pill.is-success #drive-submit { background: linear-gradient(180deg, #2f2f33, #222225); }
+    #drive-submit .submit-check { background: var(--accent); }
+
+    /* Destructive buttons (Delete, Move to bin), like the red glass on macOS's bin: in the dark theme a red so
+       deep it is nearly black, with a bright red outline and a label in the same red; in the light theme the same idea
+       inverted, a pale red glass with a red outline and a red label. Hovering only lifts it; colours stay put. */
+    :root { --danger-top: #fff4f3; --danger-bottom: #fbe3e1; --danger-edge: #c8322b; --danger-ink: #c8322b; --danger-sheen: rgba(255,255,255,.85); --danger-glow: rgba(214,52,44,.28); --danger-tint: rgba(210,55,48,.08); }
+    :root[data-theme="dark"] { --danger-top: #301213; --danger-bottom: #1c0a0b; --danger-edge: #e5483e; --danger-ink: #e5483e; --danger-sheen: rgba(255,130,120,.16); --danger-glow: rgba(255,80,70,.32); --danger-tint: rgba(235,90,80,.14); }
+    .small-button.is-danger-solid {
+      border: 0; color: var(--danger-ink);
+      background: linear-gradient(180deg, var(--danger-top), var(--danger-bottom));
+      box-shadow: inset 0 1px 0 var(--danger-sheen), 0 0 0 1px var(--danger-edge), 0 1px 2px rgba(0,0,0,.2);
+      text-shadow: none; font-weight: 600;
+      transition: transform 160ms ease, box-shadow 200ms ease;
+    }
+    .small-button.is-danger-solid:hover:not(:disabled) { background: linear-gradient(180deg, var(--danger-top), var(--danger-bottom)); transform: translateY(-1px); box-shadow: inset 0 1px 0 var(--danger-sheen), 0 0 0 1px var(--danger-edge), 0 3px 10px -3px var(--danger-glow); }
+    .small-button.is-danger-solid:active:not(:disabled) { transform: translateY(1px) scale(.985); box-shadow: inset 0 1px 0 var(--danger-sheen), 0 0 0 1px var(--danger-edge); }
+    .small-button.is-danger:hover:not(:disabled), .ctx-item.is-danger:hover:not(:disabled) { background: var(--danger-tint); }

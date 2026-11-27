@@ -7,6 +7,7 @@ const MAX_PANEL_HEIGHT = 1000;
 // The window can be dragged wider (and its folder list taller) from the corner grip; PANEL_WIDTH is the
 // smallest it goes. The size chosen is remembered for next time.
 const PANEL_SIZE_KEY = 'panel-size';
+const THEME_KEY = 'theme'; // 'light' | 'dark'; nothing saved = follow Figma's theme
 let panelWidth = PANEL_WIDTH;
 let selectionVersion = 0;
 // Set by the UI's Cancel while an export is rendering; runExport checks it between frames (a frame already
@@ -258,7 +259,7 @@ async function placeImages(msg) {
         figma.viewport.scrollAndZoomIntoView(nodes);
     }
 }
-figma.showUI(__html__, { width: PANEL_WIDTH, height: PANEL_HEIGHT });
+figma.showUI(__html__, { width: PANEL_WIDTH, height: PANEL_HEIGHT, themeColors: true }); // themeColors: the UI can follow Figma's light/dark theme
 void sendSelection();
 figma.on('selectionchange', () => { void sendSelection(); });
 figma.ui.onmessage = (message) => {
@@ -286,6 +287,17 @@ figma.ui.onmessage = (message) => {
         void figma.clientStorage.getAsync(PANEL_SIZE_KEY)
             .then((size) => figma.ui.postMessage({ type: 'panel-size', size: size || null }))
             .catch(() => figma.ui.postMessage({ type: 'panel-size', size: null }));
+        return;
+    }
+    if (message.type === 'theme-get') {
+        void figma.clientStorage.getAsync(THEME_KEY)
+            .then((theme) => figma.ui.postMessage({ type: 'theme', theme: theme || 'auto' }))
+            .catch(() => figma.ui.postMessage({ type: 'theme', theme: 'auto' }));
+        return;
+    }
+    if (message.type === 'theme-set') {
+        const save = message.theme === 'auto' ? figma.clientStorage.deleteAsync(THEME_KEY) : figma.clientStorage.setAsync(THEME_KEY, message.theme);
+        void save.catch(() => { });
         return;
     }
     if (message.type === 'storage-get') {

@@ -590,8 +590,9 @@
       const target = pickerTarget()
       if (!move || !target) return
       pickerSelect.disabled = true
+      pickerSelect.classList.add('is-busy')
       const place = { tab: pickerTab, stack: pickerStack.slice() } // the destination is the folder on show in the dialog
-      const ok = await moveEntriesTo(move.entries, target, place)
+      const ok = await moveEntriesTo(move.entries, target, place).finally(() => pickerSelect.classList.remove('is-busy'))
       if (!ok) { updatePickerSelect(); return }
       endMove({ render: false }) // back to the folder the move was started from…
       await renderPicker({ silent: true }) // …with the moved items gone from it

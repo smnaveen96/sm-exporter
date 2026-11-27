@@ -91,6 +91,7 @@
       const target = pickerTarget()
       if (!target) return
       pickerSelect.disabled = true
+      pickerSelect.classList.add('is-busy') // the same working sheen as Export while it uploads
       try {
         const id = await resolveFolderId(target.id)
         saveLastFolder(id, target.name)
@@ -109,5 +110,7 @@
       } catch (error) {
         updatePickerSelect()
         failDrive(friendlyDriveMessage(error))
+      } finally {
+        pickerSelect.classList.remove('is-busy')
       }
     })
