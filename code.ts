@@ -23,7 +23,8 @@ type PlaceableImage =
 type UiMessage =
   | { type: 'export'; options: ExportOptions }
   | { type: 'cancel-export' }
-  | { type: 'resize'; height: number }
+  | { type: 'resize'; height: number; width?: number; save?: { width: number; listHeight: number } }
+  | { type: 'panel-size-get' }
   | { type: 'storage-get'; keys: string[] }
   | { type: 'storage-set'; values: { [key: string]: unknown } }
   | { type: 'open-url'; url: string }
@@ -41,6 +42,12 @@ type RasterSource = {
 const PANEL_WIDTH = 386
 const PANEL_HEIGHT = 566 // initial window height; the UI resizes it to fit its content right after opening
 const MIN_PANEL_HEIGHT = 200 // smallest height the UI may shrink the window to
+const MAX_PANEL_WIDTH = 1200
+const MAX_PANEL_HEIGHT = 1000
+// The window can be dragged wider (and its folder list taller) from the corner grip; PANEL_WIDTH is the
+// smallest it goes. The size chosen is remembered for next time.
+const PANEL_SIZE_KEY = 'panel-size'
+let panelWidth = PANEL_WIDTH
 
 let selectionVersion = 0
 // Set by the UI's Cancel while an export is rendering; runExport checks it between frames (a frame already
@@ -300,8 +307,16 @@ figma.ui.onmessage = (message: UiMessage) => {
     return
   }
   if (message.type === 'resize') {
-    const height = Math.max(MIN_PANEL_HEIGHT, Math.min(1000, Math.round(message.height)))
-    figma.ui.resize(PANEL_WIDTH, height)
+    if (typeof message.width === 'number') panelWidth = Math.max(PANEL_WIDTH, Math.min(MAX_PANEL_WIDTH, Math.round(message.width)))
+    const height = Math.max(MIN_PANEL_HEIGHT, Math.min(MAX_PANEL_HEIGHT, Math.round(message.height)))
+    figma.ui.resize(panelWidth, height)
+    if (message.save) void figma.clientStorage.setAsync(PANEL_SIZE_KEY, message.save).catch(() => {})
+    return
+  }
+  if (message.type === 'panel-size-get') {
+    void figma.clientStorage.getAsync(PANEL_SIZE_KEY)
+      .then((size: unknown) => figma.ui.postMessage({ type: 'panel-size', size: size || null }))
+      .catch(() => figma.ui.postMessage({ type: 'panel-size', size: null }))
     return
   }
   if (message.type === 'storage-get') {

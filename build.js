@@ -54,6 +54,7 @@ const APP_FILES = [
   path.join(SRC, 'app', '05b-ql-swipe-and-pdf.js'),
   path.join(SRC, 'app', '05c-ql-video-controls.js'),
   path.join(SRC, 'app', '06-canvas-dragdrop.js'),
+  path.join(SRC, 'app', '07-window-resize.js'),
 ]
 
 // swipe-gesture.js is also a plain Node module (for swipe-gesture.test.js), so it carries a leading

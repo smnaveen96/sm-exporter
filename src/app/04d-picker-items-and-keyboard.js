@@ -112,29 +112,127 @@
     // ---- Dragging items: onto a folder (or a parent in the breadcrumb) moves them there; images released
     // over the Figma canvas are placed on it, as before. The selection is what moves: dragging an item that
     // isn't selected selects just it first, the same as Drive.
-    let internalDrag = null // { entries, ids, handled } while a drag that started in this list is in flight
+    let internalDrag = null // { entries, ids, handled, sourceEl, origin, sprung } while a drag that started in this list is in flight
     let dropTargetEl = null
     function setDropTarget(el) {
       if (dropTargetEl === el) return
-      if (dropTargetEl) dropTargetEl.classList.remove('is-drop-target')
+      if (dropTargetEl) dropTargetEl.classList.remove('is-drop-target', 'is-spring')
       dropTargetEl = el
       if (el) el.classList.add('is-drop-target')
+      armSpring(el)
     }
     // Where a drop at this event would move the dragged items: a folder in the list that isn't one of them,
-    // or a parent crumb. Null when a drop there would do nothing.
+    // or a parent crumb. Once a held folder has opened (see below), the empty space of the list too, which
+    // moves them into the folder on show. Null when a drop there would do nothing.
     function dropFolderFor(event) {
       if (!internalDrag || pickerMove || !event.target.closest) return null
       const crumb = event.target.closest('.crumb[data-drop-id]')
-      if (crumb && pickerPath.contains(crumb)) return { el: crumb, folder: { id: crumb.dataset.dropId, name: crumb.textContent }, place: { tab: pickerTab, stack: pickerStack.slice(0, Number(crumb.dataset.dropIndex)) } }
+      if (crumb && pickerPath.contains(crumb)) return { el: crumb, folder: { id: crumb.dataset.dropId, name: crumb.textContent }, place: { tab: pickerTab, stack: pickerStack.slice(0, Number(crumb.dataset.dropIndex)) }, crumb: true }
+      if (!pickerList.contains(event.target)) return null
       const el = event.target.closest('[data-id]')
-      if (!el || !pickerList.contains(el)) return null
-      const entry = entryById.get(el.dataset.id)
-      if (!entry || entry.kind !== 'folder' || internalDrag.ids.has(entry.id)) return null
-      // Opening a folder from the list appends it to the current path (outside a search), so that's its path.
-      return { el, folder: entry, place: pickerSearch.value.trim() ? null : { tab: pickerTab, stack: [...pickerStack, entry] } }
+      if (el && pickerList.contains(el)) {
+        const entry = entryById.get(el.dataset.id)
+        if (!entry || internalDrag.ids.has(entry.id)) return null
+        // Opening a folder from the list appends it to the current path (outside a search), so that's its path.
+        if (entry.kind === 'folder') return { el, folder: entry, place: pickerSearch.value.trim() ? null : { tab: pickerTab, stack: [...pickerStack, entry] } }
+      }
+      return internalDrag.sprung ? hereTarget() : null
     }
+    // The folder on show, as a drop target for its empty space: only a real folder (not a search or a list
+    // like Shared with me), and not the one the drag started in, where dropping would move nothing.
+    function hereTarget() {
+      const folder = pickerTarget()
+      if (!folder || folder.id === internalDrag.origin.containerId) return null
+      return { el: pickerList, folder, place: { tab: pickerTab, stack: pickerStack.slice() } }
+    }
+
+    // ---- Spring-loaded folders, as in the Finder: holding a drag over a folder (or a parent crumb) opens it
+    // so the items can be taken further in or back up. The highlight blinks just before it opens. Wherever
+    // the drag ends — a drop, Esc, the canvas — the picker returns to the folder the drag started in; the
+    // "Go to folder" button on the snackbar leads to where the items went.
+    const SPRING_MS = 800
+    const SPRING_BLINK_MS = 220
+    let springTimer = 0
+    function armSpring(el) {
+      clearTimeout(springTimer)
+      if (!el || el === pickerList || !internalDrag || moveInFlight) return
+      springTimer = setTimeout(() => {
+        if (dropTargetEl !== el || !internalDrag) return
+        el.classList.add('is-spring')
+        springTimer = setTimeout(() => { if (dropTargetEl === el && internalDrag) springOpen(el) }, SPRING_BLINK_MS)
+      }, SPRING_MS)
+    }
+    // The tile the drag started from has to stay in the page: the browser sends the end of the drag to it,
+    // and a tile cleared away with the old folder's list would never hear it. It waits off-screen instead.
+    let dragPark = null
+    function parkDragSource() {
+      const el = internalDrag && internalDrag.sourceEl
+      if (!el || !pickerList.contains(el)) return
+      if (!dragPark) {
+        dragPark = document.createElement('div')
+        dragPark.setAttribute('aria-hidden', 'true')
+        dragPark.style.cssText = 'position: fixed; top: -1000px; left: -1000px; width: 1px; height: 1px; overflow: hidden; pointer-events: none;'
+      }
+      if (!dragPark.parentNode) document.body.append(dragPark)
+      dragPark.append(el)
+    }
+    function springOpen(el) {
+      const target = { el, crumbIndex: el.dataset.dropIndex, id: el.dataset.id }
+      setDropTarget(null)
+      parkDragSource()
+      internalDrag.sprung = true
+      clearTimeout(pickerSearchTimer)
+      if (target.crumbIndex != null) pickerStack = pickerStack.slice(0, Number(target.crumbIndex))
+      else {
+        const entry = entryById.get(target.id)
+        if (!entry) return
+        pickerStack.push(entry)
+        pickerSearch.value = ''
+      }
+      pickerRedoStack = []
+      console.log(LOG, 'Opened a folder held under a drag', pickerContainer().name)
+      void renderPicker()
+    }
+    // Back to where the drag started. True when the view had moved and needs drawing again.
+    function returnFromSpring(drag) {
+      if (!drag || !drag.sprung) return false
+      const origin = drag.origin
+      pickerTab = origin.tab
+      pickerStack = origin.stack.slice()
+      pickerRedoStack = origin.redo.slice()
+      pickerSearch.value = origin.search
+      picked.clear()
+      for (const id of origin.picked) picked.add(id) // the selection comes back with the folder
+      return true
+    }
+    async function showOrigin(drag) {
+      await renderPicker({ silent: true, keep: true })
+      pickerList.scrollTop = drag.origin.scroll
+    }
+    // A safety net: if the end of a drag that opened folders never arrives, the first plain pointer move
+    // afterwards (no button held, which can't happen mid-drag) ends it the same way as letting go elsewhere.
+    document.addEventListener('mousemove', (event) => {
+      const drag = internalDrag
+      if (!drag || !drag.sprung || event.buttons !== 0) return
+      console.warn(LOG, 'A drag that opened folders ended without telling the picker; returning to where it started')
+      internalDrag = null
+      pendingCanvasDrag = null
+      setDropTarget(null)
+      if (dragPark) { dragPark.textContent = ''; dragPark.remove() }
+      if (returnFromSpring(drag)) void showOrigin(drag)
+    }, true)
+    // Near the top or bottom of the list, a drag scrolls it, so folders further along can be reached.
+    const SCROLL_ZONE = 28
+    function autoScroll(event) {
+      const rect = pickerList.getBoundingClientRect()
+      const top = event.clientY - rect.top, bottom = rect.bottom - event.clientY
+      if (top >= 0 && top < SCROLL_ZONE) pickerList.scrollTop -= Math.ceil((SCROLL_ZONE - top) / 2)
+      else if (bottom >= 0 && bottom < SCROLL_ZONE) pickerList.scrollTop += Math.ceil((SCROLL_ZONE - bottom) / 2)
+    }
+
     for (const zone of [pickerList, pickerPath]) {
       zone.addEventListener('dragover', (event) => {
+        if (internalDrag && zone === pickerList) autoScroll(event)
         const target = dropFolderFor(event)
         setDropTarget(target ? target.el : null)
         if (!target) return
@@ -149,9 +247,10 @@
         setDropTarget(null)
         if (!target) return
         event.preventDefault()
-        internalDrag.handled = true
-        const entries = internalDrag.entries
-        void moveEntriesTo(entries, target.folder, target.place).then(() => renderPicker({ silent: true, keep: true }))
+        const drag = internalDrag
+        drag.handled = true
+        const back = returnFromSpring(drag)
+        void moveEntriesTo(drag.entries, target.folder, target.place).then(() => (back ? showOrigin(drag) : renderPicker({ silent: true, keep: true })))
       })
     }
     // More than one item gets a small "3 items" label as the drag image instead of whichever tile was grabbed.
@@ -199,7 +298,8 @@
       if (!entry || pickerMove || isDriveRoot(entry)) { event.preventDefault(); return }
       if (!picked.has(entry.id)) selectOnly(entry.id)
       const dragged = pickedEntries().filter((item) => !isDriveRoot(item))
-      internalDrag = { entries: dragged, ids: new Set(dragged.map((item) => item.id)), handled: false }
+      const origin = { tab: pickerTab, stack: pickerStack.slice(), redo: pickerRedoStack.slice(), search: pickerSearch.value, scroll: pickerList.scrollTop, picked: [...picked], containerId: pickerTarget() ? pickerTarget().id : '' }
+      internalDrag = { entries: dragged, ids: new Set(dragged.map((item) => item.id)), handled: false, sprung: false, origin, sourceEl: event.target.closest('[draggable="true"]') || event.target }
       for (const item of dragged) elById.get(item.id)?.classList.add('is-dragging')
       event.dataTransfer.effectAllowed = 'copyMove'
       // A drag image is always set: a handful of embedded Chromium builds (Figma's desktop shell among them)
@@ -241,11 +341,15 @@
     // directly via postMessage on dragend, using the pluginDrop message shape their own sample plugins
     // use — Figma turns that into a real drop event on its side, into the very same figma.on('drop')
     // handler in code.js, so nothing there needs to change to receive it.
-    pickerList.addEventListener('dragend', (event) => {
+    // Heard on the document, since a drag that opened folders ends on the parked tile, outside the list.
+    document.addEventListener('dragend', (event) => {
       const drag = internalDrag
+      if (!drag || !(pickerList.contains(event.target) || (dragPark && dragPark.contains(event.target)))) return
       internalDrag = null
       setDropTarget(null)
+      if (dragPark) { dragPark.textContent = ''; dragPark.remove() }
       for (const el of pickerList.querySelectorAll('.is-dragging')) el.classList.remove('is-dragging')
+      if (!drag.handled && returnFromSpring(drag)) void showOrigin(drag) // let go elsewhere or Esc: back to the start
       const payload = pendingCanvasDrag
       pendingCanvasDrag = null
       if (!payload) return

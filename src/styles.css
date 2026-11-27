@@ -946,12 +946,12 @@
     .picker-files:first-child { margin-top: 0; }
     .picker-files-label { grid-column: 1 / -1; padding: 4px 2px 0; color: var(--muted); font-size: 11px; font-weight: 500; }
     .picker-files-body { display: grid; gap: 2px; }
-    .picker-list.is-grid .picker-files-body { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .picker-list.is-grid .picker-files-body { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
     .picker-folders-body { display: grid; gap: 2px; }
     /* Folders stay compact cards of their own in grid view — same 2-column grid as the files below them,
        but without stretching into the big thumbnail tiles files get, since a folder has no thumbnail to
        show. */
-    .picker-list.is-grid .picker-folders-body { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 6px; }
+    .picker-list.is-grid .picker-folders-body { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; margin-bottom: 6px; }
     .picker-file { position: relative; min-width: 0; border-radius: 12px; color: var(--ink); transition: background-color 140ms ease, border-color 140ms ease, box-shadow 140ms ease, opacity 180ms ease, transform 180ms ease; cursor: default; }
     .picker-file:focus-visible { outline: 2px solid var(--black); outline-offset: 1px; }
     /* Figma's desktop app embeds an older Chromium build where a plain draggable="true" div doesn't
@@ -964,6 +964,16 @@
     .picker-item.is-dragging, .picker-file.is-dragging { opacity: .45; }
     .picker-item.is-drop-target { border-color: var(--link-accent); box-shadow: 0 0 0 2px var(--link-accent); background: rgba(29,114,232,.14); }
     .crumb.is-drop-target { color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--link-accent); background: rgba(29,114,232,.12); }
+    .picker-list.is-drop-target { box-shadow: inset 0 0 0 2px var(--link-accent); background: rgba(29,114,232,.06); }
+    /* A folder held under a drag blinks just before it springs open. */
+    .picker-list .picker-item.is-spring, .crumb.is-spring { animation: springBlink 110ms ease-in-out 2; }
+    @keyframes springBlink { 50% { opacity: .35; } }
+    /* The window's resize grip, bottom-right. The folder list takes a height chosen with it as a floor, never shorter than usual. */
+    .resize-grip { position: fixed; right: 0; bottom: 0; z-index: 90; width: 14px; height: 14px; cursor: nwse-resize; touch-action: none; opacity: .6; transition: opacity 120ms ease;
+      background: linear-gradient(135deg, transparent 0 52%, rgba(128,128,134,.9) 52% 58%, transparent 58% 68%, rgba(128,128,134,.9) 68% 74%, transparent 74% 84%, rgba(128,128,134,.9) 84% 90%, transparent 90%); }
+    .resize-grip:hover, body.is-resizing .resize-grip { opacity: 1; }
+    body.is-resizing, body.is-resizing * { cursor: nwse-resize !important; user-select: none; }
+    body.has-list-size:not(.is-moving) #picker-list { min-height: var(--list-h); max-height: max(240px, var(--list-h)); }
     /* Undo bar: a zero-height anchor between the list and the buttons (its negative margin cancels the card's
        grid gap), so the bar overlays the bottom of the list without moving anything or resizing the window. */
     .snack-anchor { position: relative; z-index: 6; height: 0; margin-top: -7px; }
