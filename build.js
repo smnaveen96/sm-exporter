@@ -49,6 +49,7 @@ const APP_FILES = [
   path.join(SRC, 'app', '04e-picker-rendering-and-drawer.js'),
   path.join(SRC, 'app', '04f-picker-swipe.js'),
   path.join(SRC, 'app', '04g-picker-location-and-info.js'),
+  path.join(SRC, 'app', '04h-picker-undo.js'),
   path.join(SRC, 'app', '05a-ql-open-and-zoom.js'),
   path.join(SRC, 'app', '05b-ql-swipe-and-pdf.js'),
   path.join(SRC, 'app', '05c-ql-video-controls.js'),

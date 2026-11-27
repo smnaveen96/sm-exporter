@@ -160,7 +160,9 @@
             body: JSON.stringify({ name: folderName, mimeType: FOLDER_MIME, parents: [container.id] }),
           })
           if (!response.ok) throw await driveError(response, 'folder creation')
-          pickerFocusId = (await response.json()).id
+          const made = await response.json()
+          pickerFocusId = made.id
+          recordCreated({ id: made.id, name: made.name || folderName }, `Created folder “${made.name || folderName}”`)
           await renderPicker({ silent: true })
         } catch (error) {
           console.warn(LOG, 'Could not create the folder', error)

@@ -20,6 +20,7 @@
         crumb.textContent = folder.name
         crumb.title = folder.name // the full name on hover, since a long one still ellipsises
         if (last) crumb.setAttribute('aria-current', 'location')
+        else if (!VIRTUAL_IDS.includes(folder.id)) { crumb.dataset.dropId = folder.id; crumb.dataset.dropIndex = String(index) } // drag items here to move them up
         crumb.addEventListener('click', () => {
           if (last) return
           pickerStack = pickerStack.slice(0, index)
@@ -204,6 +205,7 @@
       try {
         const response = await patchFile(entry.id, { name })
         if (!response.ok) throw await driveError(response, 'rename')
+        recordRename(entry, entry.name, name)
         await renderPicker({ silent: true, keep: true })
       } catch (error) { failDrive(actionFailMessage(error, 'rename')) }
     }
@@ -211,14 +213,15 @@
     async function copyEntry(entry) {
       setDriveStatus('busy', 'Making a copy…')
       try {
-        const response = await driveFetch(`${DRIVE_API}/files/${encodeURIComponent(entry.id)}/copy?supportsAllDrives=true&fields=id`, {
+        const response = await driveFetch(`${DRIVE_API}/files/${encodeURIComponent(entry.id)}/copy?supportsAllDrives=true&fields=id,name`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json; charset=UTF-8' },
           body: JSON.stringify({ name: `Copy of ${entry.name}` }),
         })
         if (!response.ok) throw await driveError(response, 'copy')
+        const copy = await response.json()
         setDriveStatus('', '')
-        flashDriveStatus('Copy created', 2200)
+        recordCreated({ id: copy.id, name: copy.name || `Copy of ${entry.name}` }, `Created “${copy.name || `Copy of ${entry.name}`}”`)
         await renderPicker({ silent: true, keep: true })
       } catch (error) { failDrive(actionFailMessage(error, 'copy')) }
     }
@@ -230,6 +233,7 @@
           const response = await patchFile(entry.id, { starred: value })
           if (!response.ok) throw await driveError(response, 'star')
         }
+        recordStar(entries, value)
         await renderPicker({ silent: true, keep: true })
       } catch (error) {
         failDrive(actionFailMessage(error, 'star'))
@@ -251,10 +255,12 @@
       for (const entry of entries) elById.get(entry.id)?.classList.add('is-busy')
       let failed = 0
       let lastError = null
+      const trashed = []
       for (const entry of entries) {
         try {
           const response = await patchFile(entry.id, { trashed: true })
           if (!response.ok) throw await driveError(response, 'delete')
+          trashed.push(entry)
           const el = elById.get(entry.id)
           if (el) el.classList.add('is-removing')
           picked.delete(entry.id)
@@ -267,6 +273,6 @@
       if (failed) failDrive(actionFailMessage(lastError, 'move to the bin'))
       await new Promise((resolve) => setTimeout(resolve, 190))
       await renderPicker({ silent: true, keep: true })
-      if (!failed) flashDriveStatus(`Moved ${entries.length === 1 ? '1 item' : `${entries.length} items`} to the bin`, 2600)
+      if (trashed.length) recordTrash(trashed) // offers Undo for whatever did reach the bin
     }
 

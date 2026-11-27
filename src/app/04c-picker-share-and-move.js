@@ -508,7 +508,13 @@
     function startMove(entries) {
       entries = entries.filter((entry) => !isDriveRoot(entry))
       if (!entries.length) return
-      pickerMove = { ids: new Set(entries.map((entry) => entry.id)), entries }
+      hideSnack()
+      // Choosing a destination browses inside the same picker, which used to overwrite the folder path you
+      // were on: after the move you were left in the destination, and Back climbed from there (often straight
+      // to My Drive) instead of returning to where you started. The starting place is kept here and put back
+      // when the move finishes or is cancelled, the same way Drive's own "Move to" dialog leaves you put.
+      const origin = { tab: pickerTab, stack: pickerStack.slice(), redo: pickerRedoStack.slice(), search: pickerSearch.value }
+      pickerMove = { ids: new Set(entries.map((entry) => entry.id)), entries, origin }
       picked.clear()
       pickerList.classList.add('is-moving')
       if (drawerPicker.parentNode !== document.body) document.body.append(drawerPicker)
@@ -519,9 +525,19 @@
       updatePickerSelect()
       for (const id of pickerMove.ids) elById.get(id)?.classList.add('is-moving')
     }
-    function endMove() {
+    function endMove(options) {
       if (!pickerMove) return
+      const origin = pickerMove.origin
       pickerMove = null
+      let returned = false
+      if (origin) {
+        const path = (stack) => stack.map((folder) => folder.id).join('/')
+        returned = origin.tab !== pickerTab || origin.search !== pickerSearch.value || path(origin.stack) !== path(pickerStack)
+        pickerTab = origin.tab
+        pickerStack = origin.stack
+        pickerRedoStack = origin.redo
+        pickerSearch.value = origin.search
+      }
       pickerList.classList.remove('is-moving')
       for (const el of elById.values()) el.classList.remove('is-moving')
       drawerPicker.classList.remove('is-floating')
@@ -531,27 +547,52 @@
       syncSelection()
       updatePickerSelect()
       syncHeight()
+      if (returned && !(options && options.render === false)) void renderPicker({ silent: true })
+    }
+    // Moves entries into folder (an entry or a { id, name } place; 'root' is My Drive). Shared by the Move-to
+    // dialog and drag-and-drop. Resolves true when everything that needed moving moved; the caller refreshes
+    // the list. Items already in that folder are skipped rather than re-parented for nothing.
+    let moveInFlight = false
+    async function moveEntriesTo(entries, folder, place) {
+      if (moveInFlight) return false
+      entries = entries.filter((entry) => !isDriveRoot(entry) && entry.id !== folder.id)
+      if (!entries.length) return true
+      moveInFlight = true
+      setDriveStatus('busy', 'Moving…')
+      for (const entry of entries) elById.get(entry.id)?.classList.add('is-busy')
+      const moved = [] // what actually moved, with where it came from, for Undo
+      try {
+        const destination = await resolveFolderId(folder.id)
+        for (const entry of entries) {
+          const parents = entry.parents || []
+          if (parents.length === 1 && parents[0] === destination) continue
+          const remove = parents.filter((id) => id !== destination)
+          const query = `&addParents=${encodeURIComponent(destination)}${remove.length ? `&removeParents=${encodeURIComponent(remove.join(','))}` : ''}`
+          const response = await patchFile(entry.id, {}, query)
+          if (!response.ok) throw await driveError(response, 'move')
+          moved.push({ id: entry.id, name: entry.name, from: parents.slice(), to: destination })
+        }
+        setDriveStatus('', '')
+        if (moved.length) recordMove(moved, folder, place)
+        else flashDriveStatus(`Already in “${folder.name || 'that folder'}”`, 2600)
+        return true
+      } catch (error) {
+        failDrive(actionFailMessage(error, 'move'))
+        if (moved.length) recordMove(moved, folder, place) // the part that did go through can still be undone
+        return false
+      } finally {
+        moveInFlight = false
+        for (const entry of entries) elById.get(entry.id)?.classList.remove('is-busy')
+      }
     }
     async function finishMove() {
       const move = pickerMove
       const target = pickerTarget()
       if (!move || !target) return
       pickerSelect.disabled = true
-      setDriveStatus('busy', 'Moving…')
-      try {
-        const destination = await resolveFolderId(target.id)
-        for (const entry of move.entries) {
-          const remove = (entry.parents || []).filter((id) => id !== destination)
-          const query = `&addParents=${encodeURIComponent(destination)}${remove.length ? `&removeParents=${encodeURIComponent(remove.join(','))}` : ''}`
-          const response = await patchFile(entry.id, {}, query)
-          if (!response.ok) throw await driveError(response, 'move')
-        }
-        endMove()
-        setDriveStatus('', '')
-        flashDriveStatus(`Moved ${move.entries.length === 1 ? '1 item' : `${move.entries.length} items`}`, 2400)
-        await renderPicker({ silent: true })
-      } catch (error) {
-        failDrive(actionFailMessage(error, 'move'))
-        updatePickerSelect()
-      }
+      const place = { tab: pickerTab, stack: pickerStack.slice() } // the destination is the folder on show in the dialog
+      const ok = await moveEntriesTo(move.entries, target, place)
+      if (!ok) { updatePickerSelect(); return }
+      endMove({ render: false }) // back to the folder the move was started from…
+      await renderPicker({ silent: true }) // …with the moved items gone from it
     }

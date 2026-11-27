@@ -87,7 +87,7 @@
     let pickerMove = null         // { ids: Set } while choosing a place to move items to
     let pickerFocusId = ''
 
-    function resetPickerLocation() { pickerTab = 'mine'; pickerStack = []; pickerRedoStack = []; pickerSearch.value = ''; picked.clear(); pickerMove = null }
+    function resetPickerLocation() { pickerTab = 'mine'; pickerStack = []; pickerRedoStack = []; pickerSearch.value = ''; picked.clear(); pickerMove = null; clearUndoHistory() }
 
     // ---- File types --------------------------------------------------------------------------------
     const TYPE_STYLE = {

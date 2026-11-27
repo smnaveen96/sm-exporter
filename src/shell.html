@@ -279,6 +279,16 @@
               <span id="picker-path" class="picker-path crumbs"></span>
             </div>
             <div id="picker-list" class="picker-list is-grid" role="listbox"></div>
+            <!-- Undo bar (Google Drive style): floats over the bottom of the list, never over the buttons. -->
+            <div class="snack-anchor">
+              <div id="picker-snack" class="picker-snack" role="status" aria-live="polite" hidden>
+                <span id="picker-snack-text" class="snack-text"></span>
+                <button id="picker-snack-goto" class="snack-action" type="button" hidden>Go to folder</button>
+                <button id="picker-snack-undo" class="snack-action" type="button" hidden>Undo</button>
+                <button id="picker-snack-close" class="snack-close" type="button" aria-label="Dismiss"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+                <span id="picker-snack-bar" class="snack-bar" aria-hidden="true"></span>
+              </div>
+            </div>
             <div class="drawer-actions">
               <button id="picker-new" class="small-button has-icon" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>New folder</button>
               <span class="spacer"></span>

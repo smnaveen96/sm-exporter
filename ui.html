@@ -969,7 +969,28 @@
        Harmless everywhere else (an unprefixed, unsupported property is simply ignored). The thumbnail
        img is explicitly excluded so starting a drag over it still drags the whole tile (with its
        Drive file payload) instead of the browser's own "save this picture" image drag taking over. */
-    .picker-file[draggable="true"] { -webkit-user-drag: element; }
+    .picker-file[draggable="true"], .picker-item[draggable="true"] { -webkit-user-drag: element; }
+    /* Drag to move: the items being dragged fade, and the folder or breadcrumb they'd land in lights up. */
+    .picker-item.is-dragging, .picker-file.is-dragging { opacity: .45; }
+    .picker-item.is-drop-target { border-color: var(--link-accent); box-shadow: 0 0 0 2px var(--link-accent); background: rgba(29,114,232,.14); }
+    .crumb.is-drop-target { color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--link-accent); background: rgba(29,114,232,.12); }
+    /* Undo bar: a zero-height anchor between the list and the buttons (its negative margin cancels the card's
+       grid gap), so the bar overlays the bottom of the list without moving anything or resizing the window. */
+    .snack-anchor { position: relative; z-index: 6; height: 0; margin-top: -7px; }
+    #drawer-picker.is-floating .snack-anchor { margin-top: -8px; }
+    .picker-snack { position: absolute; left: 2px; right: 2px; bottom: 6px; display: flex; align-items: center; gap: 2px; min-height: 38px; padding: 4px 4px 4px 14px; border-radius: 10px; color: #f2f2f2; background: #1f1f1f; box-shadow: 0 6px 20px rgba(0,0,0,.28); overflow: hidden; font-size: 12px; line-height: 1.3; opacity: 0; transform: translateY(6px); transition: opacity 160ms ease, transform 200ms var(--ease); }
+    .picker-snack[hidden] { display: none; }
+    .picker-snack.is-open { opacity: 1; transform: none; }
+    .snack-text { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .snack-action { flex: 0 0 auto; height: 30px; padding: 0 8px; border: 0; border-radius: 6px; color: #a8c7fa; background: transparent; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+    .snack-action[hidden] { display: none; }
+    .snack-action:hover { background: rgba(168,199,250,.14); }
+    .snack-action:focus-visible, .snack-close:focus-visible { outline: 2px solid #a8c7fa; outline-offset: -2px; }
+    .snack-close { flex: 0 0 auto; width: 28px; height: 28px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; color: #c4c7c5; background: transparent; cursor: pointer; }
+    .snack-close:hover { background: rgba(255,255,255,.1); }
+    .snack-close svg { width: 14px; height: 14px; display: block; }
+    .snack-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: #8ab4f8; box-shadow: 0 0 6px rgba(138,180,248,.55); transform-origin: left center; pointer-events: none; }
+    .drag-label { position: fixed; top: -200px; left: 0; padding: 6px 11px; border-radius: 8px; color: #fff; background: #111; font-size: 12px; font-weight: 600; white-space: nowrap; pointer-events: none; }
     .pf-thumb img { -webkit-user-drag: none; }
     .pf-head { display: flex; align-items: center; gap: 8px; min-width: 0; }
     .pf-ico { flex: 0 0 18px; width: 18px; height: 18px; display: block; }
@@ -1443,6 +1464,16 @@
               <span id="picker-path" class="picker-path crumbs"></span>
             </div>
             <div id="picker-list" class="picker-list is-grid" role="listbox"></div>
+            <!-- Undo bar (Google Drive style): floats over the bottom of the list, never over the buttons. -->
+            <div class="snack-anchor">
+              <div id="picker-snack" class="picker-snack" role="status" aria-live="polite" hidden>
+                <span id="picker-snack-text" class="snack-text"></span>
+                <button id="picker-snack-goto" class="snack-action" type="button" hidden>Go to folder</button>
+                <button id="picker-snack-undo" class="snack-action" type="button" hidden>Undo</button>
+                <button id="picker-snack-close" class="snack-close" type="button" aria-label="Dismiss"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+                <span id="picker-snack-bar" class="snack-bar" aria-hidden="true"></span>
+              </div>
+            </div>
             <div class="drawer-actions">
               <button id="picker-new" class="small-button has-icon" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>New folder</button>
               <span class="spacer"></span>
@@ -5662,7 +5693,7 @@ class SwipeAxis {
     let pickerMove = null         // { ids: Set } while choosing a place to move items to
     let pickerFocusId = ''
 
-    function resetPickerLocation() { pickerTab = 'mine'; pickerStack = []; pickerRedoStack = []; pickerSearch.value = ''; picked.clear(); pickerMove = null }
+    function resetPickerLocation() { pickerTab = 'mine'; pickerStack = []; pickerRedoStack = []; pickerSearch.value = ''; picked.clear(); pickerMove = null; clearUndoHistory() }
 
     // ---- File types --------------------------------------------------------------------------------
     const TYPE_STYLE = {
@@ -5921,6 +5952,7 @@ class SwipeAxis {
         crumb.textContent = folder.name
         crumb.title = folder.name // the full name on hover, since a long one still ellipsises
         if (last) crumb.setAttribute('aria-current', 'location')
+        else if (!VIRTUAL_IDS.includes(folder.id)) { crumb.dataset.dropId = folder.id; crumb.dataset.dropIndex = String(index) } // drag items here to move them up
         crumb.addEventListener('click', () => {
           if (last) return
           pickerStack = pickerStack.slice(0, index)
@@ -6105,6 +6137,7 @@ class SwipeAxis {
       try {
         const response = await patchFile(entry.id, { name })
         if (!response.ok) throw await driveError(response, 'rename')
+        recordRename(entry, entry.name, name)
         await renderPicker({ silent: true, keep: true })
       } catch (error) { failDrive(actionFailMessage(error, 'rename')) }
     }
@@ -6112,14 +6145,15 @@ class SwipeAxis {
     async function copyEntry(entry) {
       setDriveStatus('busy', 'Making a copy…')
       try {
-        const response = await driveFetch(`${DRIVE_API}/files/${encodeURIComponent(entry.id)}/copy?supportsAllDrives=true&fields=id`, {
+        const response = await driveFetch(`${DRIVE_API}/files/${encodeURIComponent(entry.id)}/copy?supportsAllDrives=true&fields=id,name`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json; charset=UTF-8' },
           body: JSON.stringify({ name: `Copy of ${entry.name}` }),
         })
         if (!response.ok) throw await driveError(response, 'copy')
+        const copy = await response.json()
         setDriveStatus('', '')
-        flashDriveStatus('Copy created', 2200)
+        recordCreated({ id: copy.id, name: copy.name || `Copy of ${entry.name}` }, `Created “${copy.name || `Copy of ${entry.name}`}”`)
         await renderPicker({ silent: true, keep: true })
       } catch (error) { failDrive(actionFailMessage(error, 'copy')) }
     }
@@ -6131,6 +6165,7 @@ class SwipeAxis {
           const response = await patchFile(entry.id, { starred: value })
           if (!response.ok) throw await driveError(response, 'star')
         }
+        recordStar(entries, value)
         await renderPicker({ silent: true, keep: true })
       } catch (error) {
         failDrive(actionFailMessage(error, 'star'))
@@ -6152,10 +6187,12 @@ class SwipeAxis {
       for (const entry of entries) elById.get(entry.id)?.classList.add('is-busy')
       let failed = 0
       let lastError = null
+      const trashed = []
       for (const entry of entries) {
         try {
           const response = await patchFile(entry.id, { trashed: true })
           if (!response.ok) throw await driveError(response, 'delete')
+          trashed.push(entry)
           const el = elById.get(entry.id)
           if (el) el.classList.add('is-removing')
           picked.delete(entry.id)
@@ -6168,7 +6205,7 @@ class SwipeAxis {
       if (failed) failDrive(actionFailMessage(lastError, 'move to the bin'))
       await new Promise((resolve) => setTimeout(resolve, 190))
       await renderPicker({ silent: true, keep: true })
-      if (!failed) flashDriveStatus(`Moved ${entries.length === 1 ? '1 item' : `${entries.length} items`} to the bin`, 2600)
+      if (trashed.length) recordTrash(trashed) // offers Undo for whatever did reach the bin
     }
 
     // ---- Share… --------------------------------------------------------------------------------------
@@ -6681,7 +6718,13 @@ class SwipeAxis {
     function startMove(entries) {
       entries = entries.filter((entry) => !isDriveRoot(entry))
       if (!entries.length) return
-      pickerMove = { ids: new Set(entries.map((entry) => entry.id)), entries }
+      hideSnack()
+      // Choosing a destination browses inside the same picker, which used to overwrite the folder path you
+      // were on: after the move you were left in the destination, and Back climbed from there (often straight
+      // to My Drive) instead of returning to where you started. The starting place is kept here and put back
+      // when the move finishes or is cancelled, the same way Drive's own "Move to" dialog leaves you put.
+      const origin = { tab: pickerTab, stack: pickerStack.slice(), redo: pickerRedoStack.slice(), search: pickerSearch.value }
+      pickerMove = { ids: new Set(entries.map((entry) => entry.id)), entries, origin }
       picked.clear()
       pickerList.classList.add('is-moving')
       if (drawerPicker.parentNode !== document.body) document.body.append(drawerPicker)
@@ -6692,9 +6735,19 @@ class SwipeAxis {
       updatePickerSelect()
       for (const id of pickerMove.ids) elById.get(id)?.classList.add('is-moving')
     }
-    function endMove() {
+    function endMove(options) {
       if (!pickerMove) return
+      const origin = pickerMove.origin
       pickerMove = null
+      let returned = false
+      if (origin) {
+        const path = (stack) => stack.map((folder) => folder.id).join('/')
+        returned = origin.tab !== pickerTab || origin.search !== pickerSearch.value || path(origin.stack) !== path(pickerStack)
+        pickerTab = origin.tab
+        pickerStack = origin.stack
+        pickerRedoStack = origin.redo
+        pickerSearch.value = origin.search
+      }
       pickerList.classList.remove('is-moving')
       for (const el of elById.values()) el.classList.remove('is-moving')
       drawerPicker.classList.remove('is-floating')
@@ -6704,29 +6757,54 @@ class SwipeAxis {
       syncSelection()
       updatePickerSelect()
       syncHeight()
+      if (returned && !(options && options.render === false)) void renderPicker({ silent: true })
+    }
+    // Moves entries into folder (an entry or a { id, name } place; 'root' is My Drive). Shared by the Move-to
+    // dialog and drag-and-drop. Resolves true when everything that needed moving moved; the caller refreshes
+    // the list. Items already in that folder are skipped rather than re-parented for nothing.
+    let moveInFlight = false
+    async function moveEntriesTo(entries, folder, place) {
+      if (moveInFlight) return false
+      entries = entries.filter((entry) => !isDriveRoot(entry) && entry.id !== folder.id)
+      if (!entries.length) return true
+      moveInFlight = true
+      setDriveStatus('busy', 'Moving…')
+      for (const entry of entries) elById.get(entry.id)?.classList.add('is-busy')
+      const moved = [] // what actually moved, with where it came from, for Undo
+      try {
+        const destination = await resolveFolderId(folder.id)
+        for (const entry of entries) {
+          const parents = entry.parents || []
+          if (parents.length === 1 && parents[0] === destination) continue
+          const remove = parents.filter((id) => id !== destination)
+          const query = `&addParents=${encodeURIComponent(destination)}${remove.length ? `&removeParents=${encodeURIComponent(remove.join(','))}` : ''}`
+          const response = await patchFile(entry.id, {}, query)
+          if (!response.ok) throw await driveError(response, 'move')
+          moved.push({ id: entry.id, name: entry.name, from: parents.slice(), to: destination })
+        }
+        setDriveStatus('', '')
+        if (moved.length) recordMove(moved, folder, place)
+        else flashDriveStatus(`Already in “${folder.name || 'that folder'}”`, 2600)
+        return true
+      } catch (error) {
+        failDrive(actionFailMessage(error, 'move'))
+        if (moved.length) recordMove(moved, folder, place) // the part that did go through can still be undone
+        return false
+      } finally {
+        moveInFlight = false
+        for (const entry of entries) elById.get(entry.id)?.classList.remove('is-busy')
+      }
     }
     async function finishMove() {
       const move = pickerMove
       const target = pickerTarget()
       if (!move || !target) return
       pickerSelect.disabled = true
-      setDriveStatus('busy', 'Moving…')
-      try {
-        const destination = await resolveFolderId(target.id)
-        for (const entry of move.entries) {
-          const remove = (entry.parents || []).filter((id) => id !== destination)
-          const query = `&addParents=${encodeURIComponent(destination)}${remove.length ? `&removeParents=${encodeURIComponent(remove.join(','))}` : ''}`
-          const response = await patchFile(entry.id, {}, query)
-          if (!response.ok) throw await driveError(response, 'move')
-        }
-        endMove()
-        setDriveStatus('', '')
-        flashDriveStatus(`Moved ${move.entries.length === 1 ? '1 item' : `${move.entries.length} items`}`, 2400)
-        await renderPicker({ silent: true })
-      } catch (error) {
-        failDrive(actionFailMessage(error, 'move'))
-        updatePickerSelect()
-      }
+      const place = { tab: pickerTab, stack: pickerStack.slice() } // the destination is the folder on show in the dialog
+      const ok = await moveEntriesTo(move.entries, target, place)
+      if (!ok) { updatePickerSelect(); return }
+      endMove({ render: false }) // back to the folder the move was started from…
+      await renderPicker({ silent: true }) // …with the moved items gone from it
     }
     // ---- Items -------------------------------------------------------------------------------------
     function moreButton(entry) {
@@ -6758,7 +6836,7 @@ class SwipeAxis {
       name.className = 'fi-name'
       name.textContent = entry.name
       item.append(icon, name)
-      if (!isDriveRoot(entry)) item.append(moreButton(entry))
+      if (!isDriveRoot(entry)) { item.append(moreButton(entry)); item.draggable = true } // drag onto another folder to move it
       return item
     }
 
@@ -6771,7 +6849,7 @@ class SwipeAxis {
       tile.tabIndex = 0
       tile.dataset.id = entry.id
       tile.setAttribute('role', 'option')
-      if (kind === 'image') tile.draggable = true // drag it straight onto the Figma canvas
+      tile.draggable = true // onto another folder to move it; an image can also go straight onto the Figma canvas
       const head = document.createElement('div')
       head.className = 'pf-head'
       const ico = document.createElement('span')
@@ -6839,24 +6917,84 @@ class SwipeAxis {
       event.preventDefault()
       menuForTarget(entry, { x: event.clientX, y: event.clientY })
     })
+    // ---- Dragging items: onto a folder (or a parent in the breadcrumb) moves them there; images released
+    // over the Figma canvas are placed on it, as before. The selection is what moves: dragging an item that
+    // isn't selected selects just it first, the same as Drive.
+    let internalDrag = null // { entries, ids, handled } while a drag that started in this list is in flight
+    let dropTargetEl = null
+    function setDropTarget(el) {
+      if (dropTargetEl === el) return
+      if (dropTargetEl) dropTargetEl.classList.remove('is-drop-target')
+      dropTargetEl = el
+      if (el) el.classList.add('is-drop-target')
+    }
+    // Where a drop at this event would move the dragged items: a folder in the list that isn't one of them,
+    // or a parent crumb. Null when a drop there would do nothing.
+    function dropFolderFor(event) {
+      if (!internalDrag || pickerMove || !event.target.closest) return null
+      const crumb = event.target.closest('.crumb[data-drop-id]')
+      if (crumb && pickerPath.contains(crumb)) return { el: crumb, folder: { id: crumb.dataset.dropId, name: crumb.textContent }, place: { tab: pickerTab, stack: pickerStack.slice(0, Number(crumb.dataset.dropIndex)) } }
+      const el = event.target.closest('[data-id]')
+      if (!el || !pickerList.contains(el)) return null
+      const entry = entryById.get(el.dataset.id)
+      if (!entry || entry.kind !== 'folder' || internalDrag.ids.has(entry.id)) return null
+      // Opening a folder from the list appends it to the current path (outside a search), so that's its path.
+      return { el, folder: entry, place: pickerSearch.value.trim() ? null : { tab: pickerTab, stack: [...pickerStack, entry] } }
+    }
+    for (const zone of [pickerList, pickerPath]) {
+      zone.addEventListener('dragover', (event) => {
+        const target = dropFolderFor(event)
+        setDropTarget(target ? target.el : null)
+        if (!target) return
+        event.preventDefault() // accept the drop here
+        event.dataTransfer.dropEffect = 'move'
+      })
+      zone.addEventListener('dragleave', (event) => {
+        if (dropTargetEl && !dropTargetEl.contains(event.relatedTarget)) setDropTarget(null)
+      })
+      zone.addEventListener('drop', (event) => {
+        const target = dropFolderFor(event)
+        setDropTarget(null)
+        if (!target) return
+        event.preventDefault()
+        internalDrag.handled = true
+        const entries = internalDrag.entries
+        void moveEntriesTo(entries, target.folder, target.place).then(() => renderPicker({ silent: true, keep: true }))
+      })
+    }
+    // More than one item gets a small "3 items" label as the drag image instead of whichever tile was grabbed.
+    function dragLabel(count) {
+      const label = document.createElement('div')
+      label.className = 'drag-label'
+      label.textContent = `${count} items`
+      document.body.append(label)
+      setTimeout(() => label.remove(), 0)
+      return label
+    }
     pickerList.addEventListener('dragstart', (event) => {
       const entry = entryFromEvent(event)
-      if (!entry || entry.kind !== 'file' || fileKind(entry) !== 'image') { event.preventDefault(); return }
+      if (!entry || pickerMove || isDriveRoot(entry)) { event.preventDefault(); return }
       if (!picked.has(entry.id)) selectOnly(entry.id)
-      const images = pickedEntries().filter((item) => item.kind === 'file' && fileKind(item) === 'image')
-      event.dataTransfer.effectAllowed = 'copy'
+      const dragged = pickedEntries().filter((item) => !isDriveRoot(item))
+      internalDrag = { entries: dragged, ids: new Set(dragged.map((item) => item.id)), handled: false }
+      for (const item of dragged) elById.get(item.id)?.classList.add('is-dragging')
+      event.dataTransfer.effectAllowed = 'copyMove'
+      // A drag image is always set: a handful of embedded Chromium builds (Figma's desktop shell among them)
+      // skip starting the drag at all when dataTransfer.setDragImage was never called, rather than falling
+      // back to a default image. One item drags its own tile; several drag a count label.
+      const tileEl = event.target.closest('[data-id]')
+      try {
+        if (dragged.length > 1) event.dataTransfer.setDragImage(dragLabel(dragged.length), 14, 14)
+        else if (tileEl) event.dataTransfer.setDragImage(tileEl, 16, 16)
+      } catch (error) { /* non-essential */ }
+      const images = dragged.filter((item) => item.kind === 'file' && fileKind(item) === 'image')
+      if (!images.length) { event.dataTransfer.setData('text/plain', dragged.map((item) => item.name).join('\n')); return }
       const payload = JSON.stringify({ smDriveImages: images.map((item) => ({ id: item.id, name: item.name, mimeType: item.mimeType, size: item.size })) })
       event.dataTransfer.setData('text/plain', payload)
       // 'text' is the old (pre-"text/plain") name for the same format — some embedded/older Chromium
       // builds (which is what Figma's desktop shell is built on) still look for it specifically rather
       // than falling back to "text/plain". Costs nothing to set both.
       event.dataTransfer.setData('text', payload)
-      // A handful of embedded Chromium builds don't auto-generate a drag thumbnail the way a full browser
-      // does, and skip starting the drag at all when dataTransfer.setDragImage was never called — rather
-      // than falling back to some default image. Giving it the tile itself covers that case and is a
-      // perfectly normal drag thumbnail otherwise.
-      const tileEl = event.target.closest('[data-id]')
-      if (tileEl) { try { event.dataTransfer.setDragImage(tileEl, 16, 16) } catch (error) { /* non-essential */ } }
       pendingCanvasDrag = payload // handed to the dragend listener below, which is the path that actually reaches the canvas
       // Visible in the UI iframe's own devtools console (right-click the plugin → Inspect) — confirms the
       // drag actually started and what it's carrying, which is the first thing to check if a drop onto
@@ -6875,9 +7013,14 @@ class SwipeAxis {
     // use — Figma turns that into a real drop event on its side, into the very same figma.on('drop')
     // handler in code.js, so nothing there needs to change to receive it.
     pickerList.addEventListener('dragend', (event) => {
+      const drag = internalDrag
+      internalDrag = null
+      setDropTarget(null)
+      for (const el of pickerList.querySelectorAll('.is-dragging')) el.classList.remove('is-dragging')
       const payload = pendingCanvasDrag
       pendingCanvasDrag = null
       if (!payload) return
+      if (drag && drag.handled) return // dropped on a folder in the picker: that was a move, not a canvas drop
       window.parent.postMessage({
         pluginDrop: {
           clientX: event.clientX,
@@ -6901,6 +7044,9 @@ class SwipeAxis {
         for (const item of pickerItems) picked.add(item.id)
         pickAnchor = pickAnchor || (pickerItems[0] && pickerItems[0].id) || ''
         syncSelection()
+      } else if (mod && (event.key.toLowerCase() === 'z' || (event.ctrlKey && event.key.toLowerCase() === 'y'))) {
+        event.preventDefault() // text fields returned above, so their own undo is untouched
+        if (event.shiftKey || event.key.toLowerCase() === 'y') void redoLast(); else void undoLast()
       } else if (event.key === ' ' && !onButton) {
         const focusId = target && target.dataset && target.dataset.id
         const entry = (focusId && entryById.get(focusId)) || pickedEntries().filter((item) => item.kind === 'file').pop()
@@ -7088,7 +7234,9 @@ class SwipeAxis {
             body: JSON.stringify({ name: folderName, mimeType: FOLDER_MIME, parents: [container.id] }),
           })
           if (!response.ok) throw await driveError(response, 'folder creation')
-          pickerFocusId = (await response.json()).id
+          const made = await response.json()
+          pickerFocusId = made.id
+          recordCreated({ id: made.id, name: made.name || folderName }, `Created folder “${made.name || folderName}”`)
           await renderPicker({ silent: true })
         } catch (error) {
           console.warn(LOG, 'Could not create the folder', error)
@@ -7498,6 +7646,192 @@ class SwipeAxis {
       if (infoModal.hidden || !infoModal.classList.contains('is-open')) return
       if (event.key === 'Escape') { event.preventDefault(); event.stopImmediatePropagation(); closeInfoDialog() }
     }, true)
+    // ---- Undo / redo for the picker's Drive actions, and the bar that offers it ---------------------------
+    // Every reversible action the picker performs (move, rename, move to bin, star, make a copy, new folder)
+    // records how to undo and redo itself. The latest one is offered as "Undo" in a Google Drive-style bar
+    // over the bottom of the list, with "Go to folder" after a move; Cmd/Ctrl+Z and Cmd/Ctrl+Shift+Z (or
+    // Ctrl+Y) walk the history while the picker has focus. History lasts for the session and is cleared when
+    // the account changes. Sharing and uploads are deliberately not undoable: reversing them could remove
+    // someone's access or a file in a way nobody expects.
+    const pickerSnack = document.getElementById('picker-snack')
+    const snackText = document.getElementById('picker-snack-text')
+    const snackGoTo = document.getElementById('picker-snack-goto')
+    const snackUndo = document.getElementById('picker-snack-undo')
+    const snackClose = document.getElementById('picker-snack-close')
+    const snackBar = document.getElementById('picker-snack-bar')
+    const UNDO_LIMIT = 20
+    const SNACK_MS = 8000
+    let undoStack = [], redoStack = [], undoBusy = false
+    let snackAction = null, snackTimer = 0, snackHideTimer = 0, snackDeadline = 0, snackLeft = 0
+
+    function itemsLabel(items) { return items.length === 1 ? `“${items[0].name}”` : `${items.length} items` }
+    function clearUndoHistory() { undoStack = []; redoStack = []; hideSnack() }
+
+    function showSnack(text, action) {
+      clearTimeout(snackTimer)
+      clearTimeout(snackHideTimer)
+      snackAction = action || null
+      snackText.textContent = text
+      snackText.title = text // the full message on hover when a long name is cut short
+      snackUndo.hidden = !action
+      snackGoTo.hidden = !(action && action.goTo)
+      snackBar.style.transition = 'none'
+      snackBar.style.transform = 'scaleX(1)'
+      pickerSnack.hidden = false
+      void pickerSnack.offsetWidth
+      pickerSnack.classList.add('is-open')
+      runSnackTimer(SNACK_MS)
+    }
+    // The thin bar along the bottom drains as the time runs out, so it is clear when the bar will go.
+    function runSnackTimer(ms) {
+      clearTimeout(snackTimer)
+      snackDeadline = Date.now() + ms
+      snackTimer = setTimeout(hideSnack, ms)
+      snackBar.style.transition = `transform ${ms}ms linear`
+      snackBar.style.transform = 'scaleX(0)'
+    }
+    function pauseSnackTimer() {
+      clearTimeout(snackTimer)
+      snackLeft = Math.max(0, snackDeadline - Date.now())
+      // Freeze the bar where it is, as a scaleX() so it can animate on to scaleX(0) later (a matrix can't).
+      const now = getComputedStyle(snackBar).transform
+      const scale = now && now !== 'none' ? new DOMMatrixReadOnly(now).a : 1
+      snackBar.style.transition = 'none'
+      snackBar.style.transform = `scaleX(${scale})`
+    }
+    function hideSnack() {
+      clearTimeout(snackTimer)
+      snackAction = null
+      if (pickerSnack.hidden) return
+      pickerSnack.classList.remove('is-open')
+      snackHideTimer = setTimeout(() => { if (!pickerSnack.classList.contains('is-open')) pickerSnack.hidden = true }, 200)
+    }
+    // Reading the bar (hovering it) holds it open and freezes the timer; it carries on when the pointer
+    // leaves, with at least 3 seconds left.
+    pickerSnack.addEventListener('mouseenter', () => { if (pickerSnack.classList.contains('is-open')) pauseSnackTimer() })
+    pickerSnack.addEventListener('mouseleave', () => { if (pickerSnack.classList.contains('is-open')) runSnackTimer(Math.max(snackLeft, 3000)) })
+    snackClose.addEventListener('click', hideSnack)
+    snackUndo.addEventListener('click', () => { if (snackAction && snackAction === undoStack[undoStack.length - 1]) void undoLast() })
+    snackGoTo.addEventListener('click', () => { const action = snackAction; hideSnack(); if (action && action.goTo) void action.goTo() })
+
+    function recordAction(action) {
+      undoStack.push(action)
+      if (undoStack.length > UNDO_LIMIT) undoStack.shift()
+      redoStack = []
+      showSnack(action.message, action)
+    }
+    async function runHistory(direction) {
+      if (undoBusy || pickerMove) return
+      const action = (direction === 'undo' ? undoStack : redoStack).pop()
+      if (!action) { showSnack(direction === 'undo' ? 'Nothing to undo' : 'Nothing to redo'); return }
+      undoBusy = true
+      hideSnack()
+      setDriveStatus('busy', direction === 'undo' ? 'Undoing…' : 'Redoing…')
+      try {
+        await action[direction]()
+        setDriveStatus('', '')
+        if (direction === 'undo') { redoStack.push(action); showSnack(action.undoneMessage) }
+        else { undoStack.push(action); showSnack(action.message, action) }
+      } catch (error) {
+        // A half-applied undo can't be replayed reliably, so the action leaves the history either way.
+        console.warn(LOG, `Could not ${direction}`, error)
+        failDrive(actionFailMessage(error, direction))
+      } finally {
+        undoBusy = false
+        await renderPicker({ silent: true, keep: true })
+      }
+    }
+    function undoLast() { return runHistory('undo') }
+    function redoLast() { return runHistory('redo') }
+
+    async function patchEach(ids, body, what) {
+      for (const id of ids) {
+        const response = await patchFile(id, body)
+        if (!response.ok) throw await driveError(response, what)
+      }
+    }
+
+    // ---- "Go to folder": where a moved item now lives ----------------------------------------------------
+    // The caller usually knows the folder's path already (it was on screen); otherwise it is worked out from
+    // the folder's parents, the same way Show location does.
+    async function placeOfFolder(folder) {
+      const rootId = await resolveFolderId('root')
+      if (folder.id === 'root' || folder.id === rootId) return { tab: 'mine', stack: [] }
+      const response = await driveFetch(`${DRIVE_API}/files/${encodeURIComponent(folder.id)}?fields=id,name,parents,driveId&supportsAllDrives=true`)
+      if (!response.ok) throw await driveError(response, 'folder lookup')
+      const item = await response.json()
+      if (item.driveId && item.driveId === item.id) return { tab: 'drives', stack: [{ id: item.id, name: item.name, drive: true, shared: true }] }
+      const place = await locateEntry(item)
+      return { tab: place.tab, stack: [...place.stack, { id: item.id, name: item.name, kind: 'folder' }] }
+    }
+    async function goToFolder(folder, place, focusId) {
+      try {
+        const target = place || await placeOfFolder(folder)
+        clearTimeout(pickerSearchTimer)
+        pickerTab = target.tab
+        pickerStack = target.stack.slice()
+        pickerRedoStack = []
+        pickerSearch.value = ''
+        pickerFocusId = focusId || '' // renderPicker selects it, scrolls it into view and flashes it
+        await renderPicker()
+      } catch (error) {
+        console.warn(LOG, 'Could not open the folder', error)
+        failDrive(actionFailMessage(error, 'open'))
+      }
+    }
+
+    // ---- The actions ---------------------------------------------------------------------------------------
+    // moved: [{ id, name, from: parents before the move, to: destination id }]
+    function recordMove(moved, folder, place) {
+      const reparent = async (forward) => {
+        for (const item of moved) {
+          const others = item.from.filter((id) => id !== item.to)
+          const add = forward ? [item.to] : others
+          const remove = forward ? others : (item.from.includes(item.to) ? [] : [item.to])
+          const query = `${add.length ? `&addParents=${encodeURIComponent(add.join(','))}` : ''}${remove.length ? `&removeParents=${encodeURIComponent(remove.join(','))}` : ''}`
+          const response = await patchFile(item.id, {}, query)
+          if (!response.ok) throw await driveError(response, 'move')
+        }
+      }
+      recordAction({
+        message: `Moved ${itemsLabel(moved)} to “${folder.name || 'folder'}”`,
+        undoneMessage: `Moved ${itemsLabel(moved)} back`,
+        undo: () => reparent(false),
+        redo: () => reparent(true),
+        goTo: () => goToFolder(folder, place, moved[0].id),
+      })
+    }
+    function recordRename(entry, oldName, newName) {
+      const setName = (name) => () => patchEach([entry.id], { name }, 'rename')
+      recordAction({ message: `Renamed to “${newName}”`, undoneMessage: `Name changed back to “${oldName}”`, undo: setName(oldName), redo: setName(newName) })
+    }
+    function recordTrash(items) {
+      const ids = items.map((item) => item.id)
+      recordAction({
+        message: `Moved ${itemsLabel(items)} to the bin`,
+        undoneMessage: `Restored ${itemsLabel(items)}`,
+        undo: () => patchEach(ids, { trashed: false }, 'restore'),
+        redo: () => patchEach(ids, { trashed: true }, 'delete'),
+      })
+    }
+    function recordStar(items, value) {
+      const ids = items.map((item) => item.id)
+      recordAction({
+        message: value ? `Added ${itemsLabel(items)} to Starred` : `Removed ${itemsLabel(items)} from Starred`,
+        undoneMessage: value ? 'Removed from Starred' : 'Added back to Starred',
+        undo: () => patchEach(ids, { starred: !value }, 'star'),
+        redo: () => patchEach(ids, { starred: value }, 'star'),
+      })
+    }
+    // A copy or a new folder: undoing it moves it to the bin (recoverable there), redoing restores it.
+    function recordCreated(item, message) {
+      recordAction({
+        message,
+        undoneMessage: `Moved “${item.name}” to the bin`,
+        undo: () => patchEach([item.id], { trashed: true }, 'delete'),
+        redo: () => patchEach([item.id], { trashed: false }, 'restore'),
+      })
+    }
     // ---- Preview (Space, double-click) ---------------------------------------------------------------------
     const qlEl = document.getElementById('qlook')
     const qlStage = document.getElementById('ql-stage')
