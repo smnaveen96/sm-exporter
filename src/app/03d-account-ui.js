@@ -18,8 +18,9 @@
 
     async function accessTokenFor(entry) {
       if (entry.accessToken && Date.now() < entry.expiresAt - 60000) return entry.accessToken
-      if (!entry.refreshToken || !oauthClient) return null
-      const data = await tokenRequest({ refresh_token: entry.refreshToken, client_id: oauthClient.clientId, client_secret: oauthClient.clientSecret, grant_type: 'refresh_token' })
+      if (!entry.refreshToken) return null
+      if (entry.via === 'own' && !oauthClient) return null
+      const data = await refreshGrant(entry)
       entry.accessToken = data.access_token
       entry.expiresAt = Date.now() + (Number(data.expires_in) || 3600) * 1000
       return entry.accessToken
@@ -45,11 +46,10 @@
     }
 
     // ---- Account switcher (header) ---------------------------------------------------------------
-    // The photo / initial button opens one panel for everything Google: the accounts, adding one and,
-    // one step further in, the OAuth client settings and the paste-the-redirect step of signing in.
+    // The photo / initial button opens the account list and the two ways to connect one: the quick sign-in
+    // through SM exporter's OAuth Worker, and your own Client ID (one step further in, with the guide link).
     const accountList = document.getElementById('account-list')
     const accountBack = document.getElementById('account-back')
-    accountMenu.append(drawerSettings, drawerAuth) // the sign-in cards live in the panel, not at the bottom
 
     function renderAccountSwitcher() {
       accountChip.classList.toggle('is-connected', Boolean(tokens))
@@ -93,28 +93,18 @@
         sep.className = 'account-sep'
         accountList.append(sep)
       }
-      const add = document.createElement('button')
-      add.type = 'button'
-      add.className = 'account-add'
-      add.setAttribute('role', 'menuitem')
-      add.innerHTML = `${connectButton.querySelector('.g-logo').outerHTML}<span>Connect new account</span>`
-      add.addEventListener('click', () => { void connectNewAccount() })
-      accountList.append(add)
-      const client = document.createElement('button')
-      client.type = 'button'
-      client.className = 'account-link'
-      client.textContent = 'Client ID & secret'
-      client.addEventListener('click', () => { fillSettingsFields(); showDrawer('settings') })
-      accountList.append(client)
     }
 
-    // view: 'list' (accounts) | 'settings' (Client ID and secret) | 'auth' (paste the redirect URL)
+    // view: 'list' (accounts and the ways to connect) | 'auth' (quick sign-in, waiting for the browser)
+    //       | 'settings' (your own Client ID and secret) | 'auth-own' (paste the address back, own client)
     function openAccountMenu(view) {
       accountMenu.dataset.view = view
       accountList.hidden = view !== 'list'
-      drawerSettings.hidden = view !== 'settings'
+      connectBlock.hidden = view !== 'list'
       drawerAuth.hidden = view !== 'auth'
-      accountBack.hidden = view !== 'settings'
+      drawerSettings.hidden = view !== 'settings'
+      drawerAuthOwn.hidden = view !== 'auth-own'
+      accountBack.hidden = view === 'list'
       if (view === 'list') renderAccountMenu()
       accountMenu.hidden = false
       accountChip.setAttribute('aria-expanded', 'true')
@@ -127,13 +117,22 @@
       syncHeight()
     }
 
-    // Clicking away closes the panel — except mid sign-in, where Cancel or Esc ends it, so the paste step isn't lost.
+    // Clicking away closes the menu, except mid sign-in, where Cancel or Esc ends it (the browser step, or
+    // the address you're about to paste, isn't lost). A Drive call waiting for an account is cancelled.
     function dismissAccountMenu() {
       if (accountMenu.hidden) return
       const view = accountMenu.dataset.view
-      if (view === 'auth') return
+      if (view === 'auth' || view === 'auth-own') return
       if (view === 'settings') showDrawer(null)
       else closeAccountMenu()
+      abandonSignInChoice()
+    }
+    // One step back: from a sign-in or the Client ID fields to the account list.
+    function accountMenuBack() {
+      const view = accountMenu.hidden ? '' : accountMenu.dataset.view
+      if (view === 'auth') cancelSignIn()
+      else if (view === 'auth-own') { if (!authOwnCancel.disabled) cancelOwnSignIn() }
+      else if (view === 'settings') { showDrawer(null); openAccountMenu('list') }
     }
 
     // driveFetch reads `tokens` fresh on every call, so switching mid-transfer would finish an upload
@@ -145,6 +144,12 @@
     }
     function switchAccount(entry) {
       closeAccountMenu()
+      if (signInWaiters.length) { // a Drive call waiting for an account: picking one answers it
+        tokens = entry
+        saveTokens()
+        settleSignInWaiters(null)
+        return
+      }
       if (entry === tokens) return
       if (transferRunning()) return
       tokens = entry
@@ -178,44 +183,27 @@
       console.log(LOG, 'Disconnected Google account')
     }
 
-    async function connectNewAccount() {
-      closeAccountMenu()
-      if (busy || checkingClient) return
-      if (!oauthClient) {
-        fillSettingsFields()
-        showDrawer('settings')
-        setSettingsMessage('error', 'Enter your Client ID and Client secret to continue.', [clientIdInput, clientSecretInput])
-        return
-      }
-      await connectFromSettings()
-    }
-
     accountChip.addEventListener('click', () => {
       if (accountMenu.hidden) openAccountMenu('list')
       else dismissAccountMenu()
     })
-    accountBack.addEventListener('click', () => { showDrawer(null); openAccountMenu('list') })
+    accountBack.addEventListener('click', accountMenuBack)
     document.addEventListener('pointerdown', (event) => { if (modalResolve) return; if (!accountMenu.hidden && !accountSwitch.contains(event.target)) dismissAccountMenu() })
-    // Clicking the Figma canvas moves focus out of the plugin: the account list folds away (not the settings or sign-in steps, which you may be copying into from another window).
-    window.addEventListener('blur', () => { if (!accountMenu.hidden && accountMenu.dataset.view === 'list') closeAccountMenu() })
-    // Esc always goes back exactly one step: sign-in → account list, client settings → account list,
-    // account list → closed, folder picker → parent folder (or clears the search) → closed.
+    // Clicking the Figma canvas moves focus out of the plugin: the account list folds away, but sign-in stays available.
+    // (Not while a Drive call is waiting for an account: that would cancel it.)
+    window.addEventListener('blur', () => { if (!accountMenu.hidden && accountMenu.dataset.view === 'list' && !signInWaiters.length) closeAccountMenu() })
+    // Esc goes back from sign-in to accounts, closes the account list, or navigates the folder picker.
     document.addEventListener('keydown', (event) => {
       if (event.key !== 'Escape' || event.defaultPrevented) return
       if (!ctxMenu.hidden) { event.preventDefault(); closeMenu(); return }
       const view = accountMenu.hidden ? '' : accountMenu.dataset.view
-      if (view === 'auth') {
+      if (view === 'auth' || view === 'auth-own' || view === 'settings') {
         event.preventDefault()
-        if (authCancel.disabled) return // mid-connect: nothing to go back to yet
-        cancelSignIn()
-        openAccountMenu('list')
-      } else if (view === 'settings') {
-        event.preventDefault()
-        showDrawer(null)
-        openAccountMenu('list')
+        accountMenuBack()
       } else if (view === 'list') {
         event.preventDefault()
         closeAccountMenu()
+        abandonSignInChoice()
       } else if (drawerMode === 'picker') {
         event.preventDefault()
         if (!ctxMenu.hidden) closeMenu()
@@ -227,4 +215,3 @@
       }
     })
     renderAccountSwitcher()
-

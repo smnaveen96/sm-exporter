@@ -1,5 +1,19 @@
     // ---- Rendering ----------------------------------------------------------------------------------------
+    // Every listing goes through here, however it was started (typing, paste, Enter, a refresh), so the
+    // search box's working glow (.is-working) is set and cleared in one place: it shows while a search
+    // runs and stops when the newest listing is done. Clearing it only after the typed-search path left it
+    // circling forever when the search came from a paste or from Enter.
+    let searchWaiting = false // typed, and the short pause before the search runs hasn't passed yet
     async function renderPicker(options) {
+      const run = pickerRun + 1 // the run listPicker is about to take
+      if (pickerSearch.value.trim() && !(options && options.silent)) pickerSearch.classList.add('is-working')
+      try {
+        return await listPicker(options)
+      } finally {
+        if (run === pickerRun && !searchWaiting) pickerSearch.classList.remove('is-working')
+      }
+    }
+    async function listPicker(options) {
       const opts = options || {}
       const run = ++pickerRun
       const query = pickerSearch.value.trim()
@@ -16,7 +30,7 @@
       pickerBack.hidden = !pickerStack.length && !query
       renderCrumbs()
       updatePickerSelect()
-      if (!opts.silent) pickerNote('Loading…', true)
+      if (!opts.silent) pickerNote(!query ? 'Loading' : parseDriveItemLink(query) ? 'Opening link' : 'Searching Drive', true)
       let folders
       let files = []
       try {
@@ -35,10 +49,10 @@
           folders = sortEntries(found)
           files = sortEntries(inside)
         }
-        // Remembering "the last place I visited" means on every successful navigation into a real folder,
-        // not only when a folder gets used as an upload destination — browsing around without uploading
-        // anything used to leave nothing saved at all, so the plugin always reopened at My Drive.
-        if (pickerStack.length && !pickerMove && container.id !== (lastFolder && lastFolder.id)) saveLastFolder(container.id, container.name)
+        // Remember the last place visited on every successful navigation: into a folder, and back out to the
+        // top of a tab too. Only saving folders left the plugin reopening an old folder after you'd gone back to
+        // My Drive or over to Shared with me / Shared drives.
+        if (!pickerMove && !query) saveLastFolder(pickerStack.length ? container.id : null, container.name, pickerTab)
       } catch (error) {
         if (run !== pickerRun) return
         // The remembered folder (from a previous session) may since have been moved, renamed, or deleted —
@@ -183,15 +197,10 @@
 
     // ---- Opening and closing the drawer -------------------------------------------------------------------
     async function openFolderPicker() {
-      if (busy || checkingClient) return
-      if (!oauthClient) {
-        fillSettingsFields()
-        showDrawer('settings')
-        failDrive('Add your Google OAuth client to continue.')
-        return
-      }
+      if (busy) return
       if (!tokens) {
-        await connectFromSettings() // signs in first, then comes straight back here
+        // Asks how to connect (the quick way or your own client), then comes straight back here.
+        try { await ensureAccessToken() } catch { return }
         if (!tokens) return
       }
       // The very first time the picker opens in a session, start where the last upload left off (closing
@@ -200,7 +209,10 @@
       if (!lastFolderApplied) {
         if (!settingsLoaded) await Promise.race([storageReady, new Promise((resolve) => setTimeout(resolve, 1500))])
         lastFolderApplied = true
-        if (lastFolder && lastFolder.id) { pickerTab = 'mine'; pickerStack = [{ id: lastFolder.id, name: lastFolder.name }] }
+        if (lastFolder) {
+          pickerTab = PICKER_ROOTS[lastFolder.tab] ? lastFolder.tab : 'mine'
+          pickerStack = lastFolder.id ? [{ id: lastFolder.id, name: lastFolder.name }] : []
+        }
       }
       pickerSearch.value = '' // the place is remembered; an old search isn't
       updatePickerView()
@@ -256,19 +268,21 @@
       }))
       openMenu(items, pickerSortButton.getBoundingClientRect())
     })
-    // While a search is waiting to run or running, the search box's glow circles its edge (.is-working).
-    let searchGlowRun = 0
+    // While a search is waiting to run or running, the search box's glow circles its edge (.is-working);
+    // renderPicker clears it when the search is done.
     pickerSearch.addEventListener('input', () => {
       clearTimeout(pickerSearchTimer)
-      pickerSearch.classList.toggle('is-working', Boolean(pickerSearch.value.trim()))
+      searchWaiting = Boolean(pickerSearch.value.trim())
+      pickerSearch.classList.toggle('is-working', searchWaiting)
       pickerSearchTimer = setTimeout(() => {
-        const mine = ++searchGlowRun
-        renderPicker().finally(() => { if (mine === searchGlowRun) pickerSearch.classList.remove('is-working') })
+        searchWaiting = false
+        void renderPicker()
       }, 300)
     })
     pickerSearch.addEventListener('paste', () => {
       setTimeout(() => {
         clearTimeout(pickerSearchTimer)
+        searchWaiting = false
         void renderPicker()
       }, 0)
     })
@@ -276,8 +290,9 @@
       if (event.key !== 'Enter') return
       event.preventDefault()
       clearTimeout(pickerSearchTimer)
+      searchWaiting = false
       const link = parseDriveItemLink(pickerSearch.value)
-      if (link) void openDriveItemLink(link)
+      if (link) void openDriveItemLink(link).finally(() => { if (!searchWaiting) pickerSearch.classList.remove('is-working') })
       else void renderPicker()
     })
     pickerBack.addEventListener('click', () => {

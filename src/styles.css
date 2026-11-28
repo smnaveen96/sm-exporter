@@ -83,7 +83,7 @@
       --accent-text-deep: #ffbd8c;
       --accent-soft: rgba(255,140,60,.16);
       --accent-line: rgba(255,140,60,.22);
-      --sheen: rgba(255,255,255,.06);
+      --sheen: rgba(255,255,255,.03);
       --surface-grad: linear-gradient(180deg, #2f2f33, #28282b);
       --card-grad: linear-gradient(180deg, #2c2c30, #252528);
       --key-grad: linear-gradient(180deg, #3d3d42, #2d2d31);
@@ -135,22 +135,6 @@
       font-size: 14px;
       font-weight: 500;
     }
-    /* "2 frames selected ⌄": the chevron folds the thumbnail strip away (and back), to give the Drive folders
-       list more room. The strip also folds when the window is dragged shorter (see 07-window-resize.js). */
-    .selection-head { display: flex; align-items: center; gap: 4px; margin: 0 5px 11px; transition: margin-bottom var(--dur) var(--ease-sheet); }
-    .selection-head #selection-count { margin: 0; }
-    .preview-toggle { flex: 0 0 auto; display: grid; place-items: center; width: 22px; height: 22px; padding: 0; border: 0; border-radius: 50%; color: var(--muted); background: transparent; cursor: pointer; transition: color 120ms ease, background-color 120ms ease; }
-    .preview-toggle[hidden] { display: none; }
-    .preview-toggle:hover { color: var(--black); background: var(--tint); }
-    .preview-toggle:focus { outline: none; }
-    .preview-toggle:focus-visible { box-shadow: 0 0 0 2px var(--black); }
-    .preview-toggle svg { width: 15px; height: 15px; display: block; transform: rotate(180deg); transition: transform 420ms var(--spring); }
-    .preview-toggle[aria-expanded="false"] svg { transform: none; }
-    .preview-fold { display: grid; grid-template-rows: 1fr; transition: grid-template-rows var(--dur) var(--ease-sheet); }
-    /* Room on every side for a lifted thumbnail and its shadow, cancelled by the negative margins. */
-    .preview-fold-inner { min-height: 0; min-width: 0; overflow: hidden; padding: 12px 8px 0; margin: -12px -8px 0; transform-origin: 50% 0; transition: opacity 280ms ease 60ms, transform 520ms var(--spring-soft); }
-    .preview-fold.is-folded { grid-template-rows: 0fr; }
-    .preview-fold.is-folded .preview-fold-inner { opacity: 0; visibility: hidden; transform: translateY(-8px) scale(.97); transition: opacity 160ms ease, transform var(--dur) var(--ease-sheet), visibility 0s linear var(--dur); }
     .preview-wrap {
       position: relative;
       display: flow-root; /* keeps the strip's negative margins inside the wrap instead of pulling the whole wrap up */
@@ -470,13 +454,8 @@
       overflow: visible;
       transition: transform 180ms ease;
     }
-    .button-download .download-arrow { transform-origin: 10px 7px; }
-    .button-download .download-tray { transform-origin: 10px 15px; }
+
     #export-button:hover:not(:disabled) .button-download { transform: scale(1.08); }
-    #export-button:hover:not(:disabled) .button-download .download-arrow { animation: arrowHover 820ms cubic-bezier(.25,.75,.3,1) infinite; }
-    #export-button:active:not(:disabled) .button-download .download-arrow,
-    #export-button.is-busy .button-download .download-arrow { animation: arrowDrop 620ms cubic-bezier(.3,.7,.35,1) infinite; }
-    #export-button.is-busy .button-download .download-tray { animation: trayPulse 620ms ease infinite; }
     .button-spinner {
       display: none;
       width: 13px; height: 13px;
@@ -622,10 +601,6 @@
     #drawer-auth > p:first-child { font-size: 11px; line-height: 1.4; }
     .drawer-card a { color: var(--black); font-weight: 500; text-decoration: underline; text-underline-offset: 2px; }
     .drawer-card a:hover { text-decoration-thickness: 2px; }
-    .drawer-card .filename-input { height: 36px; padding: 0 12px; font-size: 12px; border-radius: 12px; background: var(--card); }
-    .drawer-card label { color: var(--ink); font-size: 12px; font-weight: 500; }
-    .drawer-field { display: grid; gap: 5px; min-width: 0; }
-    .drawer-field input { width: 100%; min-width: 0; }
     .drawer-actions { display: flex; align-items: center; gap: 8px; margin-top: 0; min-width: 0; }
     .drawer-actions .spacer { flex: 1 1 0; min-width: 0; }
     .drawer-actions .small-button { flex: 0 0 auto; }
@@ -633,21 +608,9 @@
     .drawer-msg.is-error { color: var(--bad); }
     .drawer-msg.is-busy { color: var(--muted); }
     .drawer-msg.is-ok { color: var(--link-accent); }
-    .account-card { display: flex; align-items: center; gap: 11px; min-width: 0; padding: 9px 10px 9px 12px; border: 1px solid var(--border); border-radius: 14px; background: var(--panel); }
-    .account-card[hidden] { display: none; }
     .g-logo { width: 20px; height: 20px; flex: 0 0 auto; }
-    .account-text { flex: 1 1 auto; min-width: 0; display: grid; gap: 1px; }
-    .account-kicker { font-size: 11px; line-height: 1.3; color: var(--muted); }
-    .account-email { font-size: 13px; line-height: 1.3; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .account-card .small-button { flex: 0 0 auto; }
     .connect-block { display: grid; gap: 8px; }
     .connect-block[hidden] { display: none; }
-    .google-button { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; height: 40px; padding: 0 16px; border: 1px solid var(--border); border-radius: 999px; color: var(--ink); background: var(--card); font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; transition: background-color 120ms ease, opacity 120ms ease; }
-    .google-button .g-logo { width: 18px; height: 18px; }
-    .google-button:hover:not(:disabled) { background: var(--surface-2); }
-    .google-button:disabled { opacity: .5; cursor: default; }
-    .google-button:focus-visible { outline: 2px solid var(--link-accent); outline-offset: 2px; }
-    .drawer-card .filename-input.is-invalid, .drawer-card .filename-input.is-invalid:focus { border-color: var(--bad); box-shadow: 0 0 0 1px var(--bad); }
     .drawer-links { display: flex; flex-wrap: wrap; gap: 2px 14px; }
     .drawer-card .drawer-links a { font-size: 10px; font-weight: 400; color: var(--muted); text-decoration: underline; text-underline-offset: 2px; text-decoration-thickness: 1px; }
     .drawer-card .drawer-links a:hover { color: var(--black); text-decoration-thickness: 1px; }
@@ -684,6 +647,7 @@
     .account-pick { flex: 1 1 auto; }
     .account-add { width: 100%; }
     .account-add:hover { background: var(--surface-2); }
+    .account-add:disabled { opacity: .5; cursor: default; }
     .account-pick:focus-visible, .account-add:focus-visible, .account-remove:focus-visible { outline: 2px solid var(--black); outline-offset: -2px; }
     .account-pick .dot { flex: 0 0 24px; width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%; background: var(--surface); font-size: 11px; font-weight: 600; text-transform: uppercase; }
     .account-row.is-active .dot { color: var(--on-black); background: var(--black); }
@@ -787,12 +751,9 @@
     .picker-summary { display: none; margin: 2px 5px 0; color: var(--muted); font-size: 12px; }
     body.is-picking .picker-summary { display: block; }
     .account-menu .drawer-card { margin: 0; padding: 8px; border: 0; background: transparent; }
-    .account-menu #account-card { display: none; }
     .account-back { display: flex; align-items: center; gap: 6px; padding: 6px 8px; border: 0; color: var(--muted); background: transparent; font: inherit; font-size: 12px; cursor: pointer; }
     .account-back[hidden] { display: none; }
     .account-back:hover { color: var(--black); }
-    .account-link { display: block; width: 100%; margin-top: 2px; padding: 7px 8px; border: 0; border-radius: 10px; color: var(--muted); background: transparent; font: inherit; font-size: 11px; text-align: left; cursor: pointer; }
-    .account-link:hover { color: var(--black); background: var(--surface-2); }
 
     /* ---- Smoothness: one easing and one duration for every drawer / panel move -------------------- */
     /* --ease: a smooth, monotonic deceleration (no overshoot) for anything that changes the window's own
@@ -816,7 +777,7 @@
     .drawer-inner { opacity: 0; transition: opacity 200ms ease; }
     .drive-drawer.is-open .drawer-inner { opacity: 1; transition: opacity 300ms ease 80ms; }
     /* Used for one synchronous moment to measure the final layout, so the window can be resized once, up front. */
-    body.no-anim .collapse, body.no-anim .collapse-inner, body.no-anim .drive-drawer, body.no-anim .drawer-inner, body.no-anim .preview-fold, body.no-anim .preview-fold-inner { transition: none !important; }
+    body.no-anim .collapse, body.no-anim .collapse-inner, body.no-anim .drive-drawer, body.no-anim .drawer-inner { transition: none !important; }
     .account-menu:not([hidden]) { animation: menuIn 220ms var(--spring); transform-origin: top right; }
     @keyframes menuIn { from { opacity: 0; transform: translateY(-4px) scale(.98); } }
     @keyframes itemIn { from { opacity: 0; transform: translateY(5px); } }
@@ -920,9 +881,6 @@
     .share-actions .spacer { flex: 1 1 0; min-width: 0; }
 
     /* ---- Client ID / secret panel: roomier, with Delete + Save underneath -------------------------- */
-    .account-menu #drawer-settings { gap: 12px; padding: 12px 10px 10px; }
-    .account-menu #drawer-settings .filename-input { height: 40px; }
-    .settings-actions { padding-top: 2px; }
     .account-remove { display: grid; place-items: center; }
     .account-remove svg { width: 15px; height: 15px; display: block; }
 
@@ -1299,22 +1257,23 @@
     @keyframes statusPulse { 0%, 100% { opacity: .3; transform: scale(.85); } 50% { opacity: 1; transform: scale(1); } }
     @keyframes spin { to { transform: rotate(360deg); } }
     @keyframes buttonSweep { 0% { transform: translateX(-130%); } 72%, 100% { transform: translateX(130%); } }
-    @keyframes arrowHover { 0%, 100% { transform: translateY(-1px); } 48% { transform: translateY(2.8px); } 68% { transform: translateY(1.6px); } }
-    @keyframes arrowDrop { 0% { opacity: 0; transform: translateY(-5px); } 28% { opacity: 1; } 66% { opacity: 1; transform: translateY(3px); } 100% { opacity: 0; transform: translateY(4.5px); } }
-    @keyframes trayPulse { 0%, 100% { opacity: .62; transform: scaleX(.94); } 58% { opacity: 1; transform: scaleX(1.06); } }
+    @keyframes arrowHover { 0%, 100% { transform: translateY(-.4px); } 50% { transform: translateY(1.5px); } }
     @keyframes checkIn { from { opacity: 0; transform: scale(.3); } to { opacity: 1; transform: none; } }
     @keyframes buttonShake { 25% { transform: translateX(-4px); } 50% { transform: translateX(4px); } 75% { transform: translateX(-2px); } }
     @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; } }
-  
 
     /* ---- Themes: the bits tokens don't reach ---------------------------------------------------------- */
     .switch input:checked ~ .switch-track .switch-knob { background: var(--knob-on); }
     .brand-mark rect { fill: var(--black); transition: fill 200ms ease; }
     .brand-mark g { fill: var(--on-black); transition: fill 200ms ease; }
     .theme-toggle + .account-switch { margin-left: 8px; }
-    /* Switching themes cross-fades the colours (not layout, not the existing motion). */
-    :root.theme-fading, :root.theme-fading * { transition: background-color 240ms ease, border-color 240ms ease, color 240ms ease, fill 240ms ease, box-shadow 240ms ease !important; }
-    :root.theme-fading .theme-toggle, :root.theme-fading .theme-toggle * { transition: transform 560ms var(--spring-soft), opacity 220ms ease, background 280ms ease, box-shadow 280ms ease !important; }
+    /* Switching themes cross-fades the whole window as one picture (08-theme.js). The switch itself is left
+       out of the picture, so its knob slides live, on its own transitions, instead of showing twice. */
+    ::view-transition-old(root), ::view-transition-new(root) { animation-duration: 260ms; animation-timing-function: ease; }
+    .theme-toggle { view-transition-name: theme-toggle; }
+    :root.theme-switching *:not(.theme-toggle):not(.theme-toggle *) { transition: none !important; }
+    ::view-transition-old(theme-toggle) { display: none; }
+    ::view-transition-new(theme-toggle) { animation: none; }
 
     /* ---- Finish: one warm accent, a little depth, soft light edges ------------------------------------
        Kept quiet on purpose: faint gradients that read as material (a sheen along the top edge, a touch
@@ -1428,7 +1387,7 @@
     .filename-input.is-working, .upload-pill.is-busy {
       border-color: transparent;
       background: linear-gradient(var(--card), var(--card)) padding-box,
-                  radial-gradient(70px 44px at var(--gx) var(--gy), color-mix(in srgb, var(--glow-color) calc(var(--glow-a) * 100%), transparent), transparent 72%) border-box,
+                  radial-gradient(72px 22px at var(--gx) var(--gy), color-mix(in srgb, var(--edge-glow) calc(var(--glow-a) * 100%), transparent) var(--edge-hold), transparent 72%) border-box,
                   linear-gradient(var(--border), var(--border)) border-box;
       box-shadow: inset 0 1px 0 var(--sheen);
       --glow-a: 1;
@@ -1483,3 +1442,148 @@
     .small-button.is-danger-solid:hover:not(:disabled) { background: linear-gradient(180deg, var(--danger-top), var(--danger-bottom)); transform: translateY(-1px); box-shadow: inset 0 1px 0 var(--danger-sheen), 0 0 0 1px var(--danger-edge), 0 3px 10px -3px var(--danger-glow); }
     .small-button.is-danger-solid:active:not(:disabled) { transform: translateY(1px) scale(.985); box-shadow: inset 0 1px 0 var(--danger-sheen), 0 0 0 1px var(--danger-edge); }
     .small-button.is-danger:hover:not(:disabled), .ctx-item.is-danger:hover:not(:disabled) { background: var(--danger-tint); }
+
+    /* ---- Fields on hover: a step below focus -------------------------------------------------------
+       The outline firms up a little and the glass brightens a touch, so a field reads as something you can
+       type in before you click. Neutral on purpose: orange stays for the field you're actually in. No lift,
+       so fields never look like buttons. */
+    .filename-input:hover:not(:focus):not(.is-working):not(:disabled),
+    .upload-pill:hover:not(.is-focused):not(.is-busy):not(.is-success):not(.is-error) {
+      border-color: color-mix(in srgb, var(--border-strong) 32%, var(--border));
+      background-image: var(--field-hover-grad);
+    }
+    :root { --field-hover-grad: linear-gradient(180deg, #f9f8f5, #f0eee9); }
+    :root[data-theme="dark"] { --field-hover-grad: linear-gradient(180deg, #343438, #2c2c2f); }
+    .filename-input, .upload-pill { transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease; }
+
+    /* ---- Loading / searching in the folder list: the word and three dots in a soft wave ------------ */
+    .picker-note.is-loading { display: flex; align-items: center; justify-content: center; gap: 0; font-size: 13.5px; font-weight: 500; color: var(--muted); letter-spacing: .005em; }
+    .loading-dots { display: inline-flex; align-items: flex-end; gap: 3px; height: 1em; margin-left: 3px; padding-bottom: 2px; }
+    .loading-dots i { width: 4px; height: 4px; border-radius: 50%; background: var(--dot-color); opacity: var(--dot-rest); animation: loadingDot 1.2s cubic-bezier(.45,0,.35,1) infinite; }
+    .loading-dots i:nth-child(2) { animation-delay: .16s; }
+    .loading-dots i:nth-child(3) { animation-delay: .32s; }
+    @keyframes loadingDot { 0%, 60%, 100% { opacity: var(--dot-rest); transform: translateY(0); } 28% { opacity: 1; transform: translateY(-3px); } }
+    @media (prefers-reduced-motion: reduce) { .loading-dots i { animation: none !important; opacity: .7; } }
+
+    /* The loading dots and the travelling edge light, tuned per theme: a clean, bright orange in both
+       (never the darker accent), the dots resting at a visible level rather than fading almost away, and
+       the edge light in light mode a touch stronger with a solid core so it reads on the pale border. */
+    :root { --dot-color: #f4873a; --dot-rest: .38; --edge-glow: #f9822c; --edge-hold: 20%; }
+    :root[data-theme="dark"] { --dot-color: #f7944a; --dot-rest: .42; --edge-glow: var(--glow-color); --edge-hold: 0%; }
+
+
+    /* Account menu rows: a hover you can actually see. The old --surface-2 step was almost the menu's own
+       colour in light, and a shade darker than the menu in dark. */
+    :root { --menu-hover: rgba(28,28,27,.08); }
+    :root[data-theme="dark"] { --menu-hover: rgba(255,255,255,.075); }
+    .account-row, .account-add { transition: background-color 120ms ease; }
+    .account-row:hover, .account-add:hover:not(:disabled) { background: var(--menu-hover); }
+
+    /* ---- Two ways to connect a Google account (account menu) ----------------------------------------
+       Each choice is a two-line row: what it is, and a short note on what it means. The own-client one leads
+       one step further in (the chevron), to the Client ID fields with the setup guide at the top. */
+    .connect-block { gap: 2px; }
+    .connect-choice { align-items: center; padding: 8px 8px; }
+    .connect-choice .g-logo, .connect-choice .choice-icon { width: 18px; height: 18px; margin: 0 3px; flex: 0 0 auto; }
+    .choice-icon { color: var(--ink-soft); }
+    .choice-text { display: grid; gap: 1px; min-width: 0; flex: 1 1 auto; }
+    .choice-title { color: var(--ink); font-size: 12.5px; line-height: 1.3; }
+    .choice-note { color: var(--muted); font-size: 11px; line-height: 1.3; }
+    .choice-chevron { width: 14px; height: 14px; flex: 0 0 auto; color: var(--muted); }
+
+    .account-menu #drawer-settings, .account-menu #drawer-auth-own { gap: 10px; padding: 6px 8px 8px; }
+    .own-intro { display: grid; gap: 4px; padding-bottom: 2px; }
+    .drawer-card .own-title { color: var(--ink); font-size: 13px; font-weight: 600; }
+    .own-intro .drawer-note { font-size: 11.5px; line-height: 1.45; }
+    .drawer-card .own-guide { display: inline-flex; align-items: center; gap: 4px; justify-self: start; margin-top: 2px; color: var(--link-accent); font-size: 12px; font-weight: 500; text-decoration: none; }
+    .drawer-card .own-guide svg { width: 12px; height: 12px; }
+    .drawer-card .own-guide:hover { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 2px; }
+    .drawer-field { display: grid; gap: 5px; min-width: 0; }
+    .drawer-field input { width: 100%; min-width: 0; }
+    .drawer-card label { color: var(--ink); font-size: 12px; font-weight: 500; }
+    .drawer-card .filename-input { height: 38px; padding: 0 12px; font-size: 12px; border-radius: 12px; }
+    .drawer-card .filename-input.is-invalid, .drawer-card .filename-input.is-invalid:focus { border-color: var(--bad); box-shadow: 0 0 0 1px var(--bad); }
+    .settings-actions { padding-top: 0; }
+    .own-connect { display: grid; gap: 6px; padding-top: 8px; border-top: 1px solid var(--line); }
+    .google-button { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; height: 40px; padding: 0 16px; border: 1px solid var(--border); border-radius: 999px; color: var(--ink); background: var(--card-grad), var(--card); box-shadow: inset 0 1px 0 var(--sheen); font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; transition: transform 160ms ease, box-shadow 160ms ease, opacity 120ms ease; }
+    .google-button .g-logo { width: 18px; height: 18px; }
+    .google-button:hover:not(:disabled) { transform: translateY(-1px); box-shadow: inset 0 1px 0 var(--sheen), 0 3px 10px -4px rgba(0,0,0,.25); }
+    .google-button:active:not(:disabled) { transform: none; }
+    .google-button:disabled { opacity: .5; cursor: default; }
+    .google-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    /* Between the two ways to connect: a quiet "or", so they read as one choice or the other. */
+    .choice-or { display: flex; align-items: center; gap: 10px; margin: 1px 4px; color: var(--muted); font-size: 10.5px; letter-spacing: .04em; text-transform: uppercase; }
+    .choice-or::before, .choice-or::after { content: ''; flex: 1 1 0; height: 1px; background: var(--line); }
+    :root[data-theme="dark"] .choice-or::before, :root[data-theme="dark"] .choice-or::after { background: var(--border); } /* --line is too faint here in dark */
+    /* Both ways to connect get the same small glass tile (like the checkboxes): the Google logo, and the key in grey. */
+    .choice-tile { display: grid; place-items: center; flex: 0 0 auto; width: 28px; height: 28px; margin: 0 -2px 0 -2px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-grad); box-shadow: inset 0 1px 0 var(--sheen); }
+    .choice-tile .choice-icon { width: 16px; height: 16px; margin: 0; color: var(--ink-soft); }
+    .connect-choice .choice-tile .g-logo { width: 15px; height: 15px; margin: 0; }
+
+    /* ---- List / grid switch: a recessed track with one raised glass knob that slides between the icons ----
+       Same language as the theme switch: the track sits a little into the surface, the knob is a key like the
+       Drive button's, and it slides (with the same soft spring) instead of the two buttons lighting up apart. */
+    .picker-view-pill { position: relative; gap: 2px; padding: 2px; border: 1px solid var(--border); background: var(--surface); box-shadow: inset 0 1px 2px rgba(28,28,27,.07); }
+    :root[data-theme="dark"] .picker-view-pill { border-color: rgba(255,255,255,.06); background: linear-gradient(180deg, #141416, #1f1f22); box-shadow: inset 0 1px 3px rgba(0,0,0,.5); }
+    .picker-view-pill::before { content: ''; position: absolute; top: 2px; left: 2px; width: 22px; height: 22px; border-radius: 999px; background: var(--key-grad); box-shadow: inset 0 1px 0 var(--sheen), 0 0 0 .5px var(--key-edge), 0 1px 3px rgba(0,0,0,.16); transition: transform 520ms var(--spring-soft); pointer-events: none; }
+    :root[data-theme="dark"] .picker-view-pill::before { box-shadow: inset 0 1px 0 rgba(255,255,255,.07), 0 0 0 .5px var(--key-edge), 0 1px 3px rgba(0,0,0,.45); }
+    .picker-view-pill:has(#picker-view-grid.is-on)::before { transform: translateX(24px); }
+    .picker-view-pill .picker-view-btn { position: relative; z-index: 1; transition: color 220ms ease; }
+    .picker-view-pill .picker-view-btn.is-on { background: transparent; box-shadow: none; color: var(--ink); }
+    .picker-view-pill .picker-view-btn:not(.is-on):hover { color: var(--ink-soft); }
+    /* The folder list's scrollbar: a longer thumb, so it's easy to see and grab even in a long list. */
+    .picker-list::-webkit-scrollbar-thumb { min-height: 44px; }
+
+    /* ---- File name: under the frames, shown only once frames are selected ----------------------------
+       It folds open (and away) like the export options do, with the window following (setNameFieldShown). */
+    .name-fold { display: grid; grid-template-rows: 0fr; transition: grid-template-rows var(--dur) var(--ease-sheet); }
+    .name-fold-inner { min-height: 0; min-width: 0; overflow: hidden; padding: 4px 12px 16px; margin: -4px -12px -16px; /* room for the focus glow */ opacity: 0; visibility: hidden; transform: translateY(-6px) scale(.985); transform-origin: 50% 0; transition: opacity 160ms ease, transform var(--dur) var(--ease-sheet), visibility 0s linear var(--dur); }
+    body.has-frames .name-fold { grid-template-rows: 1fr; }
+    body.has-frames .name-fold-inner { opacity: 1; visibility: visible; transform: none; transition: opacity 280ms ease 60ms, transform 520ms var(--spring-soft), visibility 0s; }
+    .name-fold .file-name-field { margin: 0 0 18px; }
+    body.no-anim .name-fold, body.no-anim .name-fold-inner { transition: none !important; }
+    /* The status line keeps its small inset on the left (text lines up inside the boxes above). On the right the
+       Drive folders button sits 3px in from the upload box's edge: flush looked like it stuck out, because the
+       box above is taller and its rounded end curves away sooner, so the eye reads its edge as further in. */
+    .drive-status { margin-right: 3px; }
+
+    /* Export reads in normal case, like every other label (and like "Upload here", the other primary button). A
+       little heavier instead of the old capitals' letter-spacing, so it keeps its presence. */
+    #export-button { font-weight: 600; letter-spacing: .005em; }
+    #export-button.is-busy .button-content { letter-spacing: 0; }
+
+    /* ---- The download icon on Export -------------------------------------------------------------------
+       A 17px box: the tray drawn across it, and the arrow in a window that ends just inside the tray's rim, so an
+       arrow moving down sinks into the tray and vanishes there. The arrow is a plain element animated with a
+       transform (on its own layer), which keeps it smooth even while the plugin is busy rendering or zipping;
+       an animation inside the SVG used to stutter whenever that work held up the page.
+       Hover: a slow, gentle bob. Working: one arrow at a time flows down at an even speed, sinks into the tray and
+       comes straight back in from the top, for as long as the work lasts (it doesn't restart between steps). */
+    .button-download { position: relative; display: block; width: 17px; height: 17px; flex: 0 0 auto; overflow: visible; transition: transform 180ms ease; }
+    .button-download svg { position: absolute; left: 0; top: 0; width: 17px; height: 17px; overflow: visible; }
+    .download-window { position: absolute; left: -2px; right: -2px; top: -1px; height: 14.3px; overflow: hidden; } /* down to just inside the rim */
+    .download-window .download-arrow { left: 2px; top: 1px; will-change: transform; }
+    #export-button:hover:not(:disabled):not(.is-busy) .download-arrow { animation: arrowHover 1.5s cubic-bezier(.45,0,.55,1) infinite; }
+    @media (prefers-reduced-motion: reduce) { #export-button .download-arrow { animation: none !important; } }
+    /* While working, the button's content never moves: the text keeps its size (the smaller busy size was for
+       the old capitals), and the label gets a slot as wide as the longest working label ("Exporting"), with the
+       text set against the arrow. Changing step ("Exporting" → "Saving") then changes only the words; the arrow
+       used to jump 8px sideways at every change, which read as a stutter. */
+    #export-button.is-busy .button-content { font-size: inherit; letter-spacing: .005em; }
+    #export-button.is-busy #button-label { display: inline-block; min-width: var(--busy-label-w, 68px); text-align: right; }
+
+    /* ---- Working: three dots instead of the arrow ------------------------------------------------------
+       Once Export is clicked the arrow steps aside for three small dots in a soft wave, the same as "Searching
+       Drive". Dots bob in place on their own layers, so a busy moment can't make them jump the way the moving
+       arrow did; the sheen sweeping across the button gets its own layer for the same reason. */
+    .button-dots { display: none; align-items: center; gap: 4px; height: 17px; }
+    .button-dots i { width: 4.5px; height: 4.5px; border-radius: 50%; background: currentColor; opacity: .4; will-change: transform, opacity; animation: buttonDot 1.2s cubic-bezier(.45,0,.35,1) infinite; }
+    .button-dots i:nth-child(2) { animation-delay: .16s; }
+    .button-dots i:nth-child(3) { animation-delay: .32s; }
+    @keyframes buttonDot { 0%, 60%, 100% { opacity: .4; transform: translateY(0); } 28% { opacity: 1; transform: translateY(-3px); } }
+    #export-button.is-busy .button-download { display: none; }
+    #export-button.is-busy .button-dots { display: inline-flex; }
+    #export-button::before { will-change: transform; }
+    @media (prefers-reduced-motion: reduce) { .button-dots i { animation: none !important; opacity: .8; } }
+    #export-button.is-busy .button-content { gap: 6px; }
+    .button-dots { align-items: flex-end; padding-bottom: 3.5px; box-sizing: border-box; } /* on the text's baseline, like an ellipsis */

@@ -330,7 +330,7 @@
     async function finishExport(message) {
       const files = await generateFiles(message)
       throwIfExportCancelled()
-      setButtonState('busy', 'SAVING')
+      setButtonState('busy', 'Saving')
       if (files.length === 1) {
         // One file → download it directly, no ZIP (already named from the typed file name, if any).
         const file = files[0]
@@ -346,11 +346,11 @@
       }
       exportRun = null
       busy = false
-      setButtonState('success', 'EXPORTED')
+      setButtonState('success', 'Exported')
       flashExportStatus(files.length === 1 ? 'Exported 1 file.' : `Exported ${files.length} files.`, 2400)
       updateButton()
       // Only settle back to the idle label if nothing new started meanwhile — a second export clicked
       // within the 0.9 s used to have its spinner and "EXPORTING n/N" label wiped by this timer.
-      setTimeout(() => { if (!busy) setButtonState('', 'EXPORT') }, 900)
+      setTimeout(() => { if (!busy) setButtonState('', 'Export') }, 900)
     }
 

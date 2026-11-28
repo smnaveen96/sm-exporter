@@ -23,7 +23,7 @@ type PlaceableImage =
 type UiMessage =
   | { type: 'export'; options: ExportOptions }
   | { type: 'cancel-export' }
-  | { type: 'resize'; height: number; width?: number; save?: { width: number; listHeight: number; framesFolded?: boolean; foldedByDrag?: boolean } }
+  | { type: 'resize'; height: number; width?: number; save?: { width: number; listHeight: number } }
   | { type: 'panel-size-get' }
   | { type: 'theme-get' }
   | { type: 'theme-set'; theme: 'light' | 'dark' | 'auto' }

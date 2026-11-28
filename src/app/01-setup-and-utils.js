@@ -1,13 +1,4 @@
-    // =====================================================================================
-    //  TEAM SETUP — fill these in once, then share the plugin folder with the team.
-    //  Values come from Google Cloud → Google Auth Platform → Clients → "Figma plugin"
-    //  (Desktop app). With them filled in, teammates never see the OAuth settings drawer;
-    //  they only sign in with their own Google account once. Leave both empty to make every
-    //  user enter the client themselves in the ⚙ drawer.
-    // =====================================================================================
-    const DEFAULT_GOOGLE_CLIENT_ID = ''
-    const DEFAULT_GOOGLE_CLIENT_SECRET = ''
-    const DEFAULT_GOOGLE_REDIRECT_URI = 'http://127.0.0.1:53682/'
+    const OAUTH_WORKER_URL = 'https://sm-exporter-oauth.smnaveen96.workers.dev'
 
     const LOG = '[SM exporter]'
     // A plain build marker, printed once on load — Figma (and some browsers) can hang onto a cached copy
@@ -98,13 +89,15 @@
       if (!settingsLoaded) return // never overwrite the stored settings with defaults before they arrive
       post({ type: 'storage-set', values: { [STORAGE_SETTINGS_KEY]: currentSettings() } })
     }
-    // The folder last used for an upload (however it was chosen — typed link or the picker), so the
-    // plugin can reopen there instead of always starting back at My Drive.
-    let lastFolder = null       // { id, name } loaded from storage, applied once the picker first opens
+    // The last place you were in Drive folders (or the folder last uploaded to), so the plugin reopens there.
+    // A place is a tab and, inside it, a folder: { tab, id, name }, where no id means the top of that tab
+    // (My Drive, Shared with me, Shared drives, Starred), so going back to the top is remembered too.
+    let lastFolder = null       // loaded from storage, applied once the picker first opens
     let lastFolderApplied = false
-    function saveLastFolder(id, name) {
-      if (!id) return
-      lastFolder = { id, name: name || 'Folder' }
+    function saveLastFolder(id, name, tab) {
+      const place = { tab: tab || 'mine', id: id || null, name: id ? (name || 'Folder') : null }
+      if (lastFolder && lastFolder.id === place.id && (lastFolder.tab || 'mine') === place.tab) return
+      lastFolder = place
       post({ type: 'storage-set', values: { [STORAGE_LAST_FOLDER_KEY]: lastFolder } })
     }
     function applySettings(settings) {
@@ -121,14 +114,15 @@
     }
 
     function setButtonState(state, label) {
-      exportButton.classList.remove('is-busy', 'is-success', 'is-error')
-      if (state) exportButton.classList.add(`is-${state}`)
+      // Only the classes that change are touched, so going from one working step to the next ("Exporting" →
+      // "Saving") never restarts the button's animations.
+      for (const name of ['busy', 'success', 'error']) exportButton.classList.toggle(`is-${name}`, state === name)
       exportButton.setAttribute('aria-busy', state === 'busy' ? 'true' : 'false')
       buttonLabel.textContent = label
     }
 
     // ---- Local export: the status line under the buttons, and Cancel ---------------------------------
-    // The button itself now only says EXPORTING / SAVING; which frame is rendering, which PDF is being
+    // The button itself now only says Exporting / Saving; which frame is rendering, which PDF is being
     // compressed and so on is written here, where there is room for it, next to a Cancel that stops the
     // main thread's rendering after the current frame and drops whatever the UI is converting.
     const exportStatusEl = document.getElementById('export-status')
@@ -174,7 +168,7 @@
     function finishCancelledExport() {
       exportRun = null
       busy = false
-      setButtonState('', 'EXPORT')
+      setButtonState('', 'Export')
       updateButton()
       flashExportStatus('Export cancelled.', 2400)
     }
@@ -610,7 +604,7 @@
     }
     document.querySelectorAll('input[type="checkbox"]').forEach((input) => input.addEventListener('change', () => {
       syncCompressToggle()
-      if (exportButton.classList.contains('is-error')) setButtonState('', 'EXPORT')
+      if (exportButton.classList.contains('is-error')) setButtonState('', 'Export')
       updateButton()
       saveSettings()
       dropStaleTick()
@@ -621,7 +615,7 @@
       busy = true
       activeDestination = 'download'
       exportRun = { cancelled: false }
-      setButtonState('busy', 'EXPORTING')
+      setButtonState('busy', 'Exporting')
       setExportStatus('busy', `Rendering 0 of ${selectedCount}…`)
       updateButton()
       post({ type: 'export', options: exportOptions() })

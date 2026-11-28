@@ -9,7 +9,7 @@
       if (images.length) await placeOnCanvas(images, { x: message.x, y: message.y })
     }
 
-    // Load the stored OAuth client and tokens from figma.clientStorage via the sandbox.
+    // Load your own OAuth client (if you added one), the connected accounts and the plugin settings.
     post({ type: 'storage-get', keys: [STORAGE_CLIENT_KEY, STORAGE_TOKENS_KEY, STORAGE_ACCOUNTS_KEY, STORAGE_SETTINGS_KEY, STORAGE_LAST_FOLDER_KEY] })
 
     window.addEventListener('message', (event) => {
@@ -22,6 +22,7 @@
           : 'Select frames to export'
         latestSelectionVersion = message.version
         renderThumbnails(message.thumbnails || [], message.ids, message.names, Boolean(message.pending))
+        setNameFieldShown(selectedCount > 0)
         selectedIds = message.ids || []
         updateButton()
         dropStaleTick()
@@ -49,7 +50,7 @@
           console.error(LOG, 'Export failed', error)
           exportRun = null
           busy = false
-          setButtonState('error', 'TRY AGAIN')
+          setButtonState('error', 'Try again')
           setExportStatus('', '')
           updateButton()
         })
@@ -62,14 +63,17 @@
         }
         exportRun = null
         busy = false
-        setButtonState('error', message.message === 'Select frames to export.' ? 'SELECT FRAMES' : 'TRY AGAIN')
+        setButtonState('error', message.message === 'Select frames to export.' ? 'Select frames' : 'Try again')
         setExportStatus('', '')
         updateButton()
       } else if (message.type === 'drive-drop') {
         void handleCanvasDrop(message)
       } else if (message.type === 'storage') {
         const values = message.values || {}
-        oauthClient = values[STORAGE_CLIENT_KEY] || builtInClient()
+        const savedClient = values[STORAGE_CLIENT_KEY]
+        oauthClient = savedClient && savedClient.clientId && savedClient.clientSecret
+          ? { clientId: savedClient.clientId, clientSecret: savedClient.clientSecret, redirectUri: savedClient.redirectUri || DEFAULT_REDIRECT_URI }
+          : null
         accounts = Array.isArray(values[STORAGE_ACCOUNTS_KEY]) ? values[STORAGE_ACCOUNTS_KEY] : []
         tokens = values[STORAGE_TOKENS_KEY] || null
         if (tokens) { // the active account is one of the list (an older single-account save is added to it)
@@ -85,11 +89,11 @@
         // Remembering the last folder is for the "Drive folders" picker drawer to reopen where you left
         // off (lastFolderApplied, above) — it should NOT also silently paste that folder's link into the
         // URL box, which looked like the box was remembering whatever link was last pasted into it.
-        if (savedFolder && savedFolder.id) lastFolder = savedFolder
-        fillSettingsFields()
+        if (savedFolder && (savedFolder.id || savedFolder.tab)) lastFolder = savedFolder // older saves have no tab: My Drive
         if (!busy) setDriveStatus('', idleStatusText())
-        if (oauthClient && accounts.length) void loadProfilePhotos()
-        console.log(LOG, 'Settings loaded', oauthClient ? 'client configured' : 'no client', tokens ? 'signed in' : 'not signed in')
+        refreshAccountLabel()
+        if (accounts.length) void loadProfilePhotos()
+        console.log(LOG, 'Settings loaded', tokens ? 'signed in' : 'not signed in')
         resolveStorageReady()
       }
     })

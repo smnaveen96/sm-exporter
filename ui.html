@@ -93,7 +93,7 @@
       --accent-text-deep: #ffbd8c;
       --accent-soft: rgba(255,140,60,.16);
       --accent-line: rgba(255,140,60,.22);
-      --sheen: rgba(255,255,255,.06);
+      --sheen: rgba(255,255,255,.03);
       --surface-grad: linear-gradient(180deg, #2f2f33, #28282b);
       --card-grad: linear-gradient(180deg, #2c2c30, #252528);
       --key-grad: linear-gradient(180deg, #3d3d42, #2d2d31);
@@ -145,22 +145,6 @@
       font-size: 14px;
       font-weight: 500;
     }
-    /* "2 frames selected ⌄": the chevron folds the thumbnail strip away (and back), to give the Drive folders
-       list more room. The strip also folds when the window is dragged shorter (see 07-window-resize.js). */
-    .selection-head { display: flex; align-items: center; gap: 4px; margin: 0 5px 11px; transition: margin-bottom var(--dur) var(--ease-sheet); }
-    .selection-head #selection-count { margin: 0; }
-    .preview-toggle { flex: 0 0 auto; display: grid; place-items: center; width: 22px; height: 22px; padding: 0; border: 0; border-radius: 50%; color: var(--muted); background: transparent; cursor: pointer; transition: color 120ms ease, background-color 120ms ease; }
-    .preview-toggle[hidden] { display: none; }
-    .preview-toggle:hover { color: var(--black); background: var(--tint); }
-    .preview-toggle:focus { outline: none; }
-    .preview-toggle:focus-visible { box-shadow: 0 0 0 2px var(--black); }
-    .preview-toggle svg { width: 15px; height: 15px; display: block; transform: rotate(180deg); transition: transform 420ms var(--spring); }
-    .preview-toggle[aria-expanded="false"] svg { transform: none; }
-    .preview-fold { display: grid; grid-template-rows: 1fr; transition: grid-template-rows var(--dur) var(--ease-sheet); }
-    /* Room on every side for a lifted thumbnail and its shadow, cancelled by the negative margins. */
-    .preview-fold-inner { min-height: 0; min-width: 0; overflow: hidden; padding: 12px 8px 0; margin: -12px -8px 0; transform-origin: 50% 0; transition: opacity 280ms ease 60ms, transform 520ms var(--spring-soft); }
-    .preview-fold.is-folded { grid-template-rows: 0fr; }
-    .preview-fold.is-folded .preview-fold-inner { opacity: 0; visibility: hidden; transform: translateY(-8px) scale(.97); transition: opacity 160ms ease, transform var(--dur) var(--ease-sheet), visibility 0s linear var(--dur); }
     .preview-wrap {
       position: relative;
       display: flow-root; /* keeps the strip's negative margins inside the wrap instead of pulling the whole wrap up */
@@ -480,13 +464,8 @@
       overflow: visible;
       transition: transform 180ms ease;
     }
-    .button-download .download-arrow { transform-origin: 10px 7px; }
-    .button-download .download-tray { transform-origin: 10px 15px; }
+
     #export-button:hover:not(:disabled) .button-download { transform: scale(1.08); }
-    #export-button:hover:not(:disabled) .button-download .download-arrow { animation: arrowHover 820ms cubic-bezier(.25,.75,.3,1) infinite; }
-    #export-button:active:not(:disabled) .button-download .download-arrow,
-    #export-button.is-busy .button-download .download-arrow { animation: arrowDrop 620ms cubic-bezier(.3,.7,.35,1) infinite; }
-    #export-button.is-busy .button-download .download-tray { animation: trayPulse 620ms ease infinite; }
     .button-spinner {
       display: none;
       width: 13px; height: 13px;
@@ -632,10 +611,6 @@
     #drawer-auth > p:first-child { font-size: 11px; line-height: 1.4; }
     .drawer-card a { color: var(--black); font-weight: 500; text-decoration: underline; text-underline-offset: 2px; }
     .drawer-card a:hover { text-decoration-thickness: 2px; }
-    .drawer-card .filename-input { height: 36px; padding: 0 12px; font-size: 12px; border-radius: 12px; background: var(--card); }
-    .drawer-card label { color: var(--ink); font-size: 12px; font-weight: 500; }
-    .drawer-field { display: grid; gap: 5px; min-width: 0; }
-    .drawer-field input { width: 100%; min-width: 0; }
     .drawer-actions { display: flex; align-items: center; gap: 8px; margin-top: 0; min-width: 0; }
     .drawer-actions .spacer { flex: 1 1 0; min-width: 0; }
     .drawer-actions .small-button { flex: 0 0 auto; }
@@ -643,21 +618,9 @@
     .drawer-msg.is-error { color: var(--bad); }
     .drawer-msg.is-busy { color: var(--muted); }
     .drawer-msg.is-ok { color: var(--link-accent); }
-    .account-card { display: flex; align-items: center; gap: 11px; min-width: 0; padding: 9px 10px 9px 12px; border: 1px solid var(--border); border-radius: 14px; background: var(--panel); }
-    .account-card[hidden] { display: none; }
     .g-logo { width: 20px; height: 20px; flex: 0 0 auto; }
-    .account-text { flex: 1 1 auto; min-width: 0; display: grid; gap: 1px; }
-    .account-kicker { font-size: 11px; line-height: 1.3; color: var(--muted); }
-    .account-email { font-size: 13px; line-height: 1.3; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .account-card .small-button { flex: 0 0 auto; }
     .connect-block { display: grid; gap: 8px; }
     .connect-block[hidden] { display: none; }
-    .google-button { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; height: 40px; padding: 0 16px; border: 1px solid var(--border); border-radius: 999px; color: var(--ink); background: var(--card); font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; transition: background-color 120ms ease, opacity 120ms ease; }
-    .google-button .g-logo { width: 18px; height: 18px; }
-    .google-button:hover:not(:disabled) { background: var(--surface-2); }
-    .google-button:disabled { opacity: .5; cursor: default; }
-    .google-button:focus-visible { outline: 2px solid var(--link-accent); outline-offset: 2px; }
-    .drawer-card .filename-input.is-invalid, .drawer-card .filename-input.is-invalid:focus { border-color: var(--bad); box-shadow: 0 0 0 1px var(--bad); }
     .drawer-links { display: flex; flex-wrap: wrap; gap: 2px 14px; }
     .drawer-card .drawer-links a { font-size: 10px; font-weight: 400; color: var(--muted); text-decoration: underline; text-underline-offset: 2px; text-decoration-thickness: 1px; }
     .drawer-card .drawer-links a:hover { color: var(--black); text-decoration-thickness: 1px; }
@@ -694,6 +657,7 @@
     .account-pick { flex: 1 1 auto; }
     .account-add { width: 100%; }
     .account-add:hover { background: var(--surface-2); }
+    .account-add:disabled { opacity: .5; cursor: default; }
     .account-pick:focus-visible, .account-add:focus-visible, .account-remove:focus-visible { outline: 2px solid var(--black); outline-offset: -2px; }
     .account-pick .dot { flex: 0 0 24px; width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%; background: var(--surface); font-size: 11px; font-weight: 600; text-transform: uppercase; }
     .account-row.is-active .dot { color: var(--on-black); background: var(--black); }
@@ -797,12 +761,9 @@
     .picker-summary { display: none; margin: 2px 5px 0; color: var(--muted); font-size: 12px; }
     body.is-picking .picker-summary { display: block; }
     .account-menu .drawer-card { margin: 0; padding: 8px; border: 0; background: transparent; }
-    .account-menu #account-card { display: none; }
     .account-back { display: flex; align-items: center; gap: 6px; padding: 6px 8px; border: 0; color: var(--muted); background: transparent; font: inherit; font-size: 12px; cursor: pointer; }
     .account-back[hidden] { display: none; }
     .account-back:hover { color: var(--black); }
-    .account-link { display: block; width: 100%; margin-top: 2px; padding: 7px 8px; border: 0; border-radius: 10px; color: var(--muted); background: transparent; font: inherit; font-size: 11px; text-align: left; cursor: pointer; }
-    .account-link:hover { color: var(--black); background: var(--surface-2); }
 
     /* ---- Smoothness: one easing and one duration for every drawer / panel move -------------------- */
     /* --ease: a smooth, monotonic deceleration (no overshoot) for anything that changes the window's own
@@ -826,7 +787,7 @@
     .drawer-inner { opacity: 0; transition: opacity 200ms ease; }
     .drive-drawer.is-open .drawer-inner { opacity: 1; transition: opacity 300ms ease 80ms; }
     /* Used for one synchronous moment to measure the final layout, so the window can be resized once, up front. */
-    body.no-anim .collapse, body.no-anim .collapse-inner, body.no-anim .drive-drawer, body.no-anim .drawer-inner, body.no-anim .preview-fold, body.no-anim .preview-fold-inner { transition: none !important; }
+    body.no-anim .collapse, body.no-anim .collapse-inner, body.no-anim .drive-drawer, body.no-anim .drawer-inner { transition: none !important; }
     .account-menu:not([hidden]) { animation: menuIn 220ms var(--spring); transform-origin: top right; }
     @keyframes menuIn { from { opacity: 0; transform: translateY(-4px) scale(.98); } }
     @keyframes itemIn { from { opacity: 0; transform: translateY(5px); } }
@@ -930,9 +891,6 @@
     .share-actions .spacer { flex: 1 1 0; min-width: 0; }
 
     /* ---- Client ID / secret panel: roomier, with Delete + Save underneath -------------------------- */
-    .account-menu #drawer-settings { gap: 12px; padding: 12px 10px 10px; }
-    .account-menu #drawer-settings .filename-input { height: 40px; }
-    .settings-actions { padding-top: 2px; }
     .account-remove { display: grid; place-items: center; }
     .account-remove svg { width: 15px; height: 15px; display: block; }
 
@@ -1309,22 +1267,23 @@
     @keyframes statusPulse { 0%, 100% { opacity: .3; transform: scale(.85); } 50% { opacity: 1; transform: scale(1); } }
     @keyframes spin { to { transform: rotate(360deg); } }
     @keyframes buttonSweep { 0% { transform: translateX(-130%); } 72%, 100% { transform: translateX(130%); } }
-    @keyframes arrowHover { 0%, 100% { transform: translateY(-1px); } 48% { transform: translateY(2.8px); } 68% { transform: translateY(1.6px); } }
-    @keyframes arrowDrop { 0% { opacity: 0; transform: translateY(-5px); } 28% { opacity: 1; } 66% { opacity: 1; transform: translateY(3px); } 100% { opacity: 0; transform: translateY(4.5px); } }
-    @keyframes trayPulse { 0%, 100% { opacity: .62; transform: scaleX(.94); } 58% { opacity: 1; transform: scaleX(1.06); } }
+    @keyframes arrowHover { 0%, 100% { transform: translateY(-.4px); } 50% { transform: translateY(1.5px); } }
     @keyframes checkIn { from { opacity: 0; transform: scale(.3); } to { opacity: 1; transform: none; } }
     @keyframes buttonShake { 25% { transform: translateX(-4px); } 50% { transform: translateX(4px); } 75% { transform: translateX(-2px); } }
     @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; } }
-  
 
     /* ---- Themes: the bits tokens don't reach ---------------------------------------------------------- */
     .switch input:checked ~ .switch-track .switch-knob { background: var(--knob-on); }
     .brand-mark rect { fill: var(--black); transition: fill 200ms ease; }
     .brand-mark g { fill: var(--on-black); transition: fill 200ms ease; }
     .theme-toggle + .account-switch { margin-left: 8px; }
-    /* Switching themes cross-fades the colours (not layout, not the existing motion). */
-    :root.theme-fading, :root.theme-fading * { transition: background-color 240ms ease, border-color 240ms ease, color 240ms ease, fill 240ms ease, box-shadow 240ms ease !important; }
-    :root.theme-fading .theme-toggle, :root.theme-fading .theme-toggle * { transition: transform 560ms var(--spring-soft), opacity 220ms ease, background 280ms ease, box-shadow 280ms ease !important; }
+    /* Switching themes cross-fades the whole window as one picture (08-theme.js). The switch itself is left
+       out of the picture, so its knob slides live, on its own transitions, instead of showing twice. */
+    ::view-transition-old(root), ::view-transition-new(root) { animation-duration: 260ms; animation-timing-function: ease; }
+    .theme-toggle { view-transition-name: theme-toggle; }
+    :root.theme-switching *:not(.theme-toggle):not(.theme-toggle *) { transition: none !important; }
+    ::view-transition-old(theme-toggle) { display: none; }
+    ::view-transition-new(theme-toggle) { animation: none; }
 
     /* ---- Finish: one warm accent, a little depth, soft light edges ------------------------------------
        Kept quiet on purpose: faint gradients that read as material (a sheen along the top edge, a touch
@@ -1438,7 +1397,7 @@
     .filename-input.is-working, .upload-pill.is-busy {
       border-color: transparent;
       background: linear-gradient(var(--card), var(--card)) padding-box,
-                  radial-gradient(70px 44px at var(--gx) var(--gy), color-mix(in srgb, var(--glow-color) calc(var(--glow-a) * 100%), transparent), transparent 72%) border-box,
+                  radial-gradient(72px 22px at var(--gx) var(--gy), color-mix(in srgb, var(--edge-glow) calc(var(--glow-a) * 100%), transparent) var(--edge-hold), transparent 72%) border-box,
                   linear-gradient(var(--border), var(--border)) border-box;
       box-shadow: inset 0 1px 0 var(--sheen);
       --glow-a: 1;
@@ -1493,6 +1452,151 @@
     .small-button.is-danger-solid:hover:not(:disabled) { background: linear-gradient(180deg, var(--danger-top), var(--danger-bottom)); transform: translateY(-1px); box-shadow: inset 0 1px 0 var(--danger-sheen), 0 0 0 1px var(--danger-edge), 0 3px 10px -3px var(--danger-glow); }
     .small-button.is-danger-solid:active:not(:disabled) { transform: translateY(1px) scale(.985); box-shadow: inset 0 1px 0 var(--danger-sheen), 0 0 0 1px var(--danger-edge); }
     .small-button.is-danger:hover:not(:disabled), .ctx-item.is-danger:hover:not(:disabled) { background: var(--danger-tint); }
+
+    /* ---- Fields on hover: a step below focus -------------------------------------------------------
+       The outline firms up a little and the glass brightens a touch, so a field reads as something you can
+       type in before you click. Neutral on purpose: orange stays for the field you're actually in. No lift,
+       so fields never look like buttons. */
+    .filename-input:hover:not(:focus):not(.is-working):not(:disabled),
+    .upload-pill:hover:not(.is-focused):not(.is-busy):not(.is-success):not(.is-error) {
+      border-color: color-mix(in srgb, var(--border-strong) 32%, var(--border));
+      background-image: var(--field-hover-grad);
+    }
+    :root { --field-hover-grad: linear-gradient(180deg, #f9f8f5, #f0eee9); }
+    :root[data-theme="dark"] { --field-hover-grad: linear-gradient(180deg, #343438, #2c2c2f); }
+    .filename-input, .upload-pill { transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease; }
+
+    /* ---- Loading / searching in the folder list: the word and three dots in a soft wave ------------ */
+    .picker-note.is-loading { display: flex; align-items: center; justify-content: center; gap: 0; font-size: 13.5px; font-weight: 500; color: var(--muted); letter-spacing: .005em; }
+    .loading-dots { display: inline-flex; align-items: flex-end; gap: 3px; height: 1em; margin-left: 3px; padding-bottom: 2px; }
+    .loading-dots i { width: 4px; height: 4px; border-radius: 50%; background: var(--dot-color); opacity: var(--dot-rest); animation: loadingDot 1.2s cubic-bezier(.45,0,.35,1) infinite; }
+    .loading-dots i:nth-child(2) { animation-delay: .16s; }
+    .loading-dots i:nth-child(3) { animation-delay: .32s; }
+    @keyframes loadingDot { 0%, 60%, 100% { opacity: var(--dot-rest); transform: translateY(0); } 28% { opacity: 1; transform: translateY(-3px); } }
+    @media (prefers-reduced-motion: reduce) { .loading-dots i { animation: none !important; opacity: .7; } }
+
+    /* The loading dots and the travelling edge light, tuned per theme: a clean, bright orange in both
+       (never the darker accent), the dots resting at a visible level rather than fading almost away, and
+       the edge light in light mode a touch stronger with a solid core so it reads on the pale border. */
+    :root { --dot-color: #f4873a; --dot-rest: .38; --edge-glow: #f9822c; --edge-hold: 20%; }
+    :root[data-theme="dark"] { --dot-color: #f7944a; --dot-rest: .42; --edge-glow: var(--glow-color); --edge-hold: 0%; }
+
+
+    /* Account menu rows: a hover you can actually see. The old --surface-2 step was almost the menu's own
+       colour in light, and a shade darker than the menu in dark. */
+    :root { --menu-hover: rgba(28,28,27,.08); }
+    :root[data-theme="dark"] { --menu-hover: rgba(255,255,255,.075); }
+    .account-row, .account-add { transition: background-color 120ms ease; }
+    .account-row:hover, .account-add:hover:not(:disabled) { background: var(--menu-hover); }
+
+    /* ---- Two ways to connect a Google account (account menu) ----------------------------------------
+       Each choice is a two-line row: what it is, and a short note on what it means. The own-client one leads
+       one step further in (the chevron), to the Client ID fields with the setup guide at the top. */
+    .connect-block { gap: 2px; }
+    .connect-choice { align-items: center; padding: 8px 8px; }
+    .connect-choice .g-logo, .connect-choice .choice-icon { width: 18px; height: 18px; margin: 0 3px; flex: 0 0 auto; }
+    .choice-icon { color: var(--ink-soft); }
+    .choice-text { display: grid; gap: 1px; min-width: 0; flex: 1 1 auto; }
+    .choice-title { color: var(--ink); font-size: 12.5px; line-height: 1.3; }
+    .choice-note { color: var(--muted); font-size: 11px; line-height: 1.3; }
+    .choice-chevron { width: 14px; height: 14px; flex: 0 0 auto; color: var(--muted); }
+
+    .account-menu #drawer-settings, .account-menu #drawer-auth-own { gap: 10px; padding: 6px 8px 8px; }
+    .own-intro { display: grid; gap: 4px; padding-bottom: 2px; }
+    .drawer-card .own-title { color: var(--ink); font-size: 13px; font-weight: 600; }
+    .own-intro .drawer-note { font-size: 11.5px; line-height: 1.45; }
+    .drawer-card .own-guide { display: inline-flex; align-items: center; gap: 4px; justify-self: start; margin-top: 2px; color: var(--link-accent); font-size: 12px; font-weight: 500; text-decoration: none; }
+    .drawer-card .own-guide svg { width: 12px; height: 12px; }
+    .drawer-card .own-guide:hover { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 2px; }
+    .drawer-field { display: grid; gap: 5px; min-width: 0; }
+    .drawer-field input { width: 100%; min-width: 0; }
+    .drawer-card label { color: var(--ink); font-size: 12px; font-weight: 500; }
+    .drawer-card .filename-input { height: 38px; padding: 0 12px; font-size: 12px; border-radius: 12px; }
+    .drawer-card .filename-input.is-invalid, .drawer-card .filename-input.is-invalid:focus { border-color: var(--bad); box-shadow: 0 0 0 1px var(--bad); }
+    .settings-actions { padding-top: 0; }
+    .own-connect { display: grid; gap: 6px; padding-top: 8px; border-top: 1px solid var(--line); }
+    .google-button { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; height: 40px; padding: 0 16px; border: 1px solid var(--border); border-radius: 999px; color: var(--ink); background: var(--card-grad), var(--card); box-shadow: inset 0 1px 0 var(--sheen); font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; transition: transform 160ms ease, box-shadow 160ms ease, opacity 120ms ease; }
+    .google-button .g-logo { width: 18px; height: 18px; }
+    .google-button:hover:not(:disabled) { transform: translateY(-1px); box-shadow: inset 0 1px 0 var(--sheen), 0 3px 10px -4px rgba(0,0,0,.25); }
+    .google-button:active:not(:disabled) { transform: none; }
+    .google-button:disabled { opacity: .5; cursor: default; }
+    .google-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    /* Between the two ways to connect: a quiet "or", so they read as one choice or the other. */
+    .choice-or { display: flex; align-items: center; gap: 10px; margin: 1px 4px; color: var(--muted); font-size: 10.5px; letter-spacing: .04em; text-transform: uppercase; }
+    .choice-or::before, .choice-or::after { content: ''; flex: 1 1 0; height: 1px; background: var(--line); }
+    :root[data-theme="dark"] .choice-or::before, :root[data-theme="dark"] .choice-or::after { background: var(--border); } /* --line is too faint here in dark */
+    /* Both ways to connect get the same small glass tile (like the checkboxes): the Google logo, and the key in grey. */
+    .choice-tile { display: grid; place-items: center; flex: 0 0 auto; width: 28px; height: 28px; margin: 0 -2px 0 -2px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-grad); box-shadow: inset 0 1px 0 var(--sheen); }
+    .choice-tile .choice-icon { width: 16px; height: 16px; margin: 0; color: var(--ink-soft); }
+    .connect-choice .choice-tile .g-logo { width: 15px; height: 15px; margin: 0; }
+
+    /* ---- List / grid switch: a recessed track with one raised glass knob that slides between the icons ----
+       Same language as the theme switch: the track sits a little into the surface, the knob is a key like the
+       Drive button's, and it slides (with the same soft spring) instead of the two buttons lighting up apart. */
+    .picker-view-pill { position: relative; gap: 2px; padding: 2px; border: 1px solid var(--border); background: var(--surface); box-shadow: inset 0 1px 2px rgba(28,28,27,.07); }
+    :root[data-theme="dark"] .picker-view-pill { border-color: rgba(255,255,255,.06); background: linear-gradient(180deg, #141416, #1f1f22); box-shadow: inset 0 1px 3px rgba(0,0,0,.5); }
+    .picker-view-pill::before { content: ''; position: absolute; top: 2px; left: 2px; width: 22px; height: 22px; border-radius: 999px; background: var(--key-grad); box-shadow: inset 0 1px 0 var(--sheen), 0 0 0 .5px var(--key-edge), 0 1px 3px rgba(0,0,0,.16); transition: transform 520ms var(--spring-soft); pointer-events: none; }
+    :root[data-theme="dark"] .picker-view-pill::before { box-shadow: inset 0 1px 0 rgba(255,255,255,.07), 0 0 0 .5px var(--key-edge), 0 1px 3px rgba(0,0,0,.45); }
+    .picker-view-pill:has(#picker-view-grid.is-on)::before { transform: translateX(24px); }
+    .picker-view-pill .picker-view-btn { position: relative; z-index: 1; transition: color 220ms ease; }
+    .picker-view-pill .picker-view-btn.is-on { background: transparent; box-shadow: none; color: var(--ink); }
+    .picker-view-pill .picker-view-btn:not(.is-on):hover { color: var(--ink-soft); }
+    /* The folder list's scrollbar: a longer thumb, so it's easy to see and grab even in a long list. */
+    .picker-list::-webkit-scrollbar-thumb { min-height: 44px; }
+
+    /* ---- File name: under the frames, shown only once frames are selected ----------------------------
+       It folds open (and away) like the export options do, with the window following (setNameFieldShown). */
+    .name-fold { display: grid; grid-template-rows: 0fr; transition: grid-template-rows var(--dur) var(--ease-sheet); }
+    .name-fold-inner { min-height: 0; min-width: 0; overflow: hidden; padding: 4px 12px 16px; margin: -4px -12px -16px; /* room for the focus glow */ opacity: 0; visibility: hidden; transform: translateY(-6px) scale(.985); transform-origin: 50% 0; transition: opacity 160ms ease, transform var(--dur) var(--ease-sheet), visibility 0s linear var(--dur); }
+    body.has-frames .name-fold { grid-template-rows: 1fr; }
+    body.has-frames .name-fold-inner { opacity: 1; visibility: visible; transform: none; transition: opacity 280ms ease 60ms, transform 520ms var(--spring-soft), visibility 0s; }
+    .name-fold .file-name-field { margin: 0 0 18px; }
+    body.no-anim .name-fold, body.no-anim .name-fold-inner { transition: none !important; }
+    /* The status line keeps its small inset on the left (text lines up inside the boxes above). On the right the
+       Drive folders button sits 3px in from the upload box's edge: flush looked like it stuck out, because the
+       box above is taller and its rounded end curves away sooner, so the eye reads its edge as further in. */
+    .drive-status { margin-right: 3px; }
+
+    /* Export reads in normal case, like every other label (and like "Upload here", the other primary button). A
+       little heavier instead of the old capitals' letter-spacing, so it keeps its presence. */
+    #export-button { font-weight: 600; letter-spacing: .005em; }
+    #export-button.is-busy .button-content { letter-spacing: 0; }
+
+    /* ---- The download icon on Export -------------------------------------------------------------------
+       A 17px box: the tray drawn across it, and the arrow in a window that ends just inside the tray's rim, so an
+       arrow moving down sinks into the tray and vanishes there. The arrow is a plain element animated with a
+       transform (on its own layer), which keeps it smooth even while the plugin is busy rendering or zipping;
+       an animation inside the SVG used to stutter whenever that work held up the page.
+       Hover: a slow, gentle bob. Working: one arrow at a time flows down at an even speed, sinks into the tray and
+       comes straight back in from the top, for as long as the work lasts (it doesn't restart between steps). */
+    .button-download { position: relative; display: block; width: 17px; height: 17px; flex: 0 0 auto; overflow: visible; transition: transform 180ms ease; }
+    .button-download svg { position: absolute; left: 0; top: 0; width: 17px; height: 17px; overflow: visible; }
+    .download-window { position: absolute; left: -2px; right: -2px; top: -1px; height: 14.3px; overflow: hidden; } /* down to just inside the rim */
+    .download-window .download-arrow { left: 2px; top: 1px; will-change: transform; }
+    #export-button:hover:not(:disabled):not(.is-busy) .download-arrow { animation: arrowHover 1.5s cubic-bezier(.45,0,.55,1) infinite; }
+    @media (prefers-reduced-motion: reduce) { #export-button .download-arrow { animation: none !important; } }
+    /* While working, the button's content never moves: the text keeps its size (the smaller busy size was for
+       the old capitals), and the label gets a slot as wide as the longest working label ("Exporting"), with the
+       text set against the arrow. Changing step ("Exporting" → "Saving") then changes only the words; the arrow
+       used to jump 8px sideways at every change, which read as a stutter. */
+    #export-button.is-busy .button-content { font-size: inherit; letter-spacing: .005em; }
+    #export-button.is-busy #button-label { display: inline-block; min-width: var(--busy-label-w, 68px); text-align: right; }
+
+    /* ---- Working: three dots instead of the arrow ------------------------------------------------------
+       Once Export is clicked the arrow steps aside for three small dots in a soft wave, the same as "Searching
+       Drive". Dots bob in place on their own layers, so a busy moment can't make them jump the way the moving
+       arrow did; the sheen sweeping across the button gets its own layer for the same reason. */
+    .button-dots { display: none; align-items: center; gap: 4px; height: 17px; }
+    .button-dots i { width: 4.5px; height: 4.5px; border-radius: 50%; background: currentColor; opacity: .4; will-change: transform, opacity; animation: buttonDot 1.2s cubic-bezier(.45,0,.35,1) infinite; }
+    .button-dots i:nth-child(2) { animation-delay: .16s; }
+    .button-dots i:nth-child(3) { animation-delay: .32s; }
+    @keyframes buttonDot { 0%, 60%, 100% { opacity: .4; transform: translateY(0); } 28% { opacity: 1; transform: translateY(-3px); } }
+    #export-button.is-busy .button-download { display: none; }
+    #export-button.is-busy .button-dots { display: inline-flex; }
+    #export-button::before { will-change: transform; }
+    @media (prefers-reduced-motion: reduce) { .button-dots i { animation: none !important; opacity: .8; } }
+    #export-button.is-busy .button-content { gap: 6px; }
+    .button-dots { align-items: flex-end; padding-bottom: 3.5px; box-sizing: border-box; } /* on the text's baseline, like an ellipsis */
 </style>
 </head>
 <body>
@@ -1594,21 +1698,68 @@
       <div id="account-menu" class="account-menu" hidden>
         <button id="account-back" class="account-back" type="button" hidden>← Accounts</button>
         <div id="account-list" role="menu"></div>
+        <div id="connect-block" class="connect-block">
+          <button id="connect-google" class="account-add connect-choice" type="button" role="menuitem"><span class="choice-tile"><svg class="g-logo" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg></span><span class="choice-text"><span class="choice-title">Sign in with Google</span><span class="choice-note">Quick sign-in through SM exporter</span></span></button>
+          <div class="choice-or" aria-hidden="true"><span>or</span></div>
+          <button id="own-client-open" class="account-add connect-choice" type="button" role="menuitem"><span class="choice-tile"><svg class="choice-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="M10.8 12.2L20 3"/><path d="M16.5 6.5l2.5 2.5"/><path d="M14 9l2 2"/></svg></span><span class="choice-text"><span class="choice-title">Use your own Client ID</span><span class="choice-note">Sign in with a Google Cloud client of your own</span></span></button>
+        </div>
+        <div id="drawer-auth" class="drawer-card" hidden>
+          <p>Complete Google sign-in in your browser. This panel will connect your account automatically when sign-in finishes.</p>
+          <p class="drawer-links"><a id="auth-link" href="#" target="_blank" rel="noopener">Open the Google sign-in page again</a></p>
+          <span id="auth-error" class="drawer-note drawer-msg is-error" role="alert" hidden></span>
+          <div class="drawer-actions">
+            <span class="spacer"></span>
+            <button id="auth-cancel" class="small-button" type="button">Cancel</button>
+          </div>
+        </div>
+        <div id="drawer-settings" class="drawer-card" hidden>
+          <div class="own-intro">
+            <p class="own-title">Use your own Google client</p>
+            <p class="drawer-note">Rather not sign in through SM exporter? Add a Client ID and secret from your own Google Cloud project. Your sign-in then goes straight between this plugin and Google.</p>
+            <a id="setup-guide-link" class="own-guide" href="#" target="_blank" rel="noopener">How to get a Client ID<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7"/><path d="M8 7h9v9"/></svg></a>
+          </div>
+          <div class="drawer-field"><label for="client-id">Client ID</label><input id="client-id" class="filename-input" type="text" spellcheck="false" autocomplete="off" placeholder="…apps.googleusercontent.com"></div>
+          <div class="drawer-field"><label for="client-secret">Client secret</label><input id="client-secret" class="filename-input" type="password" spellcheck="false" autocomplete="off" placeholder="GOCSPX-…"></div>
+          <span id="settings-msg" class="drawer-note drawer-msg" role="alert" hidden></span>
+          <div class="drawer-actions settings-actions">
+            <button id="client-delete" class="small-button is-danger" type="button">Delete</button>
+            <span class="spacer"></span>
+            <button id="client-save" class="small-button" type="button">Save</button>
+          </div>
+          <div class="own-connect">
+            <button id="own-connect" class="google-button" type="button"><svg class="g-logo" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg><span>Continue with Google</span></button>
+            <span id="own-connect-hint" class="drawer-note"></span>
+          </div>
+        </div>
+        <div id="drawer-auth-own" class="drawer-card" hidden>
+          <p>Approve access in your browser. The next page may say “This site can’t be reached”. That’s expected: copy its address and paste it below.</p>
+          <p class="drawer-links"><a id="auth-own-link" href="#" target="_blank" rel="noopener">Open the Google sign-in page again</a><a id="auth-edit-client" href="#">Edit Client ID &amp; secret</a></p>
+          <div class="drawer-field"><label for="auth-code">Address of that page (or the code)</label><input id="auth-code" class="filename-input" type="text" spellcheck="false" autocomplete="off" placeholder="http://127.0.0.1:53682/?code=…"></div>
+          <span id="auth-own-error" class="drawer-note drawer-msg is-error" role="alert" hidden></span>
+          <div class="drawer-actions">
+            <span class="spacer"></span>
+            <button id="auth-own-cancel" class="small-button" type="button">Cancel</button>
+            <button id="auth-continue" class="small-button is-primary" type="button">Continue</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
-  <div class="selection-head">
-    <p id="selection-count">Select frames to export</p>
-    <button id="preview-toggle" class="preview-toggle" type="button" aria-expanded="true" aria-controls="preview-fold" aria-label="Hide frames"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
-  </div>
-  <div id="preview-fold" class="preview-fold"><div class="preview-fold-inner">
+  <p id="selection-count">Select frames to export</p>
   <div class="preview-wrap">
     <div id="preview"><div class="preview-empty">No frames selected</div></div>
     <button id="preview-arrow-left" class="preview-arrow is-left" type="button" aria-label="Scroll thumbnails left" tabindex="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg></button>
     <button id="preview-arrow-right" class="preview-arrow is-right" type="button" aria-label="Scroll thumbnails right" tabindex="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg></button>
   </div>
-  </div></div>
 
+  <!-- The file name belongs to the frames, so it sits right under them, and only shows once frames are
+       selected (it folds open with them). Away from the Drive link box, so links don't land in it. -->
+  <div id="name-fold" class="name-fold"><div class="name-fold-inner">
+    <div class="file-name-field">
+      <label for="file-name">File name</label>
+      <input id="file-name" class="filename-input" type="text" placeholder="Enter your filename" spellcheck="false">
+    </div>
+  </div></div>
   <p id="picker-summary" class="picker-summary"></p>
   <div id="export-panel" class="collapse"><div class="collapse-inner">
   <div class="section-title">Export</div>
@@ -1651,18 +1802,17 @@
       <span id="compress-level-pill" class="scale-pill compress-level" title="Compression level" hidden><span class="scale-value">Medium</span><select id="compress-level" aria-label="Compression level"><option value="default" selected>Medium</option><option value="smaller">Small</option></select></span>
     </div>
   </div>
-  <div class="file-name-field">
-    <label for="file-name">File name</label>
-    <input id="file-name" class="filename-input" type="text" placeholder="Enter your filename" spellcheck="false">
-  </div>
   <div id="actions" class="actions">
     <button id="export-button" type="button" disabled>
       <span class="button-content">
-        <span class="button-spinner"></span><span class="button-check"></span><span id="button-label">EXPORT</span>
-        <svg class="button-download" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <g class="download-arrow"><path d="M10 2.6v9.4"/><path d="M6.1 8.4 10 12.3l3.9-3.9"/></g>
-          <path class="download-tray" d="M3.2 13v1.8a2.4 2.4 0 0 0 2.4 2.4h8.8a2.4 2.4 0 0 0 2.4-2.4V13"/>
-        </svg>
+        <span class="button-spinner"></span><span class="button-check"></span><span id="button-label">Export</span>
+        <!-- The download icon: the tray, and the arrow in its own clipped window above it (a plain element, not part
+             of the SVG, so its animation runs smoothly even while the plugin is busy building files). -->
+        <span class="button-download" aria-hidden="true">
+          <svg class="download-tray-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path class="download-tray" d="M3.2 13v1.8a2.4 2.4 0 0 0 2.4 2.4h8.8a2.4 2.4 0 0 0 2.4-2.4V13"/></svg>
+          <span class="download-window"><svg class="download-arrow" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2.6v9.4"/><path d="M6.1 8.4 10 12.3l3.9-3.9"/></svg></span>
+        </span>
+        <span class="button-dots" aria-hidden="true"><i></i><i></i><i></i></span>
       </span>
     </button>
     <div id="upload-pill" class="upload-pill">
@@ -1700,25 +1850,6 @@
       </div>
       <div id="drive-drawer" class="drive-drawer">
         <div class="drawer-inner">
-          <div id="drawer-settings" class="drawer-card" hidden>
-            <div class="drawer-field"><label for="client-id">Client ID</label><input id="client-id" class="filename-input" type="text" spellcheck="false" autocomplete="off" placeholder="…apps.googleusercontent.com"></div>
-            <div class="drawer-field"><label for="client-secret">Client secret</label><input id="client-secret" class="filename-input" type="password" spellcheck="false" autocomplete="off" placeholder="GOCSPX-…"></div>
-            <span id="settings-msg" class="drawer-note drawer-msg" role="alert" hidden></span>
-            <div class="drawer-actions settings-actions">
-              <button id="client-delete" class="small-button is-danger" type="button">Delete</button>
-              <span class="spacer"></span>
-              <button id="client-save" class="small-button is-primary" type="button">Save</button>
-            </div>
-            <div id="account-card" class="account-card" hidden>
-              <svg class="g-logo" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
-              <div class="account-text"><span id="account-kicker" class="account-kicker">Connected as</span><span id="account-email" class="account-email"></span></div>
-              <button id="disconnect-button" class="small-button is-danger" type="button">Disconnect</button>
-            </div>
-            <div id="connect-block" class="connect-block">
-              <button id="connect-google" class="google-button" type="button"><svg class="g-logo" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg><span>Continue with Google</span></button>
-              <span id="connect-hint" class="drawer-note"></span>
-            </div>
-          </div>
           <div id="drawer-picker" class="drawer-card" hidden>
             <div id="picker-top" class="picker-top" hidden>
               <span id="picker-title" class="picker-title"></span>
@@ -1782,17 +1913,6 @@
             </div>
           </div>
           <span id="picker-anchor" hidden></span>
-          <div id="drawer-auth" class="drawer-card" hidden>
-            <p>Approve access in your browser. The next page may say “This site can’t be reached” — that’s expected. Copy its address and paste it below.</p>
-            <p class="drawer-links"><a id="auth-link" href="#" target="_blank" rel="noopener">Open the Google sign-in page again</a><a id="auth-edit-client" href="#">Edit client settings</a></p>
-            <div class="drawer-field"><label for="auth-code">Authorization code or redirect URL</label><input id="auth-code" class="filename-input" type="text" spellcheck="false" autocomplete="off" placeholder="4/0A… or http://127.0.0.1:53682/?code=…"></div>
-            <span id="auth-error" class="drawer-note drawer-msg is-error" role="alert" hidden></span>
-            <div class="drawer-actions">
-              <span class="spacer"></span>
-              <button id="auth-cancel" class="small-button" type="button">Cancel</button>
-              <button id="auth-continue" class="small-button is-primary" type="button">Continue</button>
-            </div>
-          </div>
         </div>
       </div>
     </div>
@@ -2368,16 +2488,7 @@ class SwipeAxis {
   }
 }
 
-    // =====================================================================================
-    //  TEAM SETUP — fill these in once, then share the plugin folder with the team.
-    //  Values come from Google Cloud → Google Auth Platform → Clients → "Figma plugin"
-    //  (Desktop app). With them filled in, teammates never see the OAuth settings drawer;
-    //  they only sign in with their own Google account once. Leave both empty to make every
-    //  user enter the client themselves in the ⚙ drawer.
-    // =====================================================================================
-    const DEFAULT_GOOGLE_CLIENT_ID = ''
-    const DEFAULT_GOOGLE_CLIENT_SECRET = ''
-    const DEFAULT_GOOGLE_REDIRECT_URI = 'http://127.0.0.1:53682/'
+    const OAUTH_WORKER_URL = 'https://sm-exporter-oauth.smnaveen96.workers.dev'
 
     const LOG = '[SM exporter]'
     // A plain build marker, printed once on load — Figma (and some browsers) can hang onto a cached copy
@@ -2468,13 +2579,15 @@ class SwipeAxis {
       if (!settingsLoaded) return // never overwrite the stored settings with defaults before they arrive
       post({ type: 'storage-set', values: { [STORAGE_SETTINGS_KEY]: currentSettings() } })
     }
-    // The folder last used for an upload (however it was chosen — typed link or the picker), so the
-    // plugin can reopen there instead of always starting back at My Drive.
-    let lastFolder = null       // { id, name } loaded from storage, applied once the picker first opens
+    // The last place you were in Drive folders (or the folder last uploaded to), so the plugin reopens there.
+    // A place is a tab and, inside it, a folder: { tab, id, name }, where no id means the top of that tab
+    // (My Drive, Shared with me, Shared drives, Starred), so going back to the top is remembered too.
+    let lastFolder = null       // loaded from storage, applied once the picker first opens
     let lastFolderApplied = false
-    function saveLastFolder(id, name) {
-      if (!id) return
-      lastFolder = { id, name: name || 'Folder' }
+    function saveLastFolder(id, name, tab) {
+      const place = { tab: tab || 'mine', id: id || null, name: id ? (name || 'Folder') : null }
+      if (lastFolder && lastFolder.id === place.id && (lastFolder.tab || 'mine') === place.tab) return
+      lastFolder = place
       post({ type: 'storage-set', values: { [STORAGE_LAST_FOLDER_KEY]: lastFolder } })
     }
     function applySettings(settings) {
@@ -2491,14 +2604,15 @@ class SwipeAxis {
     }
 
     function setButtonState(state, label) {
-      exportButton.classList.remove('is-busy', 'is-success', 'is-error')
-      if (state) exportButton.classList.add(`is-${state}`)
+      // Only the classes that change are touched, so going from one working step to the next ("Exporting" →
+      // "Saving") never restarts the button's animations.
+      for (const name of ['busy', 'success', 'error']) exportButton.classList.toggle(`is-${name}`, state === name)
       exportButton.setAttribute('aria-busy', state === 'busy' ? 'true' : 'false')
       buttonLabel.textContent = label
     }
 
     // ---- Local export: the status line under the buttons, and Cancel ---------------------------------
-    // The button itself now only says EXPORTING / SAVING; which frame is rendering, which PDF is being
+    // The button itself now only says Exporting / Saving; which frame is rendering, which PDF is being
     // compressed and so on is written here, where there is room for it, next to a Cancel that stops the
     // main thread's rendering after the current frame and drops whatever the UI is converting.
     const exportStatusEl = document.getElementById('export-status')
@@ -2544,7 +2658,7 @@ class SwipeAxis {
     function finishCancelledExport() {
       exportRun = null
       busy = false
-      setButtonState('', 'EXPORT')
+      setButtonState('', 'Export')
       updateButton()
       flashExportStatus('Export cancelled.', 2400)
     }
@@ -2980,7 +3094,7 @@ class SwipeAxis {
     }
     document.querySelectorAll('input[type="checkbox"]').forEach((input) => input.addEventListener('change', () => {
       syncCompressToggle()
-      if (exportButton.classList.contains('is-error')) setButtonState('', 'EXPORT')
+      if (exportButton.classList.contains('is-error')) setButtonState('', 'Export')
       updateButton()
       saveSettings()
       dropStaleTick()
@@ -2991,7 +3105,7 @@ class SwipeAxis {
       busy = true
       activeDestination = 'download'
       exportRun = { cancelled: false }
-      setButtonState('busy', 'EXPORTING')
+      setButtonState('busy', 'Exporting')
       setExportStatus('busy', `Rendering 0 of ${selectedCount}…`)
       updateButton()
       post({ type: 'export', options: exportOptions() })
@@ -4158,7 +4272,7 @@ class SwipeAxis {
     async function finishExport(message) {
       const files = await generateFiles(message)
       throwIfExportCancelled()
-      setButtonState('busy', 'SAVING')
+      setButtonState('busy', 'Saving')
       if (files.length === 1) {
         // One file → download it directly, no ZIP (already named from the typed file name, if any).
         const file = files[0]
@@ -4174,12 +4288,12 @@ class SwipeAxis {
       }
       exportRun = null
       busy = false
-      setButtonState('success', 'EXPORTED')
+      setButtonState('success', 'Exported')
       flashExportStatus(files.length === 1 ? 'Exported 1 file.' : `Exported ${files.length} files.`, 2400)
       updateButton()
       // Only settle back to the idle label if nothing new started meanwhile — a second export clicked
       // within the 0.9 s used to have its spinner and "EXPORTING n/N" label wiped by this timer.
-      setTimeout(() => { if (!busy) setButtonState('', 'EXPORT') }, 900)
+      setTimeout(() => { if (!busy) setButtonState('', 'Export') }, 900)
     }
 
     // ---- From the sandbox's PNG renders to the final files (JPEG / PNG / WebP / SVG / PDF) --------------
@@ -4363,20 +4477,22 @@ class SwipeAxis {
       return files
     }
     // ===================== Google Drive upload =====================
-    // OAuth 2.0 authorization-code flow (with PKCE when WebCrypto is available), run
-    // entirely by the plugin. The OAuth client and the tokens are kept in
-    // figma.clientStorage on this machine — nothing is embedded in the source.
-    const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth'
-    const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token'
     const DRIVE_API = 'https://www.googleapis.com/drive/v3'
     const DRIVE_UPLOAD_API = 'https://www.googleapis.com/upload/drive/v3/files'
-    const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive'
-    const DEFAULT_REDIRECT_URI = DEFAULT_GOOGLE_REDIRECT_URI
-    const STORAGE_CLIENT_KEY = 'tier2-google-oauth-client'
     const STORAGE_TOKENS_KEY = 'tier2-google-tokens'   // the active account
     const STORAGE_ACCOUNTS_KEY = 'tier2-google-accounts' // every connected account
     const STORAGE_LAST_FOLDER_KEY = 'tier2-last-drive-folder' // the folder last used, so the plugin reopens there
     const MULTIPART_LIMIT = 5 * 1024 * 1024
+    // Two ways to connect a Google account: through SM exporter's OAuth Worker (OAUTH_WORKER_URL), or with the
+    // user's own Google Cloud client, run entirely by the plugin (authorization code + PKCE, the redirect pasted
+    // back in). Each account remembers which one it came from (entry.via: 'own', or nothing for the Worker),
+    // because its refresh token only works with the client that issued it.
+    const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth'
+    const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token'
+    const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive'
+    const DEFAULT_REDIRECT_URI = 'http://127.0.0.1:53682/'
+    const STORAGE_CLIENT_KEY = 'tier2-google-oauth-client' // the user's own Client ID and secret
+    const SETUP_GUIDE_URL = 'https://smnaveen96.github.io/sm-exporter/SETUP-GUIDE.html'
 
     const uploadPill = document.getElementById('upload-pill')
     // ---- Button tooltips -------------------------------------------------------------------------
@@ -4486,24 +4602,29 @@ class SwipeAxis {
     const driveOpenText = document.getElementById('drive-open-text')
     const driveCancel = document.getElementById('drive-cancel')
     const driveDrawer = document.getElementById('drive-drawer')
-    const drawerSettings = document.getElementById('drawer-settings')
     const drawerAuth = document.getElementById('drawer-auth')
-    const clientIdInput = document.getElementById('client-id')
-    const clientSecretInput = document.getElementById('client-secret')
-    const disconnectButton = document.getElementById('disconnect-button')
-    const accountCard = document.getElementById('account-card')
-    const accountKicker = document.getElementById('account-kicker')
-    const accountEmail = document.getElementById('account-email')
     const connectBlock = document.getElementById('connect-block')
     const connectButton = document.getElementById('connect-google')
-    const connectHint = document.getElementById('connect-hint')
     const authLink = document.getElementById('auth-link')
-    const authCodeInput = document.getElementById('auth-code')
-    const authContinue = document.getElementById('auth-continue')
     const authCancel = document.getElementById('auth-cancel')
-    const authEditClient = document.getElementById('auth-edit-client')
     const authError = document.getElementById('auth-error')
+    const ownClientOpen = document.getElementById('own-client-open')
+    const drawerSettings = document.getElementById('drawer-settings')
+    const setupGuideLink = document.getElementById('setup-guide-link')
+    const clientIdInput = document.getElementById('client-id')
+    const clientSecretInput = document.getElementById('client-secret')
     const settingsMsg = document.getElementById('settings-msg')
+    const clientSaveButton = document.getElementById('client-save')
+    const clientDeleteButton = document.getElementById('client-delete')
+    const ownConnectButton = document.getElementById('own-connect')
+    const ownConnectHint = document.getElementById('own-connect-hint')
+    const drawerAuthOwn = document.getElementById('drawer-auth-own')
+    const authOwnLink = document.getElementById('auth-own-link')
+    const authEditClient = document.getElementById('auth-edit-client')
+    const authCodeInput = document.getElementById('auth-code')
+    const authOwnError = document.getElementById('auth-own-error')
+    const authOwnCancel = document.getElementById('auth-own-cancel')
+    const authContinue = document.getElementById('auth-continue')
     const accountSwitch = document.getElementById('account-switch')
     const accountChip = document.getElementById('account-chip')
     const accountMenu = document.getElementById('account-menu')
@@ -4516,8 +4637,6 @@ class SwipeAxis {
     const pickerSelect = document.getElementById('picker-select')
     const pickerNew = document.getElementById('picker-new')
     const driveFolderButton = document.getElementById('drive-toggle')
-    const clientSaveButton = document.getElementById('client-save')
-    const clientDeleteButton = document.getElementById('client-delete')
     const modalEl = document.getElementById('modal')
     const modalTitle = document.getElementById('modal-title')
     const modalText = document.getElementById('modal-text')
@@ -4527,13 +4646,15 @@ class SwipeAxis {
     const TRASH_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16"/><path d="M9 7V4.5h6V7"/><path d="M6.5 7l.8 12a1.5 1.5 0 0 0 1.5 1.4h6.4a1.5 1.5 0 0 0 1.5-1.4l.8-12"/><path d="M10 11v6M14 11v6"/></svg>'
     const CHECK_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>'
 
-    let drawerMode = null            // null | 'settings' | 'auth'
-    let oauthClient = null           // { clientId, clientSecret, redirectUri }
+    let drawerMode = null            // null | 'picker' | 'auth' | 'settings' | 'auth-own' (the last three open in the account menu)
+    const MENU_MODES = ['auth', 'settings', 'auth-own']
+    let oauthClient = null           // the user's own client: { clientId, clientSecret, redirectUri }, or null
+    let pendingAuth = null           // { state, timer, resolve, reject } while waiting for the pasted code (own client)
+    let checkingClient = false       // true while the Client ID / secret is being checked with Google
+    let clientCheckRun = 0, settingsMsgTimer = 0
+    let signInWaiters = []           // a Drive call that needed an account, waiting for one to be connected either way
     let tokens = null                // { accessToken, refreshToken, expiresAt, account }
     let accounts = []                // tokens of every connected Google account; `tokens` is the active one
-    let pendingAuth = null           // { state, timer, resolve, reject } while waiting for the pasted code
-    let checkingClient = false       // true while the Client ID / secret is being checked with Google
-    let autosaveTimer = 0, autosaveRun = 0, settingsMsgTimer = 0
     const AUTH_TIMEOUT_MS = 10 * 60 * 1000
     let pendingExport = null         // { resolve, reject } while waiting for the sandbox's export-ready
     let uploadedKey = ''             // fingerprint of what the tick on the cloud button stands for
@@ -4695,15 +4816,43 @@ class SwipeAxis {
       setDriveStatus('error', text)
     }
 
-    // The bottom drawer holds only the folder picker. The client settings and the paste-the-redirect step of
-    // signing in open inside the account panel at the top.
+    // The bottom drawer holds only the folder picker; OAuth status stays in the account menu.
     function setPickingState(on) {
       document.body.classList.toggle('is-picking', on) // folds the export options away while a folder is chosen
       driveDrawer.classList.toggle('is-open', on)
     }
 
+    // The file name field shows only while frames are selected, under them. It folds open or away with the
+    // window following, measured up front the same way the drawer is (see showDrawer). The first selection
+    // the plugin hears about (on opening) just sets it, without animating.
+    let nameFieldPrimed = false
+    function setNameFieldShown(show) {
+      const body = document.body
+      const was = body.classList.contains('has-frames')
+      if (!nameFieldPrimed || was === show) {
+        nameFieldPrimed = true
+        if (was !== show) {
+          body.classList.add('no-anim')
+          body.classList.toggle('has-frames', show)
+          void body.offsetHeight
+          body.classList.remove('no-anim')
+          syncHeight()
+        }
+        return
+      }
+      const from = contentHeight()
+      body.classList.add('no-anim')
+      body.classList.toggle('has-frames', show)
+      const to = heightAtWidth(panelWidth())
+      body.classList.toggle('has-frames', was)
+      void body.offsetHeight
+      body.classList.remove('no-anim')
+      body.classList.toggle('has-frames', show)
+      animateResize(from, to, true)
+    }
+
     function showDrawer(mode) {
-      const wasInMenu = drawerMode === 'settings' || drawerMode === 'auth'
+      const wasInMenu = MENU_MODES.includes(drawerMode)
       const picking = mode === 'picker'
       const wasPicking = document.body.classList.contains('is-picking')
       drawerMode = mode
@@ -4730,16 +4879,9 @@ class SwipeAxis {
         setPickingState(picking)
         animateResize(from, to, true)
       }
-      if (mode === 'settings' || mode === 'auth') openAccountMenu(mode)
+      if (MENU_MODES.includes(mode)) openAccountMenu(mode)
       else if (wasInMenu) closeAccountMenu()
       syncHeight()
-    }
-
-    // The client baked into this file (see TEAM SETUP at the top), if any.
-    function builtInClient() {
-      const clientId = DEFAULT_GOOGLE_CLIENT_ID.trim()
-      if (!clientId) return null
-      return { clientId, clientSecret: DEFAULT_GOOGLE_CLIENT_SECRET.trim(), redirectUri: DEFAULT_GOOGLE_REDIRECT_URI.trim() || 'http://127.0.0.1:53682/', builtIn: true }
     }
 
     // The status line stays empty until something happens (progress, success or an error).
@@ -4762,23 +4904,39 @@ class SwipeAxis {
       refreshTooltip()
     }
     fileNameInput.addEventListener('input', dropStaleTick)
+    // A Drive link pasted (or typed) into the file name box goes where it was meant to: the Drive link box, or,
+    // while Drive folders is open, its search (which opens a pasted link). The name box is left as it was.
+    const DRIVE_LINK = /^\s*https?:\/\/(drive|docs)\.google\.com\//i
+    fileNameInput.addEventListener('input', () => {
+      const value = fileNameInput.value.trim()
+      if (!DRIVE_LINK.test(value)) return
+      fileNameInput.value = ''
+      dropStaleTick()
+      if (document.body.classList.contains('is-picking')) {
+        pickerSearch.value = value
+        pickerSearch.dispatchEvent(new Event('input'))
+        pickerSearch.focus()
+        flashDriveStatus('Link moved to the folder search.', 2800)
+      } else {
+        driveUrlInput.value = value
+        driveUrlInput.dispatchEvent(new Event('input'))
+        driveUrlInput.focus()
+        driveUrlInput.setSelectionRange(0, 0) // show the start of the link, not its scrolled-away end
+        driveUrlInput.scrollLeft = 0
+        flashDriveStatus('Link moved to the upload box.', 2800)
+      }
+    })
 
-    // The bottom of the settings panel: who is connected, or the way to connect.
+    // Keep the account menu and its connection actions in sync with active account state. While a Drive call
+    // is waiting for an account (signInWaiters), the actions stay usable even though an upload counts as busy.
     function refreshAccountLabel() {
       renderAccountSwitcher()
+      const blocked = busy && !signInWaiters.length
+      connectButton.disabled = blocked
+      ownClientOpen.disabled = blocked
+      connectButton.querySelector('.choice-title').textContent = accounts.length ? 'Add account' : 'Sign in with Google'
+      ownClientOpen.querySelector('.choice-title').textContent = accounts.length ? 'Add with your own Client ID' : 'Use your own Client ID'
       updateClientButtons()
-      const connected = Boolean(tokens)
-      accountCard.hidden = !connected
-      connectBlock.hidden = connected
-      if (connected) {
-        accountKicker.textContent = tokens.account ? 'Connected as' : 'Connected to'
-        accountEmail.textContent = tokens.account || 'Google Drive'
-      } else {
-        connectButton.disabled = !oauthClient || checkingClient
-        connectHint.textContent = oauthClient
-          ? 'Opens Google in your browser. Allow access, then copy the URL and paste it here.'
-          : 'Add your Client ID and secret above first.'
-      }
       syncHeight()
     }
 
@@ -4788,6 +4946,27 @@ class SwipeAxis {
       syncHeight()
     }
 
+    function setAuthError(text) {
+      authError.hidden = !text
+      authError.textContent = text || ''
+      if (text) revealMessage(authError); else syncHeight()
+    }
+
+    // The own-client sign-in step: the error under the pasted address, and Continue while it's being checked.
+    function setOwnAuthError(text) {
+      authOwnError.hidden = !text
+      authOwnError.textContent = text || ''
+      authCodeInput.classList.toggle('is-invalid', Boolean(text))
+      if (text) authCodeInput.setAttribute('aria-invalid', 'true'); else authCodeInput.removeAttribute('aria-invalid')
+      if (text) revealMessage(authOwnError); else syncHeight()
+    }
+    function setOwnAuthBusy(isBusy) {
+      authContinue.disabled = isBusy
+      authOwnCancel.disabled = isBusy
+      authContinue.textContent = isBusy ? 'Connecting…' : 'Continue'
+    }
+
+    // The message under the Client ID and secret.
     function setSettingsMessage(state, text, invalidInputs) {
       clearTimeout(settingsMsgTimer)
       settingsMsg.hidden = !text
@@ -4802,55 +4981,11 @@ class SwipeAxis {
       if (state === 'ok' && text) settingsMsgTimer = setTimeout(() => setSettingsMessage('', ''), Math.max(2400, 1500 + text.length * 45))
       if (text) revealMessage(settingsMsg); else syncHeight()
     }
-
-    function setAuthError(text) {
-      authError.hidden = !text
-      authError.textContent = text || ''
-      authCodeInput.classList.toggle('is-invalid', Boolean(text))
-      if (text) authCodeInput.setAttribute('aria-invalid', 'true'); else authCodeInput.removeAttribute('aria-invalid')
-      if (text) revealMessage(authError); else syncHeight()
-    }
-
-    function setAuthBusy(isBusy) {
-      authContinue.disabled = isBusy
-      authCancel.disabled = isBusy
-      authContinue.textContent = isBusy ? 'Connecting…' : 'Continue'
-    }
-
     function fillSettingsFields() {
       clientIdInput.value = oauthClient ? oauthClient.clientId : ''
       clientSecretInput.value = oauthClient ? oauthClient.clientSecret : ''
       setSettingsMessage('', '')
       refreshAccountLabel()
-    }
-
-    function saveTokens() {
-      if (tokens) {
-        const at = accounts.findIndex((entry) => entry === tokens || (tokens.account && entry.account === tokens.account) || (tokens.refreshToken && entry.refreshToken === tokens.refreshToken))
-        if (at >= 0) accounts[at] = tokens; else accounts.push(tokens)
-      }
-      post({ type: 'storage-set', values: { [STORAGE_TOKENS_KEY]: tokens, [STORAGE_ACCOUNTS_KEY]: accounts } })
-      refreshAccountLabel()
-    }
-
-    driveUrlInput.addEventListener('focus', () => uploadPill.classList.add('is-focused'))
-    driveUrlInput.addEventListener('blur', () => uploadPill.classList.remove('is-focused'))
-    driveUrlInput.addEventListener('input', () => {
-      if (busy || !oauthClient) return
-      if (driveStatus.classList.contains('is-error') || driveStatus.classList.contains('is-success') || !driveOpenFolder.hidden) setDriveStatus('', idleStatusText())
-    })
-    driveForm.addEventListener('submit', (event) => {
-      event.preventDefault()
-      if (!driveUrlInput.value.trim()) { nudgeFolderButton(); return }
-      void startDriveUpload()
-    })
-
-    function nudgeFolderButton() {
-      driveFolderButton.classList.remove('is-nudge')
-      void driveFolderButton.offsetWidth
-      driveFolderButton.classList.add('is-nudge')
-      flashDriveStatus('Paste a folder link, or open Drive folders', 2800)
-      setTimeout(() => driveFolderButton.classList.remove('is-nudge'), 700)
     }
 
     const CLIENT_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]*\.apps\.googleusercontent\.com$/i
@@ -4877,71 +5012,35 @@ class SwipeAxis {
         return { status: 'offline' }
       }
     }
-    // ---- Client settings: Save and Delete ------------------------------------------------------------
-    // Save checks the Client ID + secret with Google and stores them. Delete forgets them (and, because
-    // tokens belong to the client that issued them, signs every account out) after a confirmation.
-    function scheduleAutosave() { /* kept so older call sites stay harmless: saving is now explicit */ }
 
-    function updateClientButtons() {
-      clientSaveButton.disabled = checkingClient
-      clientSaveButton.textContent = checkingClient ? 'Checking…' : 'Save'
-      const hasSaved = Boolean(oauthClient && !oauthClient.builtIn) || accounts.length > 0
-      const hasText = Boolean(clientIdInput.value.trim() || clientSecretInput.value.trim())
-      clientDeleteButton.disabled = checkingClient || !(hasSaved || hasText)
-    }
-
-    for (const input of [clientIdInput, clientSecretInput]) {
-      input.addEventListener('input', () => { setSettingsMessage('', ''); updateClientButtons() })
-      input.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); clientSaveButton.click() } })
-    }
-
-    clientSaveButton.addEventListener('click', async () => {
-      if (checkingClient) return
-      const missingId = !stripQuotes(clientIdInput.value)
-      const missingSecret = !stripQuotes(clientSecretInput.value)
-      if (missingId || missingSecret) {
-        const what = missingId && missingSecret ? 'Client ID and Client secret' : missingId ? 'Client ID' : 'Client secret'
-        setSettingsMessage('error', `Enter your ${what} to save.`, [missingId && clientIdInput, missingSecret && clientSecretInput])
-        ;(missingId ? clientIdInput : clientSecretInput).focus()
-        return
+    function saveTokens() {
+      if (tokens) {
+        const at = accounts.findIndex((entry) => entry === tokens || (tokens.account && entry.account === tokens.account) || (tokens.refreshToken && entry.refreshToken === tokens.refreshToken))
+        if (at >= 0) accounts[at] = tokens; else accounts.push(tokens)
       }
-      const ok = await autosaveClient(true)
-      if (ok && settingsMsg.hidden) setSettingsMessage('ok', 'Saved')
+      post({ type: 'storage-set', values: { [STORAGE_TOKENS_KEY]: tokens, [STORAGE_ACCOUNTS_KEY]: accounts } })
+      refreshAccountLabel()
+    }
+
+    driveUrlInput.addEventListener('focus', () => uploadPill.classList.add('is-focused'))
+    driveUrlInput.addEventListener('blur', () => uploadPill.classList.remove('is-focused'))
+    driveUrlInput.addEventListener('input', () => {
+      if (busy) return
+      if (driveStatus.classList.contains('is-error') || driveStatus.classList.contains('is-success') || !driveOpenFolder.hidden) setDriveStatus('', idleStatusText())
+    })
+    driveForm.addEventListener('submit', (event) => {
+      event.preventDefault()
+      if (!driveUrlInput.value.trim()) { nudgeFolderButton(); return }
+      void startDriveUpload()
     })
 
-    async function deleteClient() {
-      const hasSaved = Boolean(oauthClient && !oauthClient.builtIn) || accounts.length > 0
-      if (!hasSaved) { // only typed text: just clear it
-        clientIdInput.value = ''
-        clientSecretInput.value = ''
-        setSettingsMessage('', '')
-        updateClientButtons()
-        clientIdInput.focus()
-        return
-      }
-      const count = accounts.length
-      const ok = await confirmDialog({
-        title: 'Delete Client ID & secret?',
-        message: (count ? `The saved credentials will be removed and ${count === 1 ? 'the connected account' : `all ${count} connected accounts`} signed out. ` : 'The saved credentials will be removed. ')
-          + 'You’ll need to enter them again to use Google Drive.',
-        confirmLabel: 'Delete',
-      })
-      if (!ok) return
-      clearTimeout(autosaveTimer)
-      autosaveRun++
-      checkingClient = false
-      oauthClient = builtInClient()
-      tokens = null
-      accounts = []
-      resetPickerLocation()
-      post({ type: 'storage-set', values: { [STORAGE_CLIENT_KEY]: null, [STORAGE_TOKENS_KEY]: null, [STORAGE_ACCOUNTS_KEY]: null } })
-      fillSettingsFields()
-      dropStaleTick()
-      setSettingsMessage('ok', 'Deleted')
-      console.log(LOG, 'OAuth client deleted')
+    function nudgeFolderButton() {
+      driveFolderButton.classList.remove('is-nudge')
+      void driveFolderButton.offsetWidth
+      driveFolderButton.classList.add('is-nudge')
+      flashDriveStatus('Paste a folder link, or open Drive folders', 2800)
+      setTimeout(() => driveFolderButton.classList.remove('is-nudge'), 700)
     }
-    clientDeleteButton.addEventListener('click', () => { void deleteClient() })
-
     // ---- Confirmation pop-up -------------------------------------------------------------------------
     // Resolves true on the confirm button, false on Cancel, Esc or a click outside. Esc closes ONLY the pop-up.
     let modalResolve = null, modalReturnFocus = null, modalHideTimer = 0, modalHasInput = false
@@ -4999,17 +5098,50 @@ class SwipeAxis {
       }
     }, true)
 
-    // Resolves true when the client in the fields is the one in effect (saved now, or already saved).
-    async function autosaveClient(report) {
-      clearTimeout(autosaveTimer)
-      const run = ++autosaveRun
+    // ---- Your own Client ID and secret ----------------------------------------------------------------
+    // For people who'd rather not sign in through SM exporter's OAuth service: they add a client from their
+    // own Google Cloud project, and signing in runs between the plugin and Google only. Save checks the pair
+    // with Google first. Delete forgets it and signs out the accounts that were connected with it (their
+    // tokens only work with that client); accounts connected the quick way stay.
+    function ownAccounts() { return accounts.filter((entry) => entry.via === 'own') }
+
+    function updateClientButtons() {
+      clientSaveButton.disabled = checkingClient
+      clientSaveButton.textContent = checkingClient ? 'Checking…' : 'Save'
+      const hasText = Boolean(clientIdInput.value.trim() || clientSecretInput.value.trim())
+      clientDeleteButton.disabled = checkingClient || !(oauthClient || hasText)
+      const blocked = (busy && !signInWaiters.length) || checkingClient
+      ownConnectButton.disabled = blocked
+      ownConnectHint.textContent = oauthClient
+        ? 'Opens Google in your browser. Allow access, then copy the address of the page that opens and paste it here.'
+        : 'Add your Client ID and secret above first.'
+    }
+
+    function openOwnClientSettings(message) {
+      fillSettingsFields()
+      showDrawer('settings')
+      if (message) setSettingsMessage('error', message, [clientIdInput, clientSecretInput])
+      setTimeout(() => { if (drawerMode === 'settings' && !oauthClient) clientIdInput.focus() }, 360)
+    }
+    ownClientOpen.addEventListener('click', () => openOwnClientSettings())
+    setupGuideLink.href = SETUP_GUIDE_URL
+    setupGuideLink.addEventListener('click', (event) => { event.preventDefault(); post({ type: 'open-url', url: SETUP_GUIDE_URL }) })
+
+    for (const input of [clientIdInput, clientSecretInput]) {
+      input.addEventListener('input', () => { setSettingsMessage('', ''); updateClientButtons() })
+      input.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); clientSaveButton.click() } })
+    }
+
+    // Saves what's in the fields if it's new and Google accepts it. Resolves true when the client in the
+    // fields is the one in effect (saved now, or already saved).
+    async function saveOwnClient(report) {
+      const run = ++clientCheckRun
       if (checkingClient) { checkingClient = false; refreshAccountLabel() } // an older check is superseded
       const clientId = stripQuotes(clientIdInput.value)
       const clientSecret = stripQuotes(clientSecretInput.value)
-      const redirectUri = (oauthClient && oauthClient.redirectUri) || DEFAULT_REDIRECT_URI // not shown in the UI; the default is baked in above
+      const redirectUri = (oauthClient && oauthClient.redirectUri) || DEFAULT_REDIRECT_URI
       if (settingsMsg.classList.contains('is-busy')) setSettingsMessage('', '')
-
-      if (!clientId && !clientSecret) return false // nothing to save; a saved client is left untouched
+      if (!clientId && !clientSecret) return false
       if (oauthClient && oauthClient.clientId === clientId && oauthClient.clientSecret === clientSecret) return true // nothing new
 
       const idProblem = clientId && (/\s/.test(clientId) || !CLIENT_ID_PATTERN.test(clientId))
@@ -5017,77 +5149,91 @@ class SwipeAxis {
       if (idProblem || secretProblem || !clientId || !clientSecret) {
         if (report && idProblem) setSettingsMessage('error', 'That doesn’t look like a Google Client ID. It should end with .apps.googleusercontent.com.', [clientIdInput])
         else if (report && secretProblem) setSettingsMessage('error', 'The Client secret can’t contain spaces. Copy it again from Google Cloud.', [clientSecretInput])
-        return false // incomplete or malformed: keep waiting
+        return false
       }
 
       checkingClient = true
       refreshAccountLabel()
       setSettingsMessage('busy', 'Checking with Google…')
       const check = await verifyOAuthClient(clientId, clientSecret, redirectUri)
-      if (run !== autosaveRun) return false // the fields changed meanwhile: the newer run owns the result
+      if (run !== clientCheckRun) return false // the fields changed meanwhile: the newer run owns the result
       checkingClient = false
       if (check.status === 'bad-id' || check.status === 'bad-secret') {
-        if (drawerMode === 'settings') setSettingsMessage('error', check.message, [check.status === 'bad-id' ? clientIdInput : clientSecretInput])
-        else { setSettingsMessage('', ''); failDrive(check.message) }
+        setSettingsMessage('error', check.message, [check.status === 'bad-id' ? clientIdInput : clientSecretInput])
         refreshAccountLabel()
         return false
       }
 
-      const changedClient = !oauthClient || oauthClient.clientId !== clientId || oauthClient.clientSecret !== clientSecret
-      oauthClient = { clientId, clientSecret, redirectUri }
-      const values = { [STORAGE_CLIENT_KEY]: oauthClient }
-      if (changedClient && accounts.length) {
-        tokens = null // tokens are bound to the client that issued them
-        accounts = []
-        values[STORAGE_TOKENS_KEY] = null
-        values[STORAGE_ACCOUNTS_KEY] = null
-      }
+      const values = { [STORAGE_CLIENT_KEY]: { clientId, clientSecret, redirectUri } }
+      const signedOut = oauthClient ? ownAccounts() : [] // a different client: its accounts' tokens stop working
+      oauthClient = values[STORAGE_CLIENT_KEY]
       post({ type: 'storage-set', values })
-      setSettingsMessage('ok', check.status === 'offline' ? 'Saved. Couldn’t reach Google to check it — it will be checked when you sign in.' : 'Saved')
+      if (signedOut.length) dropAccounts(signedOut)
+      setSettingsMessage('ok', check.status === 'offline' ? 'Saved. Couldn’t reach Google to check it; it will be checked when you sign in.' : 'Saved')
       refreshAccountLabel()
-      setTimeout(() => { if (drawerMode === 'settings' && !connectBlock.hidden) connectBlock.scrollIntoView({ block: 'nearest' }) }, 60)
-      console.log(LOG, 'OAuth client saved', check.status === 'offline' ? '(not verified — offline)' : '(verified)')
+      console.log(LOG, 'OAuth client saved', check.status === 'offline' ? '(not verified, offline)' : '(verified)')
       return true
     }
 
-    // ---- Continue with Google (from the settings panel) -------------------------------------------
-    // The same sign-in an upload would trigger, started on purpose. Afterwards the settings panel
-    // comes back so the connected account is right there.
-    async function connectFromSettings() {
-      busy = true
-      updateButton()
-      let justConnected = false
-      try {
-        await interactiveSignIn()
-        justConnected = true
-        setDriveStatus('', '')
-      } catch (error) {
-        if (error && error.cancelled) {
-          setDriveStatus('', error.userMessage || '')
-        } else if (error && error.oauthError === 'invalid_client') {
-          fillSettingsFields()
-          showDrawer('settings')
-          setSettingsMessage('error', 'Google rejected this Client ID or secret. Check both for typos.', [clientIdInput, clientSecretInput])
-          setDriveStatus('', '')
-        } else {
-          console.error(LOG, 'Google sign-in failed', error)
-          failDrive(friendlyDriveMessage(error))
-        }
-      } finally {
-        if (pendingAuth) { clearTimeout(pendingAuth.timer); pendingAuth = null }
-        setAuthBusy(false)
-        busy = false
-        updateButton()
-        if (justConnected && tokens) {
-          // Signed in: fold the panel away and flash who is connected for a moment, instead of leaving the form open.
-          showDrawer(null)
-          flashDriveStatus(tokens.account ? `Connected as ${tokens.account}` : 'Connected to Google Drive', 3500)
-        }
+    clientSaveButton.addEventListener('click', async () => {
+      if (checkingClient) return
+      const missingId = !stripQuotes(clientIdInput.value)
+      const missingSecret = !stripQuotes(clientSecretInput.value)
+      if (missingId || missingSecret) {
+        const what = missingId && missingSecret ? 'Client ID and Client secret' : missingId ? 'Client ID' : 'Client secret'
+        setSettingsMessage('error', `Enter your ${what} to save.`, [missingId && clientIdInput, missingSecret && clientSecretInput])
+        ;(missingId ? clientIdInput : clientSecretInput).focus()
+        return
       }
+      const ok = await saveOwnClient(true)
+      if (ok && settingsMsg.hidden) setSettingsMessage('ok', 'Saved')
+    })
+
+    // Takes these accounts out of the list (signing out); the active one moves to whichever is left.
+    function dropAccounts(gone) {
+      if (!gone.length) return
+      const wasActive = gone.includes(tokens)
+      accounts = accounts.filter((entry) => !gone.includes(entry))
+      if (wasActive) {
+        tokens = accounts[0] || null
+        resetPickerLocation()
+        if (drawerMode === 'picker') showDrawer(null)
+      }
+      saveTokens()
+      dropStaleTick()
     }
 
-    connectButton.addEventListener('click', async () => {
-      if (busy || checkingClient || tokens) return
+    async function deleteOwnClient() {
+      if (!oauthClient) { // only typed text: just clear it
+        clientIdInput.value = ''
+        clientSecretInput.value = ''
+        setSettingsMessage('', '')
+        updateClientButtons()
+        clientIdInput.focus()
+        return
+      }
+      const count = ownAccounts().length
+      const ok = await confirmDialog({
+        title: 'Delete Client ID & secret?',
+        message: (count ? `They’ll be removed, and ${count === 1 ? 'the account connected with them' : `the ${count} accounts connected with them`} signed out. ` : 'They’ll be removed. ')
+          + 'Accounts connected with “Sign in with Google” stay connected.',
+        confirmLabel: 'Delete',
+      })
+      if (!ok) return
+      clientCheckRun++
+      checkingClient = false
+      oauthClient = null
+      post({ type: 'storage-set', values: { [STORAGE_CLIENT_KEY]: null } })
+      dropAccounts(ownAccounts())
+      fillSettingsFields()
+      setSettingsMessage('ok', 'Deleted')
+      console.log(LOG, 'OAuth client deleted')
+    }
+    clientDeleteButton.addEventListener('click', () => { void deleteOwnClient() })
+
+    // "Continue with Google": anything still being typed is checked and saved first.
+    ownConnectButton.addEventListener('click', async () => {
+      if (checkingClient) return
       const missingId = !stripQuotes(clientIdInput.value)
       const missingSecret = !stripQuotes(clientSecretInput.value)
       if (missingId || missingSecret) {
@@ -5096,40 +5242,36 @@ class SwipeAxis {
         ;(missingId ? clientIdInput : clientSecretInput).focus()
         return
       }
-      const ready = await autosaveClient(true) // anything still being typed is checked and saved first
-      if (!ready || !oauthClient || busy || tokens) return
-      await connectFromSettings()
+      const ready = await saveOwnClient(true)
+      if (!ready || !oauthClient) return
+      await connectWith('own')
     })
 
-    disconnectButton.addEventListener('click', () => { void confirmRemoveAccount(tokens) })
-
+    // ---- Signing in with your own client: authorization code + PKCE, the redirect pasted back in ---------
     authContinue.addEventListener('click', submitAuthCode)
-    authCodeInput.addEventListener('keydown', (event) => {
-      if (event.key === 'Enter') { event.preventDefault(); submitAuthCode() }
-    })
-    authCodeInput.addEventListener('input', () => setAuthError(''))
-    authCancel.addEventListener('click', () => cancelSignIn())
+    authCodeInput.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); submitAuthCode() } })
+    authCodeInput.addEventListener('input', () => setOwnAuthError(''))
+    authOwnCancel.addEventListener('click', () => cancelOwnSignIn())
     authEditClient.addEventListener('click', (event) => {
       event.preventDefault()
-      if (pendingAuth) cancelSignIn({ openSettings: true })
+      if (pendingAuth) cancelOwnSignIn({ openSettings: true })
+    })
+    authOwnLink.addEventListener('click', (event) => {
+      event.preventDefault()
+      if (authOwnLink.dataset.url) post({ type: 'open-url', url: authOwnLink.dataset.url })
     })
 
-    // Backing out of sign-in is a choice, not a failure: close the panel and show no error.
-    function cancelSignIn(options) {
+    // Backing out is a choice, not a failure: no error is shown.
+    function cancelOwnSignIn(options) {
       const openSettings = Boolean(options && options.openSettings)
       const waiting = pendingAuth
-      if (!waiting) { if (drawerMode === 'auth' && !authCancel.disabled) showDrawer(null); return }
+      if (!waiting) return
       pendingAuth = null
-      setAuthError('')
-      showDrawer(null)
+      setOwnAuthError('')
       const error = new DriveError('Sign-in cancelled by user', openSettings ? '' : 'Sign-in cancelled.')
       error.cancelled = true
+      error.openSettings = openSettings
       waiting.reject(error)
-      if (openSettings) {
-        fillSettingsFields()
-        showDrawer('settings')
-        setTimeout(() => clientIdInput.focus(), 360)
-      }
     }
 
     // Resolves with the pasted code. Gives up after AUTH_TIMEOUT_MS so the buttons never stay locked.
@@ -5138,8 +5280,7 @@ class SwipeAxis {
         const timer = setTimeout(() => {
           if (!pendingAuth) return
           pendingAuth = null
-          setAuthError('')
-          showDrawer(null)
+          setOwnAuthError('')
           reject(new DriveError('Sign-in timed out', 'Sign-in timed out. Please try again.'))
         }, AUTH_TIMEOUT_MS)
         pendingAuth = {
@@ -5155,18 +5296,18 @@ class SwipeAxis {
       if (!pendingAuth) return
       const parsed = extractAuthCode(authCodeInput.value, pendingAuth.state)
       if (parsed.error) {
-        setAuthError(parsed.error)
+        setOwnAuthError(parsed.error)
         authCodeInput.focus()
         return
       }
-      setAuthError('')
+      setOwnAuthError('')
       const waiting = pendingAuth
       pendingAuth = null
       waiting.resolve(parsed.code)
     }
 
-    // Accepts the bare authorization code or the full redirect URL (…?code=…&state=…), which is
-    // what the browser address bar shows after consent. Returns { code } or { error } in plain words.
+    // Accepts the bare authorization code or the full redirect URL (…?code=…&state=…), which is what the
+    // browser address bar shows after consent. Returns { code } or { error } in plain words.
     function extractAuthCode(rawValue, expectedState) {
       const value = stripQuotes(rawValue)
       if (!value) return { error: 'Paste the address from the browser (or the code) to continue.' }
@@ -5198,26 +5339,6 @@ class SwipeAxis {
         return { error: 'That doesn’t look like a Google code. After approving, copy the full address from the browser bar.' }
       }
       return { code }
-    }
-
-    driveOpenFolder.addEventListener('click', (event) => {
-      event.preventDefault()
-      if (driveOpenFolder.dataset.url) post({ type: 'open-url', url: driveOpenFolder.dataset.url })
-    })
-    authLink.addEventListener('click', (event) => {
-      event.preventDefault()
-      if (authLink.dataset.url) post({ type: 'open-url', url: authLink.dataset.url })
-    })
-
-    function parseDriveFolderId(rawValue) {
-      const value = String(rawValue || '').trim()
-      if (!value) return null
-      let match = value.match(/\/folders\/([A-Za-z0-9_-]{10,})/)
-      if (match) return match[1]
-      match = value.match(/[?&#]id=([A-Za-z0-9_-]{10,})/)
-      if (match) return match[1]
-      if (/^[A-Za-z0-9_-]{19,}$/.test(value)) return value
-      return null
     }
 
     function randomString(length) {
@@ -5260,14 +5381,16 @@ class SwipeAxis {
       return data
     }
 
-    async function interactiveSignIn() {
-      if (!oauthClient) throw new DriveError('No OAuth client configured', 'Add your Google OAuth client to continue.')
+    // Signs in with the saved own client. Returns the token response; the caller turns it into an account.
+    async function ownClientGrant() {
+      if (!oauthClient) throw new DriveError('No OAuth client configured', 'Add your Client ID and secret to continue.')
+      const client = oauthClient
       const state = randomString(24)
       const verifier = randomString(64)
       const challenge = await pkceChallenge(verifier)
       const params = new URLSearchParams({
-        client_id: oauthClient.clientId,
-        redirect_uri: oauthClient.redirectUri,
+        client_id: client.clientId,
+        redirect_uri: client.redirectUri,
         response_type: 'code',
         scope: DRIVE_SCOPE,
         access_type: 'offline',
@@ -5279,53 +5402,282 @@ class SwipeAxis {
         params.set('code_challenge_method', 'S256')
       }
       const url = `${GOOGLE_AUTH_URL}?${params.toString()}`
-      authLink.dataset.url = url
-      authLink.href = url
-      console.log(LOG, 'Opening Google sign-in', challenge ? '(PKCE S256)' : '(no PKCE)')
+      authOwnLink.dataset.url = url
+      authOwnLink.href = url
+      console.log(LOG, 'Opening Google sign-in with your own client', challenge ? '(PKCE S256)' : '(no PKCE)')
       post({ type: 'open-url', url })
       authCodeInput.value = ''
-      setAuthError('')
-      setAuthBusy(false)
-      showDrawer('auth')
-      setDriveStatus('busy', 'Waiting for Google sign-in...')
+      setOwnAuthError('')
+      setOwnAuthBusy(false)
+      showDrawer('auth-own')
+      setDriveStatus('busy', 'Waiting for Google sign-in…')
       setTimeout(() => authCodeInput.focus(), 360)
-      let data = null
-      while (!data) {
-        const code = await waitForAuthCode(state)
-        const fields = {
-          code,
-          client_id: oauthClient.clientId,
-          client_secret: oauthClient.clientSecret,
-          redirect_uri: oauthClient.redirectUri,
-          grant_type: 'authorization_code',
-        }
-        if (challenge) fields.code_verifier = verifier
-        setAuthBusy(true)
-        try {
-          data = await tokenRequest(fields)
-        } catch (error) {
-          setAuthBusy(false)
-          // A bad or used code, or a dropped connection: keep the panel open so it can be fixed in place.
-          if (error instanceof DriveError && error.oauthError === 'invalid_grant') {
-            setAuthError('Google didn’t accept that code. It may be incomplete, already used or expired. Copy the address again, or open the sign-in page again.')
-          } else if (error instanceof TypeError) {
-            setAuthError('Couldn’t reach Google. Check your connection, then press Continue.')
-          } else {
-            throw error
+      try {
+        while (true) {
+          const code = await waitForAuthCode(state)
+          const fields = { code, client_id: client.clientId, client_secret: client.clientSecret, redirect_uri: client.redirectUri, grant_type: 'authorization_code' }
+          if (challenge) fields.code_verifier = verifier
+          setOwnAuthBusy(true)
+          try {
+            return await tokenRequest(fields)
+          } catch (error) {
+            setOwnAuthBusy(false)
+            // A bad or used code, or a dropped connection: keep the panel open so it can be fixed in place.
+            if (error instanceof DriveError && error.oauthError === 'invalid_grant') {
+              setOwnAuthError('Google didn’t accept that code. It may be incomplete, already used or expired. Copy the address again, or open the sign-in page again.')
+            } else if (error instanceof TypeError) {
+              setOwnAuthError('Couldn’t reach Google. Check your connection, then press Continue.')
+            } else {
+              throw error
+            }
+            authCodeInput.focus()
+            authCodeInput.select()
           }
-          authCodeInput.focus()
-          authCodeInput.select()
+        }
+      } finally {
+        if (pendingAuth) { clearTimeout(pendingAuth.timer); pendingAuth = null }
+        setOwnAuthBusy(false)
+      }
+    }
+    // ---- Connecting a Google account: the quick way (OAuth Worker) or with your own client ----------------
+    // connectWith runs one sign-in from the account menu. Usually it's on its own (the menu's buttons); when an
+    // upload or the picker needed an account first, it's answering that call (signInWaiters): it then leaves
+    // `busy` to the upload, backing out of one way returns to the choice, and success hands the account over.
+    async function connectWith(method) {
+      const answering = signInWaiters.length > 0
+      if (busy && !answering) return
+      if (method === 'own' && !oauthClient) { openOwnClientSettings(); return }
+      if (!answering) { busy = true; updateButton() }
+      refreshAccountLabel()
+      let connected = false
+      try {
+        const data = method === 'own' ? await ownClientGrant() : await workerGrant()
+        await adoptGrant(data, method === 'own' ? 'own' : '')
+        connected = true
+        if (!answering) setDriveStatus('', '')
+      } catch (error) {
+        if (error && error.cancelled) {
+          // Backing out of one way goes back to the choice of ways (or, from "Edit Client ID & secret", to the fields).
+          if (error.openSettings) openOwnClientSettings()
+          else { drawerMode = null; openAccountMenu('list') }
+          setDriveStatus(signInWaiters.length ? 'busy' : '', signInWaiters.length ? CHOOSE_SIGN_IN_TEXT : (error.userMessage || ''))
+        } else if (method === 'own' && error && error.oauthError === 'invalid_client') {
+          // Google doesn't accept the saved client: straight to the fields to fix it.
+          openOwnClientSettings('Google rejected this Client ID or secret. Check both for typos, then Save.')
+          if (!signInWaiters.length) setDriveStatus('', '')
+        } else {
+          console.error(LOG, 'Google sign-in failed', error)
+          showDrawer(null)
+          if (signInWaiters.length) settleSignInWaiters(error)
+          else failDrive(friendlyDriveMessage(error))
+        }
+      } finally {
+        if (!answering) { busy = false; updateButton() }
+        refreshAccountLabel()
+        if (connected && tokens) {
+          showDrawer(null)
+          if (signInWaiters.length) settleSignInWaiters(null)
+          else flashDriveStatus(tokens.account ? `Connected as ${tokens.account}` : 'Connected to Google Drive', 3500)
         }
       }
-      setAuthBusy(false)
+    }
+
+    // A Drive call found no account (or its sign-in ran out and couldn't be renewed): open the account menu
+    // on the two ways to connect, and carry on once either one has connected an account. Closing the menu
+    // without connecting cancels the call.
+    const CHOOSE_SIGN_IN_TEXT = 'Choose how to connect Google Drive…'
+    function interactiveSignIn() {
+      return new Promise((resolve, reject) => {
+        signInWaiters.push({ resolve, reject })
+        if (!MENU_MODES.includes(drawerMode)) openAccountMenu('list')
+        setDriveStatus('busy', CHOOSE_SIGN_IN_TEXT)
+        refreshAccountLabel()
+      })
+    }
+    function settleSignInWaiters(error) {
+      const waiting = signInWaiters
+      signInWaiters = []
+      for (const waiter of waiting) { if (error) waiter.reject(error); else waiter.resolve() }
+      refreshAccountLabel()
+    }
+    // The menu was closed while a Drive call was waiting for an account.
+    function abandonSignInChoice() {
+      if (!signInWaiters.length) return
+      const cancelled = new DriveError('Sign-in cancelled', 'Sign-in cancelled.')
+      cancelled.cancelled = true
+      settleSignInWaiters(cancelled)
+    }
+
+    connectButton.addEventListener('click', () => { void connectWith('worker') })
+    authCancel.addEventListener('click', () => cancelSignIn())
+
+    let oauthCancelRequested = false
+    let oauthRequestController = null
+    let oauthWake = null // ends the wait between polls early, so Cancel takes effect at once
+    function cancelSignIn() {
+      oauthCancelRequested = true
+      if (oauthRequestController) oauthRequestController.abort()
+      if (oauthWake) oauthWake()
+      setAuthError('')
+      drawerMode = null
+      openAccountMenu('list')
+    }
+
+    driveOpenFolder.addEventListener('click', (event) => {
+      event.preventDefault()
+      if (driveOpenFolder.dataset.url) post({ type: 'open-url', url: driveOpenFolder.dataset.url })
+    })
+    authLink.addEventListener('click', (event) => {
+      event.preventDefault()
+      if (authLink.dataset.url) post({ type: 'open-url', url: authLink.dataset.url })
+    })
+
+    function parseDriveFolderId(rawValue) {
+      const value = String(rawValue || '').trim()
+      if (!value) return null
+      let match = value.match(/\/folders\/([A-Za-z0-9_-]{10,})/)
+      if (match) return match[1]
+      match = value.match(/[?&#]id=([A-Za-z0-9_-]{10,})/)
+      if (match) return match[1]
+      if (/^[A-Za-z0-9_-]{19,}$/.test(value)) return value
+      return null
+    }
+
+    async function workerRequest(path, options = {}) {
+      const response = await fetch(`${OAUTH_WORKER_URL}${path}`, options)
+      let data
+      try {
+        data = await response.json()
+      } catch {
+        throw new DriveError('OAuth service returned an invalid response', 'Could not connect to Google. Please try again.', response.status)
+      }
+      if (!data || typeof data !== 'object' || Array.isArray(data)) {
+        throw new DriveError('OAuth service returned an invalid response', 'Could not connect to Google. Please try again.', response.status)
+      }
+      if (!response.ok) {
+        const detail = data.message || data.error || `OAuth service error (${response.status})`
+        const error = new DriveError(detail, data.message || 'Could not connect to Google. Please try again.', response.status)
+        error.oauthError = data.error || ''
+        throw error
+      }
+      return data
+    }
+
+    // Signs in through the OAuth Worker. Returns the token response; adoptGrant turns it into an account.
+    async function workerGrant() {
+      oauthCancelRequested = false
+      setAuthError('')
+      showDrawer('auth')
+      setDriveStatus('busy', 'Starting secure Google sign-in…')
+      let transaction
+      let data
+      try {
+        oauthRequestController = new AbortController()
+        try {
+          transaction = await workerRequest('/oauth/init', { method: 'POST', signal: oauthRequestController.signal })
+        } catch (error) {
+          if (oauthCancelRequested) {
+            const cancelled = new DriveError('Sign-in cancelled', 'Sign-in cancelled.')
+            cancelled.cancelled = true
+            throw cancelled
+          }
+          throw error
+        } finally {
+          oauthRequestController = null
+        }
+        if (oauthCancelRequested) {
+          const cancelled = new DriveError('Sign-in cancelled', 'Sign-in cancelled.')
+          cancelled.cancelled = true
+          throw cancelled
+        }
+        if (!transaction.writeKey || !transaction.readKey || !transaction.startUrl) {
+          throw new DriveError('OAuth service returned an incomplete session', 'Could not start Google sign-in. Please try again.')
+        }
+        const startUrl = new URL(transaction.startUrl)
+        if (startUrl.protocol !== 'https:') {
+          throw new DriveError('OAuth service returned an insecure sign-in URL', 'Could not start Google sign-in. Please try again.')
+        }
+        authLink.dataset.url = startUrl.href
+        authLink.href = startUrl.href
+        post({ type: 'open-url', url: startUrl.href })
+        setDriveStatus('busy', 'Waiting for Google sign-in…')
+        const deadline = Date.now() + AUTH_TIMEOUT_MS
+        while (Date.now() < deadline) {
+          if (oauthCancelRequested) {
+            const cancelled = new DriveError('Sign-in cancelled', 'Sign-in cancelled.')
+            cancelled.cancelled = true
+            throw cancelled
+          }
+          await new Promise((resolve) => { oauthWake = resolve; setTimeout(resolve, 1800) })
+          oauthWake = null
+          if (oauthCancelRequested) {
+            const cancelled = new DriveError('Sign-in cancelled', 'Sign-in cancelled.')
+            cancelled.cancelled = true
+            throw cancelled
+          }
+          oauthRequestController = new AbortController()
+          try {
+            data = await workerRequest(`/oauth/poll?read=${encodeURIComponent(transaction.readKey)}`, { signal: oauthRequestController.signal })
+          } catch (error) {
+            if (oauthCancelRequested) {
+              const cancelled = new DriveError('Sign-in cancelled', 'Sign-in cancelled.')
+              cancelled.cancelled = true
+              throw cancelled
+            }
+            throw error
+          } finally {
+            oauthRequestController = null
+          }
+          if (data.status === 'complete') break
+          if (data.status === 'cancelled' || data.status === 'canceled') {
+            const cancelled = new DriveError('Google sign-in was cancelled', 'Google sign-in was cancelled.')
+            cancelled.cancelled = true
+            throw cancelled
+          }
+          if (data.status === 'denied') {
+            throw new DriveError(data.message || 'Google access was denied', data.message || 'Google access was denied. Please try again.')
+          }
+          if (data.status === 'failed' || data.status === 'expired') {
+            throw new DriveError(data.message || 'Google sign-in expired', data.message || 'Google sign-in expired. Please try again.')
+          }
+          if (data.status === 'error') {
+            throw new DriveError(data.message || 'Google sign-in failed', data.message || 'Google sign-in failed. Please try again.')
+          }
+          if (!data.status) {
+            throw new DriveError(`Unexpected OAuth status: ${data.status || 'missing'}`, 'Google sign-in returned an unexpected response. Please try again.')
+          }
+          data = null
+        }
+        if (!data || data.status !== 'complete') {
+          throw new DriveError('Google sign-in timed out', 'Google sign-in timed out. Please try again.')
+        }
+        if (!data.access_token) {
+          throw new DriveError('OAuth response did not contain an access token', 'Google sign-in did not return an access token. Please try again.')
+        }
+      } catch (error) {
+        if (oauthCancelRequested && !(error && error.cancelled)) {
+          const cancelled = new DriveError('Sign-in cancelled', 'Sign-in cancelled.')
+          cancelled.cancelled = true
+          throw cancelled
+        }
+        if (error && !error.cancelled) setAuthError(friendlyDriveMessage(error))
+        throw error
+      }
+      return data
+    }
+
+    // A finished sign-in, either way, becomes the active account. via: 'own' for your own client, '' for the Worker.
+    async function adoptGrant(data, via) {
+      if (!data || !data.access_token) throw new DriveError('OAuth response did not contain an access token', 'Google sign-in did not return an access token. Please try again.')
       showDrawer(null)
-      setDriveStatus('busy', 'Connecting to Google Drive...')
+      setDriveStatus('busy', 'Connecting to Google Drive…')
       tokens = {
         accessToken: data.access_token,
         refreshToken: data.refresh_token || null,
         expiresAt: Date.now() + (Number(data.expires_in) || 3600) * 1000,
         account: null,
       }
+      if (via) tokens.via = via
       try {
         const about = await fetch(`${DRIVE_API}/about?fields=user(emailAddress,photoLink)`, { headers: { Authorization: `Bearer ${tokens.accessToken}` } })
         if (about.ok) {
@@ -5338,16 +5690,17 @@ class SwipeAxis {
       }
       const prior = accounts.find((entry) => entry !== tokens && tokens.account && entry.account === tokens.account)
       if (prior) { // same account signing in again: replace its entry
-        if (!tokens.refreshToken) tokens.refreshToken = prior.refreshToken
+        // Its old refresh token only helps if it came from the same client.
+        if (!tokens.refreshToken && (prior.via || '') === (tokens.via || '')) tokens.refreshToken = prior.refreshToken
         accounts = accounts.filter((entry) => entry !== prior)
       }
       saveTokens()
-      console.log(LOG, 'Connected to Google Drive', tokens.account || '')
+      console.log(LOG, 'Connected to Google Drive', via === 'own' ? 'with your own client' : 'through the OAuth Worker', tokens.account || '')
     }
 
     // One refresh at a time per account: the picker fires its folder and file listings together, and a
     // 401 on both used to start two refreshes. The result is written to the account object the refresh
-    // was started for — `tokens` can point at a different account by the time Google answers (the
+    // was started for — `tokens` can point at a different account by the time the Worker answers (the
     // person switched accounts meanwhile), and writing there would have handed account A's new token to B.
     let refreshInFlight = null // { account, promise }
     function refreshAccessToken() {
@@ -5356,12 +5709,7 @@ class SwipeAxis {
       if (refreshInFlight && refreshInFlight.account === account) return refreshInFlight.promise
       const promise = (async () => {
         try {
-          const data = await tokenRequest({
-            refresh_token: account.refreshToken,
-            client_id: oauthClient.clientId,
-            client_secret: oauthClient.clientSecret,
-            grant_type: 'refresh_token',
-          })
+          const data = await refreshGrant(account)
           Object.assign(account, {
             accessToken: data.access_token,
             expiresAt: Date.now() + (Number(data.expires_in) || 3600) * 1000,
@@ -5376,8 +5724,24 @@ class SwipeAxis {
       return promise
     }
 
+    // A new access token for this account, from whichever client issued it.
+    async function refreshGrant(entry) {
+      let data
+      if (entry.via === 'own') {
+        if (!oauthClient) throw new DriveError('No OAuth client for this account', 'Add your Client ID and secret again to use this account.', 400)
+        data = await tokenRequest({ refresh_token: entry.refreshToken, client_id: oauthClient.clientId, client_secret: oauthClient.clientSecret, grant_type: 'refresh_token' })
+      } else {
+        data = await workerRequest('/oauth/refresh', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refreshToken: entry.refreshToken }),
+        })
+      }
+      if (!data.access_token) throw new DriveError('OAuth refresh response did not contain an access token', 'Google Drive needs to reconnect. Please try again.')
+      return data
+    }
+
     async function ensureAccessToken(forceRefresh) {
-      if (!oauthClient) throw new DriveError('No OAuth client configured', 'Add your Google OAuth client to continue.')
       if (tokens && tokens.accessToken && !forceRefresh && Date.now() < tokens.expiresAt - 60000) return tokens.accessToken
       if (tokens && tokens.refreshToken) {
         try {
@@ -5398,11 +5762,15 @@ class SwipeAxis {
       // files together). They all wait on one sign-in instead of each opening its own browser tab and
       // poll loop — the extra loops never completed, which left the picker on "Loading…" for minutes.
       if (!signInInFlight) {
-        signInInFlight = interactiveSignIn().catch((error) => {
-          // A sign-in started by a picker/download/share call has no caller resetting the status line
-          // (connectGoogleAccount and the upload flow do their own), so the spinner stayed on
-          // "Waiting for Google sign-in…" after Cancel. An upload in progress keeps its own line.
-          if (!busy) setDriveStatus('', error && error.cancelled ? 'Sign-in cancelled.' : idleStatusText())
+        signInInFlight = interactiveSignIn().then(() => {
+          if (!busy) setDriveStatus('', idleStatusText()) // the "Choose how to connect…" line is done with
+        }, (error) => {
+          // A sign-in started by a picker/download/share call has no caller resetting the status line (the
+          // upload flow does its own), so the spinner stayed on after Cancel. An upload in progress keeps its own line.
+          if (!busy) {
+            if (error && error.cancelled) setDriveStatus('', 'Sign-in cancelled.')
+            else failDrive(friendlyDriveMessage(error))
+          }
           throw error
         }).finally(() => { signInInFlight = null })
       }
@@ -5610,19 +5978,13 @@ class SwipeAxis {
         driveUrlInput.focus()
         return
       }
-      if (!oauthClient) {
-        fillSettingsFields()
-        showDrawer('settings')
-        failDrive('Add your Google OAuth client to continue.')
-        return
-      }
       busy = true
       activeDestination = 'drive'
       uploadRun = { cancelled: false, controller: new AbortController(), uploaded: 0, total: 0 }
       const signature = uploadSignature() // what this upload is made of
       hideTooltip()
       updateButton()
-      setButtonState('', 'EXPORT')
+      setButtonState('', 'Export')
       try {
         setDriveStatus('busy', 'Connecting to Google Drive...')
         await ensureAccessToken()
@@ -5665,12 +6027,6 @@ class SwipeAxis {
           setDriveStatus('', uploadCancelledMessage(), uploadRun.uploaded ? uploadRun.folderUrl : '')
         } else if (error && error.cancelled) {
           setDriveStatus('', error.userMessage || '') // cancelling is a choice, not an error
-        } else if (error && error.oauthError === 'invalid_client') {
-          // Google doesn’t accept the saved client: take the user straight to the fields to fix it.
-          fillSettingsFields()
-          showDrawer('settings')
-          failDrive('Google rejected the Client ID or secret.')
-          setSettingsMessage('error', 'Google rejected this Client ID or secret. Check both for typos, then Save.', [clientIdInput, clientSecretInput])
         } else {
           failDrive(friendlyDriveMessage(error))
         }
@@ -5678,12 +6034,10 @@ class SwipeAxis {
         pendingExport = null
         showUploadCancel(false)
         uploadRun = null
-        if (pendingAuth) { clearTimeout(pendingAuth.timer); pendingAuth = null }
-        setAuthBusy(false)
-        if (drawerMode === 'auth') showDrawer(null) // never leave the sign-in panel stranded open
+        if (MENU_MODES.includes(drawerMode)) showDrawer(null) // never leave a sign-in panel stranded open
         busy = false
         activeDestination = 'download'
-        setButtonState('', 'EXPORT') // the EXPORT button never keeps a busy look after an upload
+        setButtonState('', 'Export') // the EXPORT button never keeps a busy look after an upload
         updateButton()
         setTimeout(() => uploadPill.classList.remove('is-error'), 1800) // the tick stays: see dropStaleTick
       }
@@ -5728,8 +6082,9 @@ class SwipeAxis {
 
     async function accessTokenFor(entry) {
       if (entry.accessToken && Date.now() < entry.expiresAt - 60000) return entry.accessToken
-      if (!entry.refreshToken || !oauthClient) return null
-      const data = await tokenRequest({ refresh_token: entry.refreshToken, client_id: oauthClient.clientId, client_secret: oauthClient.clientSecret, grant_type: 'refresh_token' })
+      if (!entry.refreshToken) return null
+      if (entry.via === 'own' && !oauthClient) return null
+      const data = await refreshGrant(entry)
       entry.accessToken = data.access_token
       entry.expiresAt = Date.now() + (Number(data.expires_in) || 3600) * 1000
       return entry.accessToken
@@ -5755,11 +6110,10 @@ class SwipeAxis {
     }
 
     // ---- Account switcher (header) ---------------------------------------------------------------
-    // The photo / initial button opens one panel for everything Google: the accounts, adding one and,
-    // one step further in, the OAuth client settings and the paste-the-redirect step of signing in.
+    // The photo / initial button opens the account list and the two ways to connect one: the quick sign-in
+    // through SM exporter's OAuth Worker, and your own Client ID (one step further in, with the guide link).
     const accountList = document.getElementById('account-list')
     const accountBack = document.getElementById('account-back')
-    accountMenu.append(drawerSettings, drawerAuth) // the sign-in cards live in the panel, not at the bottom
 
     function renderAccountSwitcher() {
       accountChip.classList.toggle('is-connected', Boolean(tokens))
@@ -5803,28 +6157,18 @@ class SwipeAxis {
         sep.className = 'account-sep'
         accountList.append(sep)
       }
-      const add = document.createElement('button')
-      add.type = 'button'
-      add.className = 'account-add'
-      add.setAttribute('role', 'menuitem')
-      add.innerHTML = `${connectButton.querySelector('.g-logo').outerHTML}<span>Connect new account</span>`
-      add.addEventListener('click', () => { void connectNewAccount() })
-      accountList.append(add)
-      const client = document.createElement('button')
-      client.type = 'button'
-      client.className = 'account-link'
-      client.textContent = 'Client ID & secret'
-      client.addEventListener('click', () => { fillSettingsFields(); showDrawer('settings') })
-      accountList.append(client)
     }
 
-    // view: 'list' (accounts) | 'settings' (Client ID and secret) | 'auth' (paste the redirect URL)
+    // view: 'list' (accounts and the ways to connect) | 'auth' (quick sign-in, waiting for the browser)
+    //       | 'settings' (your own Client ID and secret) | 'auth-own' (paste the address back, own client)
     function openAccountMenu(view) {
       accountMenu.dataset.view = view
       accountList.hidden = view !== 'list'
-      drawerSettings.hidden = view !== 'settings'
+      connectBlock.hidden = view !== 'list'
       drawerAuth.hidden = view !== 'auth'
-      accountBack.hidden = view !== 'settings'
+      drawerSettings.hidden = view !== 'settings'
+      drawerAuthOwn.hidden = view !== 'auth-own'
+      accountBack.hidden = view === 'list'
       if (view === 'list') renderAccountMenu()
       accountMenu.hidden = false
       accountChip.setAttribute('aria-expanded', 'true')
@@ -5837,13 +6181,22 @@ class SwipeAxis {
       syncHeight()
     }
 
-    // Clicking away closes the panel — except mid sign-in, where Cancel or Esc ends it, so the paste step isn't lost.
+    // Clicking away closes the menu, except mid sign-in, where Cancel or Esc ends it (the browser step, or
+    // the address you're about to paste, isn't lost). A Drive call waiting for an account is cancelled.
     function dismissAccountMenu() {
       if (accountMenu.hidden) return
       const view = accountMenu.dataset.view
-      if (view === 'auth') return
+      if (view === 'auth' || view === 'auth-own') return
       if (view === 'settings') showDrawer(null)
       else closeAccountMenu()
+      abandonSignInChoice()
+    }
+    // One step back: from a sign-in or the Client ID fields to the account list.
+    function accountMenuBack() {
+      const view = accountMenu.hidden ? '' : accountMenu.dataset.view
+      if (view === 'auth') cancelSignIn()
+      else if (view === 'auth-own') { if (!authOwnCancel.disabled) cancelOwnSignIn() }
+      else if (view === 'settings') { showDrawer(null); openAccountMenu('list') }
     }
 
     // driveFetch reads `tokens` fresh on every call, so switching mid-transfer would finish an upload
@@ -5855,6 +6208,12 @@ class SwipeAxis {
     }
     function switchAccount(entry) {
       closeAccountMenu()
+      if (signInWaiters.length) { // a Drive call waiting for an account: picking one answers it
+        tokens = entry
+        saveTokens()
+        settleSignInWaiters(null)
+        return
+      }
       if (entry === tokens) return
       if (transferRunning()) return
       tokens = entry
@@ -5888,44 +6247,27 @@ class SwipeAxis {
       console.log(LOG, 'Disconnected Google account')
     }
 
-    async function connectNewAccount() {
-      closeAccountMenu()
-      if (busy || checkingClient) return
-      if (!oauthClient) {
-        fillSettingsFields()
-        showDrawer('settings')
-        setSettingsMessage('error', 'Enter your Client ID and Client secret to continue.', [clientIdInput, clientSecretInput])
-        return
-      }
-      await connectFromSettings()
-    }
-
     accountChip.addEventListener('click', () => {
       if (accountMenu.hidden) openAccountMenu('list')
       else dismissAccountMenu()
     })
-    accountBack.addEventListener('click', () => { showDrawer(null); openAccountMenu('list') })
+    accountBack.addEventListener('click', accountMenuBack)
     document.addEventListener('pointerdown', (event) => { if (modalResolve) return; if (!accountMenu.hidden && !accountSwitch.contains(event.target)) dismissAccountMenu() })
-    // Clicking the Figma canvas moves focus out of the plugin: the account list folds away (not the settings or sign-in steps, which you may be copying into from another window).
-    window.addEventListener('blur', () => { if (!accountMenu.hidden && accountMenu.dataset.view === 'list') closeAccountMenu() })
-    // Esc always goes back exactly one step: sign-in → account list, client settings → account list,
-    // account list → closed, folder picker → parent folder (or clears the search) → closed.
+    // Clicking the Figma canvas moves focus out of the plugin: the account list folds away, but sign-in stays available.
+    // (Not while a Drive call is waiting for an account: that would cancel it.)
+    window.addEventListener('blur', () => { if (!accountMenu.hidden && accountMenu.dataset.view === 'list' && !signInWaiters.length) closeAccountMenu() })
+    // Esc goes back from sign-in to accounts, closes the account list, or navigates the folder picker.
     document.addEventListener('keydown', (event) => {
       if (event.key !== 'Escape' || event.defaultPrevented) return
       if (!ctxMenu.hidden) { event.preventDefault(); closeMenu(); return }
       const view = accountMenu.hidden ? '' : accountMenu.dataset.view
-      if (view === 'auth') {
+      if (view === 'auth' || view === 'auth-own' || view === 'settings') {
         event.preventDefault()
-        if (authCancel.disabled) return // mid-connect: nothing to go back to yet
-        cancelSignIn()
-        openAccountMenu('list')
-      } else if (view === 'settings') {
-        event.preventDefault()
-        showDrawer(null)
-        openAccountMenu('list')
+        accountMenuBack()
       } else if (view === 'list') {
         event.preventDefault()
         closeAccountMenu()
+        abandonSignInChoice()
       } else if (drawerMode === 'picker') {
         event.preventDefault()
         if (!ctxMenu.hidden) closeMenu()
@@ -5937,7 +6279,6 @@ class SwipeAxis {
       }
     })
     renderAccountSwitcher()
-
     // ---- Folder picker -----------------------------------------------------------------------------
     // Shown when the link field is empty and the upload button is pressed. Laid out like Google's own
     // folder picker: tabs, search, grid / list; click a folder to open it. "Upload here"
@@ -6248,6 +6589,14 @@ class SwipeAxis {
       const note = document.createElement('div')
       note.className = `picker-note${loading ? ' is-loading' : ''}`
       note.textContent = text
+      if (loading) {
+        // Three dots in a soft wave (the styles animate them); fixed width, so the word never shifts.
+        const dots = document.createElement('span')
+        dots.className = 'loading-dots'
+        dots.setAttribute('aria-hidden', 'true')
+        dots.append(document.createElement('i'), document.createElement('i'), document.createElement('i'))
+        note.append(dots)
+      }
       pickerList.textContent = ''
       pickerList.append(note)
       pickerItems = []
@@ -7586,7 +7935,21 @@ class SwipeAxis {
     })
 
     // ---- Rendering ----------------------------------------------------------------------------------------
+    // Every listing goes through here, however it was started (typing, paste, Enter, a refresh), so the
+    // search box's working glow (.is-working) is set and cleared in one place: it shows while a search
+    // runs and stops when the newest listing is done. Clearing it only after the typed-search path left it
+    // circling forever when the search came from a paste or from Enter.
+    let searchWaiting = false // typed, and the short pause before the search runs hasn't passed yet
     async function renderPicker(options) {
+      const run = pickerRun + 1 // the run listPicker is about to take
+      if (pickerSearch.value.trim() && !(options && options.silent)) pickerSearch.classList.add('is-working')
+      try {
+        return await listPicker(options)
+      } finally {
+        if (run === pickerRun && !searchWaiting) pickerSearch.classList.remove('is-working')
+      }
+    }
+    async function listPicker(options) {
       const opts = options || {}
       const run = ++pickerRun
       const query = pickerSearch.value.trim()
@@ -7603,7 +7966,7 @@ class SwipeAxis {
       pickerBack.hidden = !pickerStack.length && !query
       renderCrumbs()
       updatePickerSelect()
-      if (!opts.silent) pickerNote('Loading…', true)
+      if (!opts.silent) pickerNote(!query ? 'Loading' : parseDriveItemLink(query) ? 'Opening link' : 'Searching Drive', true)
       let folders
       let files = []
       try {
@@ -7622,10 +7985,10 @@ class SwipeAxis {
           folders = sortEntries(found)
           files = sortEntries(inside)
         }
-        // Remembering "the last place I visited" means on every successful navigation into a real folder,
-        // not only when a folder gets used as an upload destination — browsing around without uploading
-        // anything used to leave nothing saved at all, so the plugin always reopened at My Drive.
-        if (pickerStack.length && !pickerMove && container.id !== (lastFolder && lastFolder.id)) saveLastFolder(container.id, container.name)
+        // Remember the last place visited on every successful navigation: into a folder, and back out to the
+        // top of a tab too. Only saving folders left the plugin reopening an old folder after you'd gone back to
+        // My Drive or over to Shared with me / Shared drives.
+        if (!pickerMove && !query) saveLastFolder(pickerStack.length ? container.id : null, container.name, pickerTab)
       } catch (error) {
         if (run !== pickerRun) return
         // The remembered folder (from a previous session) may since have been moved, renamed, or deleted —
@@ -7770,15 +8133,10 @@ class SwipeAxis {
 
     // ---- Opening and closing the drawer -------------------------------------------------------------------
     async function openFolderPicker() {
-      if (busy || checkingClient) return
-      if (!oauthClient) {
-        fillSettingsFields()
-        showDrawer('settings')
-        failDrive('Add your Google OAuth client to continue.')
-        return
-      }
+      if (busy) return
       if (!tokens) {
-        await connectFromSettings() // signs in first, then comes straight back here
+        // Asks how to connect (the quick way or your own client), then comes straight back here.
+        try { await ensureAccessToken() } catch { return }
         if (!tokens) return
       }
       // The very first time the picker opens in a session, start where the last upload left off (closing
@@ -7787,7 +8145,10 @@ class SwipeAxis {
       if (!lastFolderApplied) {
         if (!settingsLoaded) await Promise.race([storageReady, new Promise((resolve) => setTimeout(resolve, 1500))])
         lastFolderApplied = true
-        if (lastFolder && lastFolder.id) { pickerTab = 'mine'; pickerStack = [{ id: lastFolder.id, name: lastFolder.name }] }
+        if (lastFolder) {
+          pickerTab = PICKER_ROOTS[lastFolder.tab] ? lastFolder.tab : 'mine'
+          pickerStack = lastFolder.id ? [{ id: lastFolder.id, name: lastFolder.name }] : []
+        }
       }
       pickerSearch.value = '' // the place is remembered; an old search isn't
       updatePickerView()
@@ -7843,19 +8204,21 @@ class SwipeAxis {
       }))
       openMenu(items, pickerSortButton.getBoundingClientRect())
     })
-    // While a search is waiting to run or running, the search box's glow circles its edge (.is-working).
-    let searchGlowRun = 0
+    // While a search is waiting to run or running, the search box's glow circles its edge (.is-working);
+    // renderPicker clears it when the search is done.
     pickerSearch.addEventListener('input', () => {
       clearTimeout(pickerSearchTimer)
-      pickerSearch.classList.toggle('is-working', Boolean(pickerSearch.value.trim()))
+      searchWaiting = Boolean(pickerSearch.value.trim())
+      pickerSearch.classList.toggle('is-working', searchWaiting)
       pickerSearchTimer = setTimeout(() => {
-        const mine = ++searchGlowRun
-        renderPicker().finally(() => { if (mine === searchGlowRun) pickerSearch.classList.remove('is-working') })
+        searchWaiting = false
+        void renderPicker()
       }, 300)
     })
     pickerSearch.addEventListener('paste', () => {
       setTimeout(() => {
         clearTimeout(pickerSearchTimer)
+        searchWaiting = false
         void renderPicker()
       }, 0)
     })
@@ -7863,8 +8226,9 @@ class SwipeAxis {
       if (event.key !== 'Enter') return
       event.preventDefault()
       clearTimeout(pickerSearchTimer)
+      searchWaiting = false
       const link = parseDriveItemLink(pickerSearch.value)
-      if (link) void openDriveItemLink(link)
+      if (link) void openDriveItemLink(link).finally(() => { if (!searchWaiting) pickerSearch.classList.remove('is-working') })
       else void renderPicker()
     })
     pickerBack.addEventListener('click', () => {
@@ -7979,7 +8343,7 @@ class SwipeAxis {
       pickerSelect.classList.add('is-busy') // the same working sheen as Export while it uploads
       try {
         const id = await resolveFolderId(target.id)
-        saveLastFolder(id, target.name)
+        saveLastFolder(id, target.name, pickerTab)
         if (driveSubmit.disabled) { // no frames or formats yet: remember the folder in the link box instead
           showDrawer(null)
           driveUrlInput.value = `https://drive.google.com/drive/folders/${id}`
@@ -9176,7 +9540,7 @@ class SwipeAxis {
       if (images.length) await placeOnCanvas(images, { x: message.x, y: message.y })
     }
 
-    // Load the stored OAuth client and tokens from figma.clientStorage via the sandbox.
+    // Load your own OAuth client (if you added one), the connected accounts and the plugin settings.
     post({ type: 'storage-get', keys: [STORAGE_CLIENT_KEY, STORAGE_TOKENS_KEY, STORAGE_ACCOUNTS_KEY, STORAGE_SETTINGS_KEY, STORAGE_LAST_FOLDER_KEY] })
 
     window.addEventListener('message', (event) => {
@@ -9189,6 +9553,7 @@ class SwipeAxis {
           : 'Select frames to export'
         latestSelectionVersion = message.version
         renderThumbnails(message.thumbnails || [], message.ids, message.names, Boolean(message.pending))
+        setNameFieldShown(selectedCount > 0)
         selectedIds = message.ids || []
         updateButton()
         dropStaleTick()
@@ -9216,7 +9581,7 @@ class SwipeAxis {
           console.error(LOG, 'Export failed', error)
           exportRun = null
           busy = false
-          setButtonState('error', 'TRY AGAIN')
+          setButtonState('error', 'Try again')
           setExportStatus('', '')
           updateButton()
         })
@@ -9229,14 +9594,17 @@ class SwipeAxis {
         }
         exportRun = null
         busy = false
-        setButtonState('error', message.message === 'Select frames to export.' ? 'SELECT FRAMES' : 'TRY AGAIN')
+        setButtonState('error', message.message === 'Select frames to export.' ? 'Select frames' : 'Try again')
         setExportStatus('', '')
         updateButton()
       } else if (message.type === 'drive-drop') {
         void handleCanvasDrop(message)
       } else if (message.type === 'storage') {
         const values = message.values || {}
-        oauthClient = values[STORAGE_CLIENT_KEY] || builtInClient()
+        const savedClient = values[STORAGE_CLIENT_KEY]
+        oauthClient = savedClient && savedClient.clientId && savedClient.clientSecret
+          ? { clientId: savedClient.clientId, clientSecret: savedClient.clientSecret, redirectUri: savedClient.redirectUri || DEFAULT_REDIRECT_URI }
+          : null
         accounts = Array.isArray(values[STORAGE_ACCOUNTS_KEY]) ? values[STORAGE_ACCOUNTS_KEY] : []
         tokens = values[STORAGE_TOKENS_KEY] || null
         if (tokens) { // the active account is one of the list (an older single-account save is added to it)
@@ -9252,11 +9620,11 @@ class SwipeAxis {
         // Remembering the last folder is for the "Drive folders" picker drawer to reopen where you left
         // off (lastFolderApplied, above) — it should NOT also silently paste that folder's link into the
         // URL box, which looked like the box was remembering whatever link was last pasted into it.
-        if (savedFolder && savedFolder.id) lastFolder = savedFolder
-        fillSettingsFields()
+        if (savedFolder && (savedFolder.id || savedFolder.tab)) lastFolder = savedFolder // older saves have no tab: My Drive
         if (!busy) setDriveStatus('', idleStatusText())
-        if (oauthClient && accounts.length) void loadProfilePhotos()
-        console.log(LOG, 'Settings loaded', oauthClient ? 'client configured' : 'no client', tokens ? 'signed in' : 'not signed in')
+        refreshAccountLabel()
+        if (accounts.length) void loadProfilePhotos()
+        console.log(LOG, 'Settings loaded', tokens ? 'signed in' : 'not signed in')
         resolveStorageReady()
       }
     })
@@ -9274,8 +9642,6 @@ class SwipeAxis {
     let listHeight = 0 // the folder list's chosen height; 0 = its usual height
     let chosenWidth = PANEL_MIN_WIDTH // the window's width while Drive folders is open
     let gripDrag = null, gripFrame = 0
-    let framesFolded = false // the thumbnail strip folded away under "N frames selected"
-    const FOLD_PULL = 40 // px dragged up past the window's usual height that folds the thumbnails away
 
     const resizeGrip = document.createElement('div')
     resizeGrip.className = 'resize-grip'
@@ -9302,88 +9668,34 @@ class SwipeAxis {
       post({ type: 'resize', width: currentPanelWidth(), height: contentHeight(), save: save ? savedSize() : undefined })
     }
 
-    // ---- Folding the thumbnail strip ----------------------------------------------------------------------
-    // The chevron after "N frames selected" folds the strip away and back. Dragging the window shorter than
-    // its usual height (the grip, upwards) folds it too, so the Drive folders list keeps its room, and dragging
-    // it tall enough again brings it back. A fold chosen with the chevron stays until the chevron opens it.
-    const previewFold = document.getElementById('preview-fold')
-    const previewToggle = document.getElementById('preview-toggle')
-    let foldedByDrag = false // folded by the grip (so the grip may unfold it), not by the chevron
-    // how: 'instant' (no animation), 'drag' (the strip animates; the grip sizes the window), or nothing (the
-    // strip animates and the window follows it).
-    function setFramesFolded(folded, how) {
-      if (framesFolded === folded) return
-      framesFolded = folded
-      previewToggle.setAttribute('aria-expanded', String(!folded))
-      previewToggle.setAttribute('aria-label', folded ? 'Show frames' : 'Hide frames')
-      if (how === 'instant') {
-        document.body.classList.add('no-anim')
-        previewFold.classList.toggle('is-folded', folded)
-        void document.body.offsetHeight
-        document.body.classList.remove('no-anim')
-        syncHeight()
-        return
-      }
-      if (how === 'drag') { previewFold.classList.toggle('is-folded', folded); return }
-      // Measure where it ends without painting it, then play the fold with the window following along.
-      const from = contentHeight()
-      document.body.classList.add('no-anim')
-      previewFold.classList.toggle('is-folded', folded)
-      const to = contentHeight()
-      previewFold.classList.toggle('is-folded', !folded)
-      void document.body.offsetHeight
-      document.body.classList.remove('no-anim')
-      previewFold.classList.toggle('is-folded', folded)
-      animateResize(from, to, true)
-    }
-    function savedSize() { return { width: chosenWidth, listHeight, framesFolded, foldedByDrag } }
-    previewToggle.addEventListener('click', () => {
-      foldedByDrag = false
-      setFramesFolded(!framesFolded)
-      post({ type: 'resize', width: currentPanelWidth(), height: contentHeight(), save: savedSize() })
-    })
+    function savedSize() { return { width: chosenWidth, listHeight } }
 
     // ---- Dragging the grip ---------------------------------------------------------------------------------
     // The window's bottom edge follows the pointer, and the folder list takes up whatever height that leaves.
-    // Pulled more than FOLD_PULL above the usual height, the thumbnails fold away and the list takes their
-    // room (the window itself doesn't jump); dragged back to the usual height, they unfold and the list gives
-    // the room back. While the strip animates, the list is re-fitted every frame so the window stays put.
-    let foldPlaying = 0 // until when the strip's fold animation runs
-    let bounds = null // { width, open, usual }: measured at the width the window is now
-    function measureBounds() {
+    // The usual size is the smallest it goes: the list never gets shorter than its usual height.
+    let usualListHeight = 0, usualAtWidth = 0 // the list's usual height, measured at the window's current width
+    function measureUsualList() {
       const had = listHeight
       document.body.classList.add('no-anim')
       applyListHeight(0)
       const usual = pickerList.getBoundingClientRect().height
-      previewFold.classList.remove('is-folded')
-      const open = contentHeight() // the window's usual height: thumbnails showing, list at its usual height
-      previewFold.classList.toggle('is-folded', framesFolded)
       applyListHeight(had)
       void document.body.offsetHeight
       document.body.classList.remove('no-anim')
-      return { width: window.innerWidth, open, usual }
-    }
-    function foldByDrag(folded) {
-      foldedByDrag = folded
-      setFramesFolded(folded, 'drag')
-      foldPlaying = performance.now() + 560
+      return usual
     }
     function gripStep() {
       gripFrame = 0
       const drag = gripDrag
       if (!drag) return
       if (drag.sizing) {
-        // Measuring snaps a running fold to its end, so it waits until the strip has settled.
-        if (!bounds || (bounds.width !== window.innerWidth && performance.now() > foldPlaying)) bounds = measureBounds()
-        if (!framesFolded && drag.target < bounds.open - FOLD_PULL) foldByDrag(true)
-        else if (framesFolded && foldedByDrag && drag.target >= bounds.open) foldByDrag(false)
+        if (!usualListHeight || usualAtWidth !== window.innerWidth) { usualListHeight = measureUsualList(); usualAtWidth = window.innerWidth }
         const rest = contentHeight() - pickerList.getBoundingClientRect().height
         const list = drag.target - rest
-        applyListHeight(list > bounds.usual + 1 ? list : 0)
+        applyListHeight(list > usualListHeight + 1 ? list : 0)
       }
       if (!resizeLocked) postPanelSize(false)
-      if (performance.now() < foldPlaying) gripFrame = requestAnimationFrame(gripStep)
-      else if (drag.released) finishGripDrag()
+      if (drag.released) finishGripDrag()
     }
 
     resizeGrip.addEventListener('pointerdown', (event) => {
@@ -9391,7 +9703,7 @@ class SwipeAxis {
       event.preventDefault()
       resizeGrip.setPointerCapture(event.pointerId) // the window's top-left corner stays put as it grows, so page coordinates track the pointer
       const height = contentHeight()
-      bounds = null
+      usualListHeight = 0
       gripDrag = {
         x: event.clientX, y: event.clientY,
         width: window.innerWidth, height,
@@ -9421,8 +9733,7 @@ class SwipeAxis {
       if (!gripDrag || gripDrag.released) return
       gripDrag.released = true
       if (event && resizeGrip.hasPointerCapture(event.pointerId)) resizeGrip.releasePointerCapture(event.pointerId)
-      // A fold still playing finishes first (the list keeps fitting the window), then the size is saved.
-      if (!gripFrame) gripFrame = requestAnimationFrame(gripStep)
+      if (!gripFrame) gripFrame = requestAnimationFrame(gripStep) // a last step, then the size is saved
     }
     resizeGrip.addEventListener('pointerup', endGripDrag)
     resizeGrip.addEventListener('pointercancel', endGripDrag)
@@ -9435,8 +9746,6 @@ class SwipeAxis {
       if (!folderListOpen()) return
       chosenWidth = PANEL_MIN_WIDTH
       applyListHeight(0)
-      foldedByDrag = false
-      setFramesFolded(false) // the usual size shows the thumbnails too
       postPanelSize(true)
     })
 
@@ -9448,8 +9757,6 @@ class SwipeAxis {
       const size = message.size
       chosenWidth = Math.max(PANEL_MIN_WIDTH, Math.min(PANEL_MAX_WIDTH, Math.round(Number(size.width) || PANEL_MIN_WIDTH)))
       applyListHeight(Number(size.listHeight) || 0)
-      foldedByDrag = !!size.foldedByDrag
-      if (size.framesFolded) setFramesFolded(true, 'instant')
       if (folderListOpen()) postPanelSize(false)
     })
     post({ type: 'panel-size-get' })
@@ -9460,7 +9767,6 @@ class SwipeAxis {
     // under :root and :root[data-theme="dark"].
     const themeToggle = document.getElementById('theme-toggle')
     let themeChoice = 'auto' // 'auto' | 'light' | 'dark'
-    let themeFadeTimer = 0
     const darkQuery = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null
 
     function figmaTheme() {
@@ -9470,18 +9776,35 @@ class SwipeAxis {
       return darkQuery && darkQuery.matches ? 'dark' : 'light' // outside Figma
     }
     function shownTheme() { return themeChoice === 'auto' ? figmaTheme() : themeChoice }
+    // The switch cross-fades the whole window as one picture (a view transition), instead of fading every
+    // element's colours on its own: that was hundreds of separate fades at once, which lagged, and the
+    // gradients (which can't fade) changed straight away while flat colours were still on their way, so
+    // grey patches showed mid-switch. Where view transitions aren't available, the theme just switches.
+    let pendingTheme = '' // the theme a cross-fade is about to put in place
     function applyTheme(fade) {
       const root = document.documentElement
       const theme = shownTheme()
-      if (root.dataset.theme === theme) return
-      if (fade) {
-        root.classList.add('theme-fading')
-        clearTimeout(themeFadeTimer)
-        themeFadeTimer = setTimeout(() => root.classList.remove('theme-fading'), 300)
+      if ((pendingTheme || root.dataset.theme) === theme) return
+      pendingTheme = theme
+      // Elements' own colour transitions (hover fades and the like) stay off while the theme swaps, so the new
+      // theme lands in one go under the cross-fade; only the switch keeps its motion.
+      root.classList.add('theme-switching')
+      const settle = () => requestAnimationFrame(() => requestAnimationFrame(() => root.classList.remove('theme-switching')))
+      const swap = () => {
+        pendingTheme = ''
+        root.dataset.theme = theme
+        themeToggle.setAttribute('aria-checked', String(theme === 'dark'))
+        themeToggle.title = theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'
       }
-      root.dataset.theme = theme
-      themeToggle.setAttribute('aria-checked', String(theme === 'dark'))
-      themeToggle.title = theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'
+      const still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      if (fade && !still && document.startViewTransition && document.visibilityState === 'visible') {
+        try {
+          document.startViewTransition(swap).finished.finally(settle)
+          return
+        } catch (error) { /* fall through */ }
+      }
+      swap()
+      settle()
     }
     applyTheme(false)
 
@@ -9491,8 +9814,16 @@ class SwipeAxis {
       applyTheme(true)
       post({ type: 'theme-set', theme: themeChoice })
     })
-    // Figma's theme changing while the plugin is open (only shows while following it).
-    new MutationObserver(() => applyTheme(true)).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
+    // Figma's theme changing while the plugin is open (only shows while following it). Other class changes on
+    // <html> (theme-switching, above) are ignored: reacting to those started a second switch before the first
+    // had landed, over and over.
+    let lastFigmaTheme = figmaTheme()
+    new MutationObserver(() => {
+      const now = figmaTheme()
+      if (now === lastFigmaTheme) return
+      lastFigmaTheme = now
+      applyTheme(true)
+    }).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
     if (darkQuery && darkQuery.addEventListener) darkQuery.addEventListener('change', () => applyTheme(true))
 
     window.addEventListener('message', (event) => {

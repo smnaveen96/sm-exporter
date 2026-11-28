@@ -1,18 +1,20 @@
     // ===================== Google Drive upload =====================
-    // OAuth 2.0 authorization-code flow (with PKCE when WebCrypto is available), run
-    // entirely by the plugin. The OAuth client and the tokens are kept in
-    // figma.clientStorage on this machine — nothing is embedded in the source.
-    const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth'
-    const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token'
     const DRIVE_API = 'https://www.googleapis.com/drive/v3'
     const DRIVE_UPLOAD_API = 'https://www.googleapis.com/upload/drive/v3/files'
-    const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive'
-    const DEFAULT_REDIRECT_URI = DEFAULT_GOOGLE_REDIRECT_URI
-    const STORAGE_CLIENT_KEY = 'tier2-google-oauth-client'
     const STORAGE_TOKENS_KEY = 'tier2-google-tokens'   // the active account
     const STORAGE_ACCOUNTS_KEY = 'tier2-google-accounts' // every connected account
     const STORAGE_LAST_FOLDER_KEY = 'tier2-last-drive-folder' // the folder last used, so the plugin reopens there
     const MULTIPART_LIMIT = 5 * 1024 * 1024
+    // Two ways to connect a Google account: through SM exporter's OAuth Worker (OAUTH_WORKER_URL), or with the
+    // user's own Google Cloud client, run entirely by the plugin (authorization code + PKCE, the redirect pasted
+    // back in). Each account remembers which one it came from (entry.via: 'own', or nothing for the Worker),
+    // because its refresh token only works with the client that issued it.
+    const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth'
+    const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token'
+    const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive'
+    const DEFAULT_REDIRECT_URI = 'http://127.0.0.1:53682/'
+    const STORAGE_CLIENT_KEY = 'tier2-google-oauth-client' // the user's own Client ID and secret
+    const SETUP_GUIDE_URL = 'https://smnaveen96.github.io/sm-exporter/SETUP-GUIDE.html'
 
     const uploadPill = document.getElementById('upload-pill')
     // ---- Button tooltips -------------------------------------------------------------------------
@@ -122,24 +124,29 @@
     const driveOpenText = document.getElementById('drive-open-text')
     const driveCancel = document.getElementById('drive-cancel')
     const driveDrawer = document.getElementById('drive-drawer')
-    const drawerSettings = document.getElementById('drawer-settings')
     const drawerAuth = document.getElementById('drawer-auth')
-    const clientIdInput = document.getElementById('client-id')
-    const clientSecretInput = document.getElementById('client-secret')
-    const disconnectButton = document.getElementById('disconnect-button')
-    const accountCard = document.getElementById('account-card')
-    const accountKicker = document.getElementById('account-kicker')
-    const accountEmail = document.getElementById('account-email')
     const connectBlock = document.getElementById('connect-block')
     const connectButton = document.getElementById('connect-google')
-    const connectHint = document.getElementById('connect-hint')
     const authLink = document.getElementById('auth-link')
-    const authCodeInput = document.getElementById('auth-code')
-    const authContinue = document.getElementById('auth-continue')
     const authCancel = document.getElementById('auth-cancel')
-    const authEditClient = document.getElementById('auth-edit-client')
     const authError = document.getElementById('auth-error')
+    const ownClientOpen = document.getElementById('own-client-open')
+    const drawerSettings = document.getElementById('drawer-settings')
+    const setupGuideLink = document.getElementById('setup-guide-link')
+    const clientIdInput = document.getElementById('client-id')
+    const clientSecretInput = document.getElementById('client-secret')
     const settingsMsg = document.getElementById('settings-msg')
+    const clientSaveButton = document.getElementById('client-save')
+    const clientDeleteButton = document.getElementById('client-delete')
+    const ownConnectButton = document.getElementById('own-connect')
+    const ownConnectHint = document.getElementById('own-connect-hint')
+    const drawerAuthOwn = document.getElementById('drawer-auth-own')
+    const authOwnLink = document.getElementById('auth-own-link')
+    const authEditClient = document.getElementById('auth-edit-client')
+    const authCodeInput = document.getElementById('auth-code')
+    const authOwnError = document.getElementById('auth-own-error')
+    const authOwnCancel = document.getElementById('auth-own-cancel')
+    const authContinue = document.getElementById('auth-continue')
     const accountSwitch = document.getElementById('account-switch')
     const accountChip = document.getElementById('account-chip')
     const accountMenu = document.getElementById('account-menu')
@@ -152,8 +159,6 @@
     const pickerSelect = document.getElementById('picker-select')
     const pickerNew = document.getElementById('picker-new')
     const driveFolderButton = document.getElementById('drive-toggle')
-    const clientSaveButton = document.getElementById('client-save')
-    const clientDeleteButton = document.getElementById('client-delete')
     const modalEl = document.getElementById('modal')
     const modalTitle = document.getElementById('modal-title')
     const modalText = document.getElementById('modal-text')
@@ -163,13 +168,15 @@
     const TRASH_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16"/><path d="M9 7V4.5h6V7"/><path d="M6.5 7l.8 12a1.5 1.5 0 0 0 1.5 1.4h6.4a1.5 1.5 0 0 0 1.5-1.4l.8-12"/><path d="M10 11v6M14 11v6"/></svg>'
     const CHECK_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>'
 
-    let drawerMode = null            // null | 'settings' | 'auth'
-    let oauthClient = null           // { clientId, clientSecret, redirectUri }
+    let drawerMode = null            // null | 'picker' | 'auth' | 'settings' | 'auth-own' (the last three open in the account menu)
+    const MENU_MODES = ['auth', 'settings', 'auth-own']
+    let oauthClient = null           // the user's own client: { clientId, clientSecret, redirectUri }, or null
+    let pendingAuth = null           // { state, timer, resolve, reject } while waiting for the pasted code (own client)
+    let checkingClient = false       // true while the Client ID / secret is being checked with Google
+    let clientCheckRun = 0, settingsMsgTimer = 0
+    let signInWaiters = []           // a Drive call that needed an account, waiting for one to be connected either way
     let tokens = null                // { accessToken, refreshToken, expiresAt, account }
     let accounts = []                // tokens of every connected Google account; `tokens` is the active one
-    let pendingAuth = null           // { state, timer, resolve, reject } while waiting for the pasted code
-    let checkingClient = false       // true while the Client ID / secret is being checked with Google
-    let autosaveTimer = 0, autosaveRun = 0, settingsMsgTimer = 0
     const AUTH_TIMEOUT_MS = 10 * 60 * 1000
     let pendingExport = null         // { resolve, reject } while waiting for the sandbox's export-ready
     let uploadedKey = ''             // fingerprint of what the tick on the cloud button stands for
@@ -331,15 +338,43 @@
       setDriveStatus('error', text)
     }
 
-    // The bottom drawer holds only the folder picker. The client settings and the paste-the-redirect step of
-    // signing in open inside the account panel at the top.
+    // The bottom drawer holds only the folder picker; OAuth status stays in the account menu.
     function setPickingState(on) {
       document.body.classList.toggle('is-picking', on) // folds the export options away while a folder is chosen
       driveDrawer.classList.toggle('is-open', on)
     }
 
+    // The file name field shows only while frames are selected, under them. It folds open or away with the
+    // window following, measured up front the same way the drawer is (see showDrawer). The first selection
+    // the plugin hears about (on opening) just sets it, without animating.
+    let nameFieldPrimed = false
+    function setNameFieldShown(show) {
+      const body = document.body
+      const was = body.classList.contains('has-frames')
+      if (!nameFieldPrimed || was === show) {
+        nameFieldPrimed = true
+        if (was !== show) {
+          body.classList.add('no-anim')
+          body.classList.toggle('has-frames', show)
+          void body.offsetHeight
+          body.classList.remove('no-anim')
+          syncHeight()
+        }
+        return
+      }
+      const from = contentHeight()
+      body.classList.add('no-anim')
+      body.classList.toggle('has-frames', show)
+      const to = heightAtWidth(panelWidth())
+      body.classList.toggle('has-frames', was)
+      void body.offsetHeight
+      body.classList.remove('no-anim')
+      body.classList.toggle('has-frames', show)
+      animateResize(from, to, true)
+    }
+
     function showDrawer(mode) {
-      const wasInMenu = drawerMode === 'settings' || drawerMode === 'auth'
+      const wasInMenu = MENU_MODES.includes(drawerMode)
       const picking = mode === 'picker'
       const wasPicking = document.body.classList.contains('is-picking')
       drawerMode = mode
@@ -366,16 +401,9 @@
         setPickingState(picking)
         animateResize(from, to, true)
       }
-      if (mode === 'settings' || mode === 'auth') openAccountMenu(mode)
+      if (MENU_MODES.includes(mode)) openAccountMenu(mode)
       else if (wasInMenu) closeAccountMenu()
       syncHeight()
-    }
-
-    // The client baked into this file (see TEAM SETUP at the top), if any.
-    function builtInClient() {
-      const clientId = DEFAULT_GOOGLE_CLIENT_ID.trim()
-      if (!clientId) return null
-      return { clientId, clientSecret: DEFAULT_GOOGLE_CLIENT_SECRET.trim(), redirectUri: DEFAULT_GOOGLE_REDIRECT_URI.trim() || 'http://127.0.0.1:53682/', builtIn: true }
     }
 
     // The status line stays empty until something happens (progress, success or an error).
@@ -398,23 +426,39 @@
       refreshTooltip()
     }
     fileNameInput.addEventListener('input', dropStaleTick)
+    // A Drive link pasted (or typed) into the file name box goes where it was meant to: the Drive link box, or,
+    // while Drive folders is open, its search (which opens a pasted link). The name box is left as it was.
+    const DRIVE_LINK = /^\s*https?:\/\/(drive|docs)\.google\.com\//i
+    fileNameInput.addEventListener('input', () => {
+      const value = fileNameInput.value.trim()
+      if (!DRIVE_LINK.test(value)) return
+      fileNameInput.value = ''
+      dropStaleTick()
+      if (document.body.classList.contains('is-picking')) {
+        pickerSearch.value = value
+        pickerSearch.dispatchEvent(new Event('input'))
+        pickerSearch.focus()
+        flashDriveStatus('Link moved to the folder search.', 2800)
+      } else {
+        driveUrlInput.value = value
+        driveUrlInput.dispatchEvent(new Event('input'))
+        driveUrlInput.focus()
+        driveUrlInput.setSelectionRange(0, 0) // show the start of the link, not its scrolled-away end
+        driveUrlInput.scrollLeft = 0
+        flashDriveStatus('Link moved to the upload box.', 2800)
+      }
+    })
 
-    // The bottom of the settings panel: who is connected, or the way to connect.
+    // Keep the account menu and its connection actions in sync with active account state. While a Drive call
+    // is waiting for an account (signInWaiters), the actions stay usable even though an upload counts as busy.
     function refreshAccountLabel() {
       renderAccountSwitcher()
+      const blocked = busy && !signInWaiters.length
+      connectButton.disabled = blocked
+      ownClientOpen.disabled = blocked
+      connectButton.querySelector('.choice-title').textContent = accounts.length ? 'Add account' : 'Sign in with Google'
+      ownClientOpen.querySelector('.choice-title').textContent = accounts.length ? 'Add with your own Client ID' : 'Use your own Client ID'
       updateClientButtons()
-      const connected = Boolean(tokens)
-      accountCard.hidden = !connected
-      connectBlock.hidden = connected
-      if (connected) {
-        accountKicker.textContent = tokens.account ? 'Connected as' : 'Connected to'
-        accountEmail.textContent = tokens.account || 'Google Drive'
-      } else {
-        connectButton.disabled = !oauthClient || checkingClient
-        connectHint.textContent = oauthClient
-          ? 'Opens Google in your browser. Allow access, then copy the URL and paste it here.'
-          : 'Add your Client ID and secret above first.'
-      }
       syncHeight()
     }
 
@@ -424,6 +468,27 @@
       syncHeight()
     }
 
+    function setAuthError(text) {
+      authError.hidden = !text
+      authError.textContent = text || ''
+      if (text) revealMessage(authError); else syncHeight()
+    }
+
+    // The own-client sign-in step: the error under the pasted address, and Continue while it's being checked.
+    function setOwnAuthError(text) {
+      authOwnError.hidden = !text
+      authOwnError.textContent = text || ''
+      authCodeInput.classList.toggle('is-invalid', Boolean(text))
+      if (text) authCodeInput.setAttribute('aria-invalid', 'true'); else authCodeInput.removeAttribute('aria-invalid')
+      if (text) revealMessage(authOwnError); else syncHeight()
+    }
+    function setOwnAuthBusy(isBusy) {
+      authContinue.disabled = isBusy
+      authOwnCancel.disabled = isBusy
+      authContinue.textContent = isBusy ? 'Connecting…' : 'Continue'
+    }
+
+    // The message under the Client ID and secret.
     function setSettingsMessage(state, text, invalidInputs) {
       clearTimeout(settingsMsgTimer)
       settingsMsg.hidden = !text
@@ -438,55 +503,11 @@
       if (state === 'ok' && text) settingsMsgTimer = setTimeout(() => setSettingsMessage('', ''), Math.max(2400, 1500 + text.length * 45))
       if (text) revealMessage(settingsMsg); else syncHeight()
     }
-
-    function setAuthError(text) {
-      authError.hidden = !text
-      authError.textContent = text || ''
-      authCodeInput.classList.toggle('is-invalid', Boolean(text))
-      if (text) authCodeInput.setAttribute('aria-invalid', 'true'); else authCodeInput.removeAttribute('aria-invalid')
-      if (text) revealMessage(authError); else syncHeight()
-    }
-
-    function setAuthBusy(isBusy) {
-      authContinue.disabled = isBusy
-      authCancel.disabled = isBusy
-      authContinue.textContent = isBusy ? 'Connecting…' : 'Continue'
-    }
-
     function fillSettingsFields() {
       clientIdInput.value = oauthClient ? oauthClient.clientId : ''
       clientSecretInput.value = oauthClient ? oauthClient.clientSecret : ''
       setSettingsMessage('', '')
       refreshAccountLabel()
-    }
-
-    function saveTokens() {
-      if (tokens) {
-        const at = accounts.findIndex((entry) => entry === tokens || (tokens.account && entry.account === tokens.account) || (tokens.refreshToken && entry.refreshToken === tokens.refreshToken))
-        if (at >= 0) accounts[at] = tokens; else accounts.push(tokens)
-      }
-      post({ type: 'storage-set', values: { [STORAGE_TOKENS_KEY]: tokens, [STORAGE_ACCOUNTS_KEY]: accounts } })
-      refreshAccountLabel()
-    }
-
-    driveUrlInput.addEventListener('focus', () => uploadPill.classList.add('is-focused'))
-    driveUrlInput.addEventListener('blur', () => uploadPill.classList.remove('is-focused'))
-    driveUrlInput.addEventListener('input', () => {
-      if (busy || !oauthClient) return
-      if (driveStatus.classList.contains('is-error') || driveStatus.classList.contains('is-success') || !driveOpenFolder.hidden) setDriveStatus('', idleStatusText())
-    })
-    driveForm.addEventListener('submit', (event) => {
-      event.preventDefault()
-      if (!driveUrlInput.value.trim()) { nudgeFolderButton(); return }
-      void startDriveUpload()
-    })
-
-    function nudgeFolderButton() {
-      driveFolderButton.classList.remove('is-nudge')
-      void driveFolderButton.offsetWidth
-      driveFolderButton.classList.add('is-nudge')
-      flashDriveStatus('Paste a folder link, or open Drive folders', 2800)
-      setTimeout(() => driveFolderButton.classList.remove('is-nudge'), 700)
     }
 
     const CLIENT_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]*\.apps\.googleusercontent\.com$/i
@@ -512,4 +533,33 @@
         console.warn(LOG, 'Could not verify the OAuth client', error)
         return { status: 'offline' }
       }
+    }
+
+    function saveTokens() {
+      if (tokens) {
+        const at = accounts.findIndex((entry) => entry === tokens || (tokens.account && entry.account === tokens.account) || (tokens.refreshToken && entry.refreshToken === tokens.refreshToken))
+        if (at >= 0) accounts[at] = tokens; else accounts.push(tokens)
+      }
+      post({ type: 'storage-set', values: { [STORAGE_TOKENS_KEY]: tokens, [STORAGE_ACCOUNTS_KEY]: accounts } })
+      refreshAccountLabel()
+    }
+
+    driveUrlInput.addEventListener('focus', () => uploadPill.classList.add('is-focused'))
+    driveUrlInput.addEventListener('blur', () => uploadPill.classList.remove('is-focused'))
+    driveUrlInput.addEventListener('input', () => {
+      if (busy) return
+      if (driveStatus.classList.contains('is-error') || driveStatus.classList.contains('is-success') || !driveOpenFolder.hidden) setDriveStatus('', idleStatusText())
+    })
+    driveForm.addEventListener('submit', (event) => {
+      event.preventDefault()
+      if (!driveUrlInput.value.trim()) { nudgeFolderButton(); return }
+      void startDriveUpload()
+    })
+
+    function nudgeFolderButton() {
+      driveFolderButton.classList.remove('is-nudge')
+      void driveFolderButton.offsetWidth
+      driveFolderButton.classList.add('is-nudge')
+      flashDriveStatus('Paste a folder link, or open Drive folders', 2800)
+      setTimeout(() => driveFolderButton.classList.remove('is-nudge'), 700)
     }

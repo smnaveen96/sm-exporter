@@ -5,7 +5,6 @@
     // under :root and :root[data-theme="dark"].
     const themeToggle = document.getElementById('theme-toggle')
     let themeChoice = 'auto' // 'auto' | 'light' | 'dark'
-    let themeFadeTimer = 0
     const darkQuery = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null
 
     function figmaTheme() {
@@ -15,18 +14,35 @@
       return darkQuery && darkQuery.matches ? 'dark' : 'light' // outside Figma
     }
     function shownTheme() { return themeChoice === 'auto' ? figmaTheme() : themeChoice }
+    // The switch cross-fades the whole window as one picture (a view transition), instead of fading every
+    // element's colours on its own: that was hundreds of separate fades at once, which lagged, and the
+    // gradients (which can't fade) changed straight away while flat colours were still on their way, so
+    // grey patches showed mid-switch. Where view transitions aren't available, the theme just switches.
+    let pendingTheme = '' // the theme a cross-fade is about to put in place
     function applyTheme(fade) {
       const root = document.documentElement
       const theme = shownTheme()
-      if (root.dataset.theme === theme) return
-      if (fade) {
-        root.classList.add('theme-fading')
-        clearTimeout(themeFadeTimer)
-        themeFadeTimer = setTimeout(() => root.classList.remove('theme-fading'), 300)
+      if ((pendingTheme || root.dataset.theme) === theme) return
+      pendingTheme = theme
+      // Elements' own colour transitions (hover fades and the like) stay off while the theme swaps, so the new
+      // theme lands in one go under the cross-fade; only the switch keeps its motion.
+      root.classList.add('theme-switching')
+      const settle = () => requestAnimationFrame(() => requestAnimationFrame(() => root.classList.remove('theme-switching')))
+      const swap = () => {
+        pendingTheme = ''
+        root.dataset.theme = theme
+        themeToggle.setAttribute('aria-checked', String(theme === 'dark'))
+        themeToggle.title = theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'
       }
-      root.dataset.theme = theme
-      themeToggle.setAttribute('aria-checked', String(theme === 'dark'))
-      themeToggle.title = theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'
+      const still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      if (fade && !still && document.startViewTransition && document.visibilityState === 'visible') {
+        try {
+          document.startViewTransition(swap).finished.finally(settle)
+          return
+        } catch (error) { /* fall through */ }
+      }
+      swap()
+      settle()
     }
     applyTheme(false)
 
@@ -36,8 +52,16 @@
       applyTheme(true)
       post({ type: 'theme-set', theme: themeChoice })
     })
-    // Figma's theme changing while the plugin is open (only shows while following it).
-    new MutationObserver(() => applyTheme(true)).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
+    // Figma's theme changing while the plugin is open (only shows while following it). Other class changes on
+    // <html> (theme-switching, above) are ignored: reacting to those started a second switch before the first
+    // had landed, over and over.
+    let lastFigmaTheme = figmaTheme()
+    new MutationObserver(() => {
+      const now = figmaTheme()
+      if (now === lastFigmaTheme) return
+      lastFigmaTheme = now
+      applyTheme(true)
+    }).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
     if (darkQuery && darkQuery.addEventListener) darkQuery.addEventListener('change', () => applyTheme(true))
 
     window.addEventListener('message', (event) => {

@@ -308,6 +308,14 @@
       const note = document.createElement('div')
       note.className = `picker-note${loading ? ' is-loading' : ''}`
       note.textContent = text
+      if (loading) {
+        // Three dots in a soft wave (the styles animate them); fixed width, so the word never shifts.
+        const dots = document.createElement('span')
+        dots.className = 'loading-dots'
+        dots.setAttribute('aria-hidden', 'true')
+        dots.append(document.createElement('i'), document.createElement('i'), document.createElement('i'))
+        note.append(dots)
+      }
       pickerList.textContent = ''
       pickerList.append(note)
       pickerItems = []

@@ -3,7 +3,7 @@
 A Figma plugin for exporting social-media creatives. Select frames, pick formats (JPEG, PNG, WebP, SVG, PDF),
 then download them or upload them straight to a Google Drive folder.
 
-**Open source** (MIT). No data is collected. Files go only to your own Google Drive, and your Google credentials
+**Open source** (MIT). No data is collected. Files go only to your own Google Drive. Connected-account tokens
 are stored only on your computer, inside Figma.
 
 ## Install
@@ -14,22 +14,21 @@ are stored only on your computer, inside Figma.
 
 ## Upload to Google Drive (one-time setup)
 
-Downloading works right away. Uploading to Drive needs a one-time setup with your own Google client
-(about 5 minutes, free): see **[SETUP-GUIDE.md](SETUP-GUIDE.md)**.
+Downloading works right away. To upload, paste a Drive folder link and connect a Google account when prompted.
+There are two ways to connect, both explained in **[SETUP-GUIDE.md](SETUP-GUIDE.md)**:
 
-**Sharing with a team:** one person follows the guide once, then either sends the Client ID and secret to teammates
-privately, or bakes them into `ui.html` and shares that file privately inside the team (guide, Part 3).
-Never post a file containing your secret publicly.
+- **Sign in with Google:** no setup. Sign-in and token refresh run through the SM exporter OAuth service.
+- **Use your own Client ID:** add a Client ID and secret from your own Google Cloud project (about 10 minutes, once).
+  Sign-in then runs between the plugin and Google only.
 
 ## Files
 
 | File | Purpose |
 | --- | --- |
-| `manifest.json` | Plugin manifest (network access limited to Google APIs) |
+| `manifest.json` | Plugin manifest (network access limited to Google APIs and the SM exporter OAuth service) |
 | `code.ts` / `code.js` | Plugin sandbox: frame selection, rendering, settings storage, canvas drag-drop (`npm install` once, then `npm run build` compiles `.ts` to `.js`) |
 | `ui.html` | Panel UI — **a built file**, not edited directly; see "Editing the UI" below |
-| `oauth-callback.html` | Optional hosted redirect page for Google sign-in |
-| `SETUP-GUIDE.md` / `.html` | How to create your Google client |
+| `SETUP-GUIDE.md` / `.html` | Connecting Google Drive and managing accounts |
 | `src/`, `build.js` | The editable source `ui.html` is built from — see "Editing the UI" below |
 | `swipe-gesture.js` / `swipe-gesture.test.js` | The trackpad swipe gesture logic, as its own tested module |
 
@@ -46,13 +45,13 @@ src/
   styles.css       all CSS
   vendor/          pdf-lib, pdf.js (+ its worker), fflate — vendored as-is, never hand-edited
   app/             the plugin's own UI code, split by feature:
-    01-setup-and-utils.js               team/OAuth config, shared constants, export-driving helpers
+    01-setup-and-utils.js               shared constants, export-driving helpers
     02a-png-compression.js              lossless PNG optimization + palette quantization
     02b-vector-pdf.js                   vector PDF merge/dedup + path-data rounding
     02c-jpeg-encoder.js                 the baseline JPEG encoder
     03a-drive-upload.js                 Google Drive upload + button tooltips
-    03b-client-settings.js              client settings + the confirmation pop-up
-    03c-oauth-and-transfers.js          "Continue with Google" sign-in, cancel-upload, cancel-download
+    03b-client-settings.js              confirmation pop-up
+    03c-oauth-and-transfers.js          Worker-based sign-in, token refresh, cancel-upload, cancel-download
     03d-account-ui.js                   profile photos + the account switcher
     04a-picker-state-and-listing.js     picker state, file-type rules, the Drive listing
     04b-picker-browse-ui.js             breadcrumbs, selection, the ⋮ context menu
@@ -75,7 +74,7 @@ what you see in each source file is exactly what ends up in the page.
 
 ## Contributing
 
-Issues and pull requests are welcome. Please never include a Client ID or secret in a pull request.
+Issues and pull requests are welcome. Please never include credentials or account tokens in a pull request.
 
 ## License
 

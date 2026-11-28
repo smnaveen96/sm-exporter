@@ -94,7 +94,7 @@
       pickerSelect.classList.add('is-busy') // the same working sheen as Export while it uploads
       try {
         const id = await resolveFolderId(target.id)
-        saveLastFolder(id, target.name)
+        saveLastFolder(id, target.name, pickerTab)
         if (driveSubmit.disabled) { // no frames or formats yet: remember the folder in the link box instead
           showDrawer(null)
           driveUrlInput.value = `https://drive.google.com/drive/folders/${id}`

@@ -1,151 +1,85 @@
-    // ---- Continue with Google (from the settings panel) -------------------------------------------
-    // The same sign-in an upload would trigger, started on purpose. Afterwards the settings panel
-    // comes back so the connected account is right there.
-    async function connectFromSettings() {
-      busy = true
-      updateButton()
-      let justConnected = false
+    // ---- Connecting a Google account: the quick way (OAuth Worker) or with your own client ----------------
+    // connectWith runs one sign-in from the account menu. Usually it's on its own (the menu's buttons); when an
+    // upload or the picker needed an account first, it's answering that call (signInWaiters): it then leaves
+    // `busy` to the upload, backing out of one way returns to the choice, and success hands the account over.
+    async function connectWith(method) {
+      const answering = signInWaiters.length > 0
+      if (busy && !answering) return
+      if (method === 'own' && !oauthClient) { openOwnClientSettings(); return }
+      if (!answering) { busy = true; updateButton() }
+      refreshAccountLabel()
+      let connected = false
       try {
-        await interactiveSignIn()
-        justConnected = true
-        setDriveStatus('', '')
+        const data = method === 'own' ? await ownClientGrant() : await workerGrant()
+        await adoptGrant(data, method === 'own' ? 'own' : '')
+        connected = true
+        if (!answering) setDriveStatus('', '')
       } catch (error) {
         if (error && error.cancelled) {
-          setDriveStatus('', error.userMessage || '')
-        } else if (error && error.oauthError === 'invalid_client') {
-          fillSettingsFields()
-          showDrawer('settings')
-          setSettingsMessage('error', 'Google rejected this Client ID or secret. Check both for typos.', [clientIdInput, clientSecretInput])
-          setDriveStatus('', '')
+          // Backing out of one way goes back to the choice of ways (or, from "Edit Client ID & secret", to the fields).
+          if (error.openSettings) openOwnClientSettings()
+          else { drawerMode = null; openAccountMenu('list') }
+          setDriveStatus(signInWaiters.length ? 'busy' : '', signInWaiters.length ? CHOOSE_SIGN_IN_TEXT : (error.userMessage || ''))
+        } else if (method === 'own' && error && error.oauthError === 'invalid_client') {
+          // Google doesn't accept the saved client: straight to the fields to fix it.
+          openOwnClientSettings('Google rejected this Client ID or secret. Check both for typos, then Save.')
+          if (!signInWaiters.length) setDriveStatus('', '')
         } else {
           console.error(LOG, 'Google sign-in failed', error)
-          failDrive(friendlyDriveMessage(error))
+          showDrawer(null)
+          if (signInWaiters.length) settleSignInWaiters(error)
+          else failDrive(friendlyDriveMessage(error))
         }
       } finally {
-        if (pendingAuth) { clearTimeout(pendingAuth.timer); pendingAuth = null }
-        setAuthBusy(false)
-        busy = false
-        updateButton()
-        if (justConnected && tokens) {
-          // Signed in: fold the panel away and flash who is connected for a moment, instead of leaving the form open.
+        if (!answering) { busy = false; updateButton() }
+        refreshAccountLabel()
+        if (connected && tokens) {
           showDrawer(null)
-          flashDriveStatus(tokens.account ? `Connected as ${tokens.account}` : 'Connected to Google Drive', 3500)
+          if (signInWaiters.length) settleSignInWaiters(null)
+          else flashDriveStatus(tokens.account ? `Connected as ${tokens.account}` : 'Connected to Google Drive', 3500)
         }
       }
     }
 
-    connectButton.addEventListener('click', async () => {
-      if (busy || checkingClient || tokens) return
-      const missingId = !stripQuotes(clientIdInput.value)
-      const missingSecret = !stripQuotes(clientSecretInput.value)
-      if (missingId || missingSecret) {
-        const what = missingId && missingSecret ? 'Client ID and Client secret' : missingId ? 'Client ID' : 'Client secret'
-        setSettingsMessage('error', `Enter your ${what} to continue.`, [missingId && clientIdInput, missingSecret && clientSecretInput])
-        ;(missingId ? clientIdInput : clientSecretInput).focus()
-        return
-      }
-      const ready = await autosaveClient(true) // anything still being typed is checked and saved first
-      if (!ready || !oauthClient || busy || tokens) return
-      await connectFromSettings()
-    })
-
-    disconnectButton.addEventListener('click', () => { void confirmRemoveAccount(tokens) })
-
-    authContinue.addEventListener('click', submitAuthCode)
-    authCodeInput.addEventListener('keydown', (event) => {
-      if (event.key === 'Enter') { event.preventDefault(); submitAuthCode() }
-    })
-    authCodeInput.addEventListener('input', () => setAuthError(''))
-    authCancel.addEventListener('click', () => cancelSignIn())
-    authEditClient.addEventListener('click', (event) => {
-      event.preventDefault()
-      if (pendingAuth) cancelSignIn({ openSettings: true })
-    })
-
-    // Backing out of sign-in is a choice, not a failure: close the panel and show no error.
-    function cancelSignIn(options) {
-      const openSettings = Boolean(options && options.openSettings)
-      const waiting = pendingAuth
-      if (!waiting) { if (drawerMode === 'auth' && !authCancel.disabled) showDrawer(null); return }
-      pendingAuth = null
-      setAuthError('')
-      showDrawer(null)
-      const error = new DriveError('Sign-in cancelled by user', openSettings ? '' : 'Sign-in cancelled.')
-      error.cancelled = true
-      waiting.reject(error)
-      if (openSettings) {
-        fillSettingsFields()
-        showDrawer('settings')
-        setTimeout(() => clientIdInput.focus(), 360)
-      }
-    }
-
-    // Resolves with the pasted code. Gives up after AUTH_TIMEOUT_MS so the buttons never stay locked.
-    function waitForAuthCode(state) {
+    // A Drive call found no account (or its sign-in ran out and couldn't be renewed): open the account menu
+    // on the two ways to connect, and carry on once either one has connected an account. Closing the menu
+    // without connecting cancels the call.
+    const CHOOSE_SIGN_IN_TEXT = 'Choose how to connect Google Drive…'
+    function interactiveSignIn() {
       return new Promise((resolve, reject) => {
-        const timer = setTimeout(() => {
-          if (!pendingAuth) return
-          pendingAuth = null
-          setAuthError('')
-          showDrawer(null)
-          reject(new DriveError('Sign-in timed out', 'Sign-in timed out. Please try again.'))
-        }, AUTH_TIMEOUT_MS)
-        pendingAuth = {
-          state,
-          timer,
-          resolve: (value) => { clearTimeout(timer); resolve(value) },
-          reject: (error) => { clearTimeout(timer); reject(error) },
-        }
+        signInWaiters.push({ resolve, reject })
+        if (!MENU_MODES.includes(drawerMode)) openAccountMenu('list')
+        setDriveStatus('busy', CHOOSE_SIGN_IN_TEXT)
+        refreshAccountLabel()
       })
     }
-
-    function submitAuthCode() {
-      if (!pendingAuth) return
-      const parsed = extractAuthCode(authCodeInput.value, pendingAuth.state)
-      if (parsed.error) {
-        setAuthError(parsed.error)
-        authCodeInput.focus()
-        return
-      }
-      setAuthError('')
-      const waiting = pendingAuth
-      pendingAuth = null
-      waiting.resolve(parsed.code)
+    function settleSignInWaiters(error) {
+      const waiting = signInWaiters
+      signInWaiters = []
+      for (const waiter of waiting) { if (error) waiter.reject(error); else waiter.resolve() }
+      refreshAccountLabel()
+    }
+    // The menu was closed while a Drive call was waiting for an account.
+    function abandonSignInChoice() {
+      if (!signInWaiters.length) return
+      const cancelled = new DriveError('Sign-in cancelled', 'Sign-in cancelled.')
+      cancelled.cancelled = true
+      settleSignInWaiters(cancelled)
     }
 
-    // Accepts the bare authorization code or the full redirect URL (…?code=…&state=…), which is
-    // what the browser address bar shows after consent. Returns { code } or { error } in plain words.
-    function extractAuthCode(rawValue, expectedState) {
-      const value = stripQuotes(rawValue)
-      if (!value) return { error: 'Paste the address from the browser (or the code) to continue.' }
-      if (/^https?:\/\//i.test(value) || /(^|[?&#])(code|error)=/.test(value)) {
-        let url
-        try {
-          url = new URL(value.includes('://') ? value : `http://x/?${value.replace(/^[?#]/, '')}`)
-        } catch {
-          return { error: 'That address couldn’t be read. Copy it again from the browser, or paste just the code.' }
-        }
-        if (/(^|\.)accounts\.google\.com$/i.test(url.hostname)) return { error: 'That’s the sign-in page. Approve access first, then copy the address of the page that opens next.' }
-        const params = new URLSearchParams(url.search || url.hash.replace(/^#/, '?'))
-        const problem = params.get('error')
-        if (problem) {
-          return { error: problem === 'access_denied'
-            ? 'Access wasn’t allowed in Google. Open the sign-in page again and approve it.'
-            : `Google reported “${problem}”. Open the sign-in page again and retry.` }
-        }
-        const code = params.get('code')
-        if (!code) return { error: 'That address has no code in it. Approve access first, then copy the address of the page that opens next.' }
-        const state = params.get('state')
-        if (state && expectedState && state !== expectedState) return { error: 'That address is from a different sign-in attempt. Use the link above to sign in again.' }
-        return { code }
-      }
-      // A bare code: tidy common copy artefacts (%2F, trailing &scope=…) and check it looks like one.
-      let code = value.split(/[&\s]/)[0]
-      try { code = decodeURIComponent(code) } catch { /* keep as pasted */ }
-      if (!/^[A-Za-z0-9_\-/.~]{20,}$/.test(code)) {
-        return { error: 'That doesn’t look like a Google code. After approving, copy the full address from the browser bar.' }
-      }
-      return { code }
+    connectButton.addEventListener('click', () => { void connectWith('worker') })
+    authCancel.addEventListener('click', () => cancelSignIn())
+
+    let oauthCancelRequested = false
+    let oauthRequestController = null
+    let oauthWake = null // ends the wait between polls early, so Cancel takes effect at once
+    function cancelSignIn() {
+      oauthCancelRequested = true
+      if (oauthRequestController) oauthRequestController.abort()
+      if (oauthWake) oauthWake()
+      setAuthError('')
+      drawerMode = null
+      openAccountMenu('list')
     }
 
     driveOpenFolder.addEventListener('click', (event) => {
@@ -168,112 +102,141 @@
       return null
     }
 
-    function randomString(length) {
-      const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'
-      const bytes = new Uint8Array(length)
-      crypto.getRandomValues(bytes)
-      let output = ''
-      for (const byte of bytes) output += alphabet[byte % alphabet.length]
-      return output
-    }
-
-    async function pkceChallenge(verifier) {
-      if (!(crypto.subtle && crypto.subtle.digest)) return null
+    async function workerRequest(path, options = {}) {
+      const response = await fetch(`${OAUTH_WORKER_URL}${path}`, options)
+      let data
       try {
-        const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier))
-        const base64 = btoa(String.fromCharCode(...new Uint8Array(digest)))
-        return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
-      } catch (error) {
-        console.warn(LOG, 'PKCE unavailable, continuing without it', error)
-        return null
+        data = await response.json()
+      } catch {
+        throw new DriveError('OAuth service returned an invalid response', 'Could not connect to Google. Please try again.', response.status)
       }
-    }
-
-    async function tokenRequest(fields) {
-      const response = await fetch(GOOGLE_TOKEN_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams(fields).toString(),
-      })
-      const data = await response.json().catch(() => ({}))
+      if (!data || typeof data !== 'object' || Array.isArray(data)) {
+        throw new DriveError('OAuth service returned an invalid response', 'Could not connect to Google. Please try again.', response.status)
+      }
       if (!response.ok) {
-        const failure = new DriveError(
-          `Token request failed (${response.status}): ${data.error || ''} ${data.error_description || ''}`.trim(),
-          `Google sign-in failed (${data.error || 'HTTP ' + response.status}${data.error === 'invalid_client' ? ': check Client ID and secret' : data.error === 'invalid_grant' ? ': code used or expired, sign in again' : data.error === 'redirect_uri_mismatch' ? ': redirect address differs' : ''}).`,
-          response.status,
-        )
-        failure.oauthError = data.error || ''
-        throw failure
+        const detail = data.message || data.error || `OAuth service error (${response.status})`
+        const error = new DriveError(detail, data.message || 'Could not connect to Google. Please try again.', response.status)
+        error.oauthError = data.error || ''
+        throw error
       }
       return data
     }
 
-    async function interactiveSignIn() {
-      if (!oauthClient) throw new DriveError('No OAuth client configured', 'Add your Google OAuth client to continue.')
-      const state = randomString(24)
-      const verifier = randomString(64)
-      const challenge = await pkceChallenge(verifier)
-      const params = new URLSearchParams({
-        client_id: oauthClient.clientId,
-        redirect_uri: oauthClient.redirectUri,
-        response_type: 'code',
-        scope: DRIVE_SCOPE,
-        access_type: 'offline',
-        prompt: 'consent select_account',
-        state,
-      })
-      if (challenge) {
-        params.set('code_challenge', challenge)
-        params.set('code_challenge_method', 'S256')
-      }
-      const url = `${GOOGLE_AUTH_URL}?${params.toString()}`
-      authLink.dataset.url = url
-      authLink.href = url
-      console.log(LOG, 'Opening Google sign-in', challenge ? '(PKCE S256)' : '(no PKCE)')
-      post({ type: 'open-url', url })
-      authCodeInput.value = ''
+    // Signs in through the OAuth Worker. Returns the token response; adoptGrant turns it into an account.
+    async function workerGrant() {
+      oauthCancelRequested = false
       setAuthError('')
-      setAuthBusy(false)
       showDrawer('auth')
-      setDriveStatus('busy', 'Waiting for Google sign-in...')
-      setTimeout(() => authCodeInput.focus(), 360)
-      let data = null
-      while (!data) {
-        const code = await waitForAuthCode(state)
-        const fields = {
-          code,
-          client_id: oauthClient.clientId,
-          client_secret: oauthClient.clientSecret,
-          redirect_uri: oauthClient.redirectUri,
-          grant_type: 'authorization_code',
-        }
-        if (challenge) fields.code_verifier = verifier
-        setAuthBusy(true)
+      setDriveStatus('busy', 'Starting secure Google sign-in…')
+      let transaction
+      let data
+      try {
+        oauthRequestController = new AbortController()
         try {
-          data = await tokenRequest(fields)
+          transaction = await workerRequest('/oauth/init', { method: 'POST', signal: oauthRequestController.signal })
         } catch (error) {
-          setAuthBusy(false)
-          // A bad or used code, or a dropped connection: keep the panel open so it can be fixed in place.
-          if (error instanceof DriveError && error.oauthError === 'invalid_grant') {
-            setAuthError('Google didn’t accept that code. It may be incomplete, already used or expired. Copy the address again, or open the sign-in page again.')
-          } else if (error instanceof TypeError) {
-            setAuthError('Couldn’t reach Google. Check your connection, then press Continue.')
-          } else {
-            throw error
+          if (oauthCancelRequested) {
+            const cancelled = new DriveError('Sign-in cancelled', 'Sign-in cancelled.')
+            cancelled.cancelled = true
+            throw cancelled
           }
-          authCodeInput.focus()
-          authCodeInput.select()
+          throw error
+        } finally {
+          oauthRequestController = null
         }
+        if (oauthCancelRequested) {
+          const cancelled = new DriveError('Sign-in cancelled', 'Sign-in cancelled.')
+          cancelled.cancelled = true
+          throw cancelled
+        }
+        if (!transaction.writeKey || !transaction.readKey || !transaction.startUrl) {
+          throw new DriveError('OAuth service returned an incomplete session', 'Could not start Google sign-in. Please try again.')
+        }
+        const startUrl = new URL(transaction.startUrl)
+        if (startUrl.protocol !== 'https:') {
+          throw new DriveError('OAuth service returned an insecure sign-in URL', 'Could not start Google sign-in. Please try again.')
+        }
+        authLink.dataset.url = startUrl.href
+        authLink.href = startUrl.href
+        post({ type: 'open-url', url: startUrl.href })
+        setDriveStatus('busy', 'Waiting for Google sign-in…')
+        const deadline = Date.now() + AUTH_TIMEOUT_MS
+        while (Date.now() < deadline) {
+          if (oauthCancelRequested) {
+            const cancelled = new DriveError('Sign-in cancelled', 'Sign-in cancelled.')
+            cancelled.cancelled = true
+            throw cancelled
+          }
+          await new Promise((resolve) => { oauthWake = resolve; setTimeout(resolve, 1800) })
+          oauthWake = null
+          if (oauthCancelRequested) {
+            const cancelled = new DriveError('Sign-in cancelled', 'Sign-in cancelled.')
+            cancelled.cancelled = true
+            throw cancelled
+          }
+          oauthRequestController = new AbortController()
+          try {
+            data = await workerRequest(`/oauth/poll?read=${encodeURIComponent(transaction.readKey)}`, { signal: oauthRequestController.signal })
+          } catch (error) {
+            if (oauthCancelRequested) {
+              const cancelled = new DriveError('Sign-in cancelled', 'Sign-in cancelled.')
+              cancelled.cancelled = true
+              throw cancelled
+            }
+            throw error
+          } finally {
+            oauthRequestController = null
+          }
+          if (data.status === 'complete') break
+          if (data.status === 'cancelled' || data.status === 'canceled') {
+            const cancelled = new DriveError('Google sign-in was cancelled', 'Google sign-in was cancelled.')
+            cancelled.cancelled = true
+            throw cancelled
+          }
+          if (data.status === 'denied') {
+            throw new DriveError(data.message || 'Google access was denied', data.message || 'Google access was denied. Please try again.')
+          }
+          if (data.status === 'failed' || data.status === 'expired') {
+            throw new DriveError(data.message || 'Google sign-in expired', data.message || 'Google sign-in expired. Please try again.')
+          }
+          if (data.status === 'error') {
+            throw new DriveError(data.message || 'Google sign-in failed', data.message || 'Google sign-in failed. Please try again.')
+          }
+          if (!data.status) {
+            throw new DriveError(`Unexpected OAuth status: ${data.status || 'missing'}`, 'Google sign-in returned an unexpected response. Please try again.')
+          }
+          data = null
+        }
+        if (!data || data.status !== 'complete') {
+          throw new DriveError('Google sign-in timed out', 'Google sign-in timed out. Please try again.')
+        }
+        if (!data.access_token) {
+          throw new DriveError('OAuth response did not contain an access token', 'Google sign-in did not return an access token. Please try again.')
+        }
+      } catch (error) {
+        if (oauthCancelRequested && !(error && error.cancelled)) {
+          const cancelled = new DriveError('Sign-in cancelled', 'Sign-in cancelled.')
+          cancelled.cancelled = true
+          throw cancelled
+        }
+        if (error && !error.cancelled) setAuthError(friendlyDriveMessage(error))
+        throw error
       }
-      setAuthBusy(false)
+      return data
+    }
+
+    // A finished sign-in, either way, becomes the active account. via: 'own' for your own client, '' for the Worker.
+    async function adoptGrant(data, via) {
+      if (!data || !data.access_token) throw new DriveError('OAuth response did not contain an access token', 'Google sign-in did not return an access token. Please try again.')
       showDrawer(null)
-      setDriveStatus('busy', 'Connecting to Google Drive...')
+      setDriveStatus('busy', 'Connecting to Google Drive…')
       tokens = {
         accessToken: data.access_token,
         refreshToken: data.refresh_token || null,
         expiresAt: Date.now() + (Number(data.expires_in) || 3600) * 1000,
         account: null,
       }
+      if (via) tokens.via = via
       try {
         const about = await fetch(`${DRIVE_API}/about?fields=user(emailAddress,photoLink)`, { headers: { Authorization: `Bearer ${tokens.accessToken}` } })
         if (about.ok) {
@@ -286,16 +249,17 @@
       }
       const prior = accounts.find((entry) => entry !== tokens && tokens.account && entry.account === tokens.account)
       if (prior) { // same account signing in again: replace its entry
-        if (!tokens.refreshToken) tokens.refreshToken = prior.refreshToken
+        // Its old refresh token only helps if it came from the same client.
+        if (!tokens.refreshToken && (prior.via || '') === (tokens.via || '')) tokens.refreshToken = prior.refreshToken
         accounts = accounts.filter((entry) => entry !== prior)
       }
       saveTokens()
-      console.log(LOG, 'Connected to Google Drive', tokens.account || '')
+      console.log(LOG, 'Connected to Google Drive', via === 'own' ? 'with your own client' : 'through the OAuth Worker', tokens.account || '')
     }
 
     // One refresh at a time per account: the picker fires its folder and file listings together, and a
     // 401 on both used to start two refreshes. The result is written to the account object the refresh
-    // was started for — `tokens` can point at a different account by the time Google answers (the
+    // was started for — `tokens` can point at a different account by the time the Worker answers (the
     // person switched accounts meanwhile), and writing there would have handed account A's new token to B.
     let refreshInFlight = null // { account, promise }
     function refreshAccessToken() {
@@ -304,12 +268,7 @@
       if (refreshInFlight && refreshInFlight.account === account) return refreshInFlight.promise
       const promise = (async () => {
         try {
-          const data = await tokenRequest({
-            refresh_token: account.refreshToken,
-            client_id: oauthClient.clientId,
-            client_secret: oauthClient.clientSecret,
-            grant_type: 'refresh_token',
-          })
+          const data = await refreshGrant(account)
           Object.assign(account, {
             accessToken: data.access_token,
             expiresAt: Date.now() + (Number(data.expires_in) || 3600) * 1000,
@@ -324,8 +283,24 @@
       return promise
     }
 
+    // A new access token for this account, from whichever client issued it.
+    async function refreshGrant(entry) {
+      let data
+      if (entry.via === 'own') {
+        if (!oauthClient) throw new DriveError('No OAuth client for this account', 'Add your Client ID and secret again to use this account.', 400)
+        data = await tokenRequest({ refresh_token: entry.refreshToken, client_id: oauthClient.clientId, client_secret: oauthClient.clientSecret, grant_type: 'refresh_token' })
+      } else {
+        data = await workerRequest('/oauth/refresh', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refreshToken: entry.refreshToken }),
+        })
+      }
+      if (!data.access_token) throw new DriveError('OAuth refresh response did not contain an access token', 'Google Drive needs to reconnect. Please try again.')
+      return data
+    }
+
     async function ensureAccessToken(forceRefresh) {
-      if (!oauthClient) throw new DriveError('No OAuth client configured', 'Add your Google OAuth client to continue.')
       if (tokens && tokens.accessToken && !forceRefresh && Date.now() < tokens.expiresAt - 60000) return tokens.accessToken
       if (tokens && tokens.refreshToken) {
         try {
@@ -346,11 +321,15 @@
       // files together). They all wait on one sign-in instead of each opening its own browser tab and
       // poll loop — the extra loops never completed, which left the picker on "Loading…" for minutes.
       if (!signInInFlight) {
-        signInInFlight = interactiveSignIn().catch((error) => {
-          // A sign-in started by a picker/download/share call has no caller resetting the status line
-          // (connectGoogleAccount and the upload flow do their own), so the spinner stayed on
-          // "Waiting for Google sign-in…" after Cancel. An upload in progress keeps its own line.
-          if (!busy) setDriveStatus('', error && error.cancelled ? 'Sign-in cancelled.' : idleStatusText())
+        signInInFlight = interactiveSignIn().then(() => {
+          if (!busy) setDriveStatus('', idleStatusText()) // the "Choose how to connect…" line is done with
+        }, (error) => {
+          // A sign-in started by a picker/download/share call has no caller resetting the status line (the
+          // upload flow does its own), so the spinner stayed on after Cancel. An upload in progress keeps its own line.
+          if (!busy) {
+            if (error && error.cancelled) setDriveStatus('', 'Sign-in cancelled.')
+            else failDrive(friendlyDriveMessage(error))
+          }
           throw error
         }).finally(() => { signInInFlight = null })
       }
@@ -558,19 +537,13 @@
         driveUrlInput.focus()
         return
       }
-      if (!oauthClient) {
-        fillSettingsFields()
-        showDrawer('settings')
-        failDrive('Add your Google OAuth client to continue.')
-        return
-      }
       busy = true
       activeDestination = 'drive'
       uploadRun = { cancelled: false, controller: new AbortController(), uploaded: 0, total: 0 }
       const signature = uploadSignature() // what this upload is made of
       hideTooltip()
       updateButton()
-      setButtonState('', 'EXPORT')
+      setButtonState('', 'Export')
       try {
         setDriveStatus('busy', 'Connecting to Google Drive...')
         await ensureAccessToken()
@@ -613,12 +586,6 @@
           setDriveStatus('', uploadCancelledMessage(), uploadRun.uploaded ? uploadRun.folderUrl : '')
         } else if (error && error.cancelled) {
           setDriveStatus('', error.userMessage || '') // cancelling is a choice, not an error
-        } else if (error && error.oauthError === 'invalid_client') {
-          // Google doesn’t accept the saved client: take the user straight to the fields to fix it.
-          fillSettingsFields()
-          showDrawer('settings')
-          failDrive('Google rejected the Client ID or secret.')
-          setSettingsMessage('error', 'Google rejected this Client ID or secret. Check both for typos, then Save.', [clientIdInput, clientSecretInput])
         } else {
           failDrive(friendlyDriveMessage(error))
         }
@@ -626,12 +593,10 @@
         pendingExport = null
         showUploadCancel(false)
         uploadRun = null
-        if (pendingAuth) { clearTimeout(pendingAuth.timer); pendingAuth = null }
-        setAuthBusy(false)
-        if (drawerMode === 'auth') showDrawer(null) // never leave the sign-in panel stranded open
+        if (MENU_MODES.includes(drawerMode)) showDrawer(null) // never leave a sign-in panel stranded open
         busy = false
         activeDestination = 'download'
-        setButtonState('', 'EXPORT') // the EXPORT button never keeps a busy look after an upload
+        setButtonState('', 'Export') // the EXPORT button never keeps a busy look after an upload
         updateButton()
         setTimeout(() => uploadPill.classList.remove('is-error'), 1800) // the tick stays: see dropStaleTick
       }
