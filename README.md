@@ -47,6 +47,7 @@ You can connect accounts both ways at once. Each account keeps renewing its sign
 | `SETUP-GUIDE.md` / `.html` | Connecting Google Drive (both ways), sharing with a team, and fixing sign-in problems |
 | `src/`, `build.js` | The editable source `ui.html` is built from; see "Editing the UI" below |
 | `swipe-gesture.js` / `swipe-gesture.test.js` | The trackpad swipe gesture logic, as its own tested module |
+| `Assets/` | The SM exporter app logo (512×512) and icons (128×128, black-on-white and white-on-black) |
 
 ## Editing the UI (`ui.html`)
 
