@@ -1,4 +1,4 @@
-# SM exporter
+# SM exporter 3.0
 
 A Figma plugin for exporting social-media creatives. Select frames, pick formats (JPEG, PNG, WebP, SVG, PDF),
 then download them or upload them straight to a Google Drive folder.
