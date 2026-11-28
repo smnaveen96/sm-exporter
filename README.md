@@ -19,7 +19,7 @@ are stored only on your computer, inside Figma.
 
 ## Install
 
-- **From Figma Community:** search for "SM exporter" and click *Install* (link coming once published).
+- **From Figma Community:** open [SM exporter on Figma Community](https://www.figma.com/community/plugin/1688606822748713623) and add it from there, or search for "SM exporter" in Figma.
 - **From source:** download this repository (Code → Download ZIP), unzip it, then in the Figma desktop app choose
   **Plugins → Development → Import plugin from manifest…** and select `manifest.json`.
 
